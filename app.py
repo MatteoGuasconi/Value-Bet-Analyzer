@@ -13,6 +13,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Inizializzazione Client Supabase
+supabase_client = None
+try:
+  from supabase import create_client
+
+  sb_url = st.secrets.get("SUPABASE_URL", "")
+  sb_key = st.secrets.get("SUPABASE_KEY", "")
+  if sb_url and sb_key:
+    supabase_client = create_client(sb_url, sb_key)
+except Exception:
+  supabase_client = None
+
 # Styling CSS Dark Fintech
 st.markdown(
     """
@@ -41,8 +53,37 @@ st.markdown(
         background-color: #111827;
         border: 1px solid #1F2937;
         border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
+        padding: 14px;
+        margin-bottom: 10px;
+    }
+    
+    .metric-title {
+        font-size: 0.75rem;
+        color: #94A3B8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+    }
+    
+    .metric-value-pos {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.20rem;
+        font-weight: 700;
+        color: #10B981;
+    }
+    
+    .metric-value-neg {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.20rem;
+        font-weight: 700;
+        color: #EF4444;
+    }
+    
+    .metric-value-neutral {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.20rem;
+        font-weight: 700;
+        color: #F9FAFB;
     }
     
     .trial-banner {
@@ -59,9 +100,8 @@ st.markdown(
         font-weight: 700;
         border-radius: 6px;
         border: none;
-        padding: 12px 24px;
+        padding: 10px 20px;
         transition: all 0.2s ease-in-out;
-        letter-spacing: 0.03em;
     }
     
     .stButton>button:hover {
@@ -89,34 +129,170 @@ st.markdown(
         font-size: 0.75rem !important;
         letter-spacing: 0.05em;
     }
-    
-    tbody tr:hover {
-        background-color: #1E293B !important;
-    }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Inizializzazione Storico Scommesse
-if "bet_history" not in st.session_state:
-  st.session_state.bet_history = pd.DataFrame(
+# Gestione Sessione Utente
+if "user" not in st.session_state:
+  st.session_state.user = None
+if "user_tier" not in st.session_state:
+  st.session_state.user_tier = "free"
+
+
+# Funzioni Autenticazione Supabase
+def login_user(email, password):
+  if not supabase_client:
+    return False, "Database non collegato."
+  try:
+    res = supabase_client.auth.sign_in_with_password(
+        {"email": email, "password": password}
+    )
+    if res.user:
+      st.session_state.user = res.user
+      # Recupero tier utente da profiles
+      profile = (
+          supabase_client.table("profiles")
+          .select("tier")
+          .eq("id", res.user.id)
+          .execute()
+      )
+      if profile.data:
+        st.session_state.user_tier = profile.data[0].get("tier", "free")
+      return True, None
+    return False, "Credenziali non valide."
+  except Exception as e:
+    return False, str(e)
+
+
+def register_user(email, password):
+  if not supabase_client:
+    return False, "Database non collegato."
+  try:
+    res = supabase_client.auth.sign_up({"email": email, "password": password})
+    if res.user:
+      return True, "Registrazione completata. Effettua il login."
+    return False, "Impossibile completare la registrazione."
+  except Exception as e:
+    return False, str(e)
+
+
+def logout_user():
+  if supabase_client:
+    try:
+      supabase_client.auth.sign_out()
+    except Exception:
+      pass
+  st.session_state.user = None
+  st.session_state.user_tier = "free"
+
+
+# Schermata di Autenticazione se l'utente non è loggato
+if st.session_state.user is None:
+  st.title("QUANTITATIVE VALUE BET ANALYZER")
+  st.caption("Accedi per consultare le analisi statistiche e il tuo bankroll")
+
+  auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
+  with auth_col2:
+    tab_log, tab_reg = st.tabs(["Accedi al Tuo Account", "Crea Nuovo Account"])
+
+    with tab_log:
+      log_email = st.text_input("Email", key="log_email")
+      log_pwd = st.text_input("Password", type="password", key="log_pwd")
+      if st.button("ACCEDI", use_container_width=True):
+        if log_email and log_pwd:
+          ok, err = login_user(log_email, log_pwd)
+          if ok:
+            st.success("Accesso effettuato.")
+            st.rerun()
+          else:
+            st.error(f"Errore accesso: {err}")
+        else:
+          st.warning("Compila tutti i campi.")
+
+    with tab_reg:
+      reg_email = st.text_input("Email", key="reg_email")
+      reg_pwd = st.text_input("Password (min. 6 caratteri)", type="password", key="reg_pwd")
+      if st.button("REGISTRATI", use_container_width=True):
+        if reg_email and len(reg_pwd) >= 6:
+          ok, msg = register_user(reg_email, reg_pwd)
+          if ok:
+            st.success(msg)
+          else:
+            st.error(f"Errore registrazione: {msg}")
+        else:
+          st.warning("Inserisci un'email valida e una password di almeno 6 caratteri.")
+  st.stop()
+
+
+# Funzioni Database Cloud Filtrate per Utente
+def fetch_user_bets(user_id):
+  if supabase_client:
+    try:
+      response = (
+          supabase_client.table("user_bets")
+          .select("*")
+          .eq("user_id", user_id)
+          .order("created_at", desc=True)
+          .execute()
+      )
+      if response.data:
+        return pd.DataFrame(response.data)
+    except Exception:
+      pass
+  return pd.DataFrame(
       columns=[
-          "Data",
-          "Partita",
-          "Mercato",
-          "Quota",
-          "Stake (€)",
-          "Probabilita IA",
-          "EV (%)",
-          "Esito",
-          "Profitto (€)",
+          "id",
+          "created_at",
+          "match",
+          "market",
+          "odds",
+          "stake",
+          "ev",
+          "status",
+          "profit",
       ]
   )
 
+
+def save_user_bet(user_id, match, market, odds, stake, ev):
+  if supabase_client:
+    try:
+      supabase_client.table("user_bets").insert({
+          "user_id": user_id,
+          "match": match,
+          "market": market,
+          "odds": float(odds),
+          "stake": float(stake),
+          "ev": float(ev),
+          "status": "IN CORSO",
+          "profit": 0.0,
+      }).execute()
+      return True
+    except Exception:
+      pass
+  return False
+
+
+def update_bet_status(bet_id, new_status, odds, stake):
+  profit_val = 0.0
+  if new_status == "VINTA":
+    profit_val = round((odds - 1.0) * stake, 2)
+  elif new_status == "PERSA":
+    profit_val = round(-stake, 2)
+
+  if supabase_client:
+    try:
+      supabase_client.table("user_bets").update(
+          {"status": new_status, "profit": profit_val}
+      ).eq("id", bet_id).execute()
+    except Exception:
+      pass
+
+
 # Database Statistico Ponderato Integrato
 TEAM_METRICS = {
-    # Serie A
     "Inter": {
         "att": 1.45,
         "def": 0.65,
@@ -207,7 +383,6 @@ TEAM_METRICS = {
         "fouls": 13.8,
         "cards": 2.3,
     },
-    # Premier League
     "Manchester City": {
         "att": 1.60,
         "def": 0.60,
@@ -280,7 +455,6 @@ TEAM_METRICS = {
         "fouls": 11.2,
         "cards": 2.1,
     },
-    # La Liga
     "Real Madrid": {
         "att": 1.55,
         "def": 0.65,
@@ -308,7 +482,6 @@ TEAM_METRICS = {
         "fouls": 12.0,
         "cards": 2.2,
     },
-    # Bundesliga
     "Bayern Munich": {
         "att": 1.65,
         "def": 0.65,
@@ -327,16 +500,6 @@ TEAM_METRICS = {
         "fouls": 10.1,
         "cards": 1.9,
     },
-    "Borussia Dortmund": {
-        "att": 1.35,
-        "def": 1.00,
-        "xg": 1.90,
-        "xga": 1.30,
-        "shots": 5.7,
-        "fouls": 10.8,
-        "cards": 1.8,
-    },
-    # Ligue 1
     "PSG": {
         "att": 1.55,
         "def": 0.70,
@@ -345,24 +508,6 @@ TEAM_METRICS = {
         "shots": 6.8,
         "fouls": 10.0,
         "cards": 1.7,
-    },
-    "Marseille": {
-        "att": 1.20,
-        "def": 0.90,
-        "xg": 1.65,
-        "xga": 1.15,
-        "shots": 5.0,
-        "fouls": 12.0,
-        "cards": 2.2,
-    },
-    "Monaco": {
-        "att": 1.30,
-        "def": 1.00,
-        "xg": 1.80,
-        "xga": 1.25,
-        "shots": 5.3,
-        "fouls": 11.5,
-        "cards": 2.1,
     },
 }
 
@@ -384,7 +529,6 @@ def get_team_metrics(team_name):
   return DEFAULT_BENCHMARK
 
 
-# Motore Dixon-Coles con Matrice Tau
 class FullDixonColesEngine:
 
   def __init__(
@@ -421,7 +565,6 @@ class FullDixonColesEngine:
         p_h = poisson.pmf(h, self.lambda_home)
         p_a = poisson.pmf(a, self.lambda_away)
         matrix[h, a] = self.tau(h, a) * p_h * p_a
-
     total_p = np.sum(matrix)
     if total_p > 0:
       matrix = matrix / total_p
@@ -445,7 +588,6 @@ class FullDixonColesEngine:
         np.sum([matrix[h, a] for h in range(1, 7) for a in range(1, 7)])
     )
     prob_ng = 1.0 - prob_gg
-
     return {
         "1": prob_1,
         "X": prob_x,
@@ -475,7 +617,6 @@ class ValueEngine:
     return round(bankroll * f_star * fraction, 2)
 
 
-# Caching Temporizzato a 30 Minuti (1800 secondi) per salvare chiamate API
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_odds_api(api_key, sport_key):
   url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?apiKey={api_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
@@ -489,10 +630,8 @@ def fetch_odds_api(api_key, sport_key):
     return None, None, str(e)
 
 
-# Scanner Massivo di Giornata
 def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
   detected_opportunities = []
-
   for match in matches:
     h_team = match.get("home_team")
     a_team = match.get("away_team")
@@ -501,7 +640,6 @@ def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
 
     h_metrics = get_team_metrics(h_team)
     a_metrics = get_team_metrics(a_team)
-
     dc = FullDixonColesEngine(h_metrics, a_metrics)
     model_probs = dc.get_probabilities()
 
@@ -540,7 +678,6 @@ def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
     for market, quota in odds_map.items():
       p = model_probs.get(market, 0.0)
       ev = ValueEngine.calculate_ev(p, quota)
-
       if ev >= min_ev:
         stake = ValueEngine.calculate_kelly_stake(
             p, quota, bankroll, kelly_fraction
@@ -559,31 +696,29 @@ def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
   return detected_opportunities
 
 
-# Header Istituzionale
+# Header Applicazione
 st.title("QUANTITATIVE VALUE BET ANALYZER")
-st.caption("Motore Algoritmico Dixon-Coles | Scanner Massivo di Giornata")
+st.caption("Suite Algoritmica Quantitativa | Modello Dixon-Coles Corretto")
 
-# Sidebar: Configurazione & Profilo Utente
-st.sidebar.markdown("### ACCOUNT & ACCESSO")
-app_pwd = st.secrets.get("APP_PASSWORD", "")
-user_pwd = st.sidebar.text_input(
-    "Password Accesso", type="password", placeholder="Credenziali..."
+# Sidebar: Utente & Metriche
+user_email = st.session_state.user.email
+tier_label = (
+    "PIANO PREMIUM"
+    if st.session_state.user_tier == "premium"
+    else "PIANO FREE (DEMO)"
 )
 
-if app_pwd and user_pwd != app_pwd:
-  st.sidebar.warning("Inserisci la password per sbloccare l'applicazione.")
-  st.warning("Accesso Riservato. Inserisci la password nella barra laterale.")
-  st.stop()
+st.sidebar.markdown(f"**Utente:** `{user_email}`")
+st.sidebar.markdown(f"**Stato:** `{tier_label}`")
 
-# Switch Piano Utente per Test e Gestione Accessi
-user_tier = st.sidebar.selectbox(
-    "Piano Utente", ["Utente Premium", "Utente Free"], index=0
-)
+if st.sidebar.button("LOGOUT", use_container_width=True):
+  logout_user()
+  st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### GESTIONE DEL CAPITALE")
-bankroll = st.sidebar.number_input(
-    "Bankroll Operativo (€)", min_value=10.0, value=1000.0, step=50.0
+st.sidebar.markdown("### PARAMETRI OPERATIVI")
+initial_bankroll = st.sidebar.number_input(
+    "Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0
 )
 kelly_fraction = st.sidebar.slider(
     "Frazione di Kelly", min_value=0.05, max_value=0.50, value=0.25, step=0.05
@@ -593,6 +728,64 @@ min_ev = (
         "Soglia Minima EV (%)", min_value=1.0, max_value=15.0, value=3.0, step=0.5
     )
     / 100.0
+)
+
+# Calcolo Metriche Personali Utente
+bets_df = fetch_user_bets(st.session_state.user.id)
+total_profit = 0.0
+yield_pct = 0.0
+win_rate_pct = 0.0
+
+if not bets_df.empty and "status" in bets_df.columns:
+  settled_bets = bets_df[bets_df["status"].isin(["VINTA", "PERSA"])]
+  total_profit = (
+      float(settled_bets["profit"].sum()) if not settled_bets.empty else 0.0
+  )
+  total_settled_stake = (
+      float(settled_bets["stake"].sum()) if not settled_bets.empty else 0.0
+  )
+  won_count = (
+      len(settled_bets[settled_bets["status"] == "VINTA"])
+      if not settled_bets.empty
+      else 0
+  )
+
+  if total_settled_stake > 0:
+    yield_pct = (total_profit / total_settled_stake) * 100.0
+  if len(settled_bets) > 0:
+    win_rate_pct = (won_count / len(settled_bets)) * 100.0
+
+current_bankroll = initial_bankroll + total_profit
+profit_pct = (
+    (total_profit / initial_bankroll) * 100.0 if initial_bankroll > 0 else 0.0
+)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### IL TUO BANKROLL CLOUD")
+st.sidebar.markdown(
+    f"""
+    <div class="metric-card">
+        <div class="metric-title">Capitale Attuale</div>
+        <div class="metric-value-neutral">{current_bankroll:.2f} €</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Profitto / Perdita Netta</div>
+        <div class="{ 'metric-value-pos' if total_profit >= 0 else 'metric-value-neg' }">
+            {total_profit:+.2f} € ({profit_pct:+.2f}%)
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Yield Operativo</div>
+        <div class="{ 'metric-value-pos' if yield_pct >= 0 else 'metric-value-neg' }">
+            {yield_pct:+.2f}%
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Win Rate</div>
+        <div class="metric-value-neutral">{win_rate_pct:.1f}%</div>
+    </div>
+""",
+    unsafe_allow_html=True,
 )
 
 user_api_key = st.secrets.get("ODDS_API_KEY", "")
@@ -607,81 +800,71 @@ ALL_LEAGUES = {
     "Europa League": "soccer_uefa_europa_league",
 }
 
-# Restrizione Campionati in base al Piano
-if user_tier == "Utente Free":
-  available_leagues = {"Serie A (Italia)": "soccer_italy_serie_a"}
-else:
-  available_leagues = ALL_LEAGUES
+is_premium = st.session_state.user_tier == "premium"
+available_leagues = (
+    ALL_LEAGUES if is_premium else {"Serie A (Italia)": "soccer_italy_serie_a"}
+)
 
-# Banner Promozionale Prova Gratuita per Utenti Free
-if user_tier == "Utente Free":
+if not is_premium:
   st.markdown(
       """
         <div class="trial-banner">
-            <h4 style="margin:0 0 6px 0; color:#10B981;">PROVA GRATUITA DI 7 GIORNI DISPONIBILE</h4>
+            <h4 style="margin:0 0 6px 0; color:#10B981;">PIANO FREE ATTIVO (DEMO SERIE A)</h4>
             <p style="margin:0; font-size:0.92rem; color:#D1D5DB;">
-                Attiva ora il piano <b>Premium</b>: sblocchi l'accesso a tutti i campionati europei e visualizzi le <b>Top 3 Value Bets con EV massimo</b>. Nessun addebito per i primi 7 giorni.
+                Passa al piano <b>Premium</b> per sbloccare tutti i campionati europei e accedere alle <b>Top 3 Value Bets con EV massimo</b>.
             </p>
         </div>
         """,
       unsafe_allow_html=True,
   )
 
-# Sezione Scanner
-st.markdown("### SCANNER AUTOMATICO DI GIORNATA")
-col_l, col_btn = st.columns([2, 1])
+tab_scanner, tab_bets = st.tabs(
+    ["Scanner Value Bets", "Registro Scommesse Personale"]
+)
 
-with col_l:
-  selected_league = st.selectbox(
-      "Seleziona Torneo", list(available_leagues.keys()), index=0
-  )
-  sport_key = available_leagues[selected_league]
+with tab_scanner:
+  st.markdown("### SCANNER AUTOMATICO DI GIORNATA")
+  col_l, col_btn = st.columns([2, 1])
 
-with col_btn:
-  st.write("")
-  st.write("")
-  scan_trigger = st.button("AVVIA SCANNER GIORNATA", use_container_width=True)
+  with col_l:
+    selected_league = st.selectbox(
+        "Seleziona Torneo", list(available_leagues.keys()), index=0
+    )
+    sport_key = available_leagues[selected_league]
 
-if scan_trigger or "league_matches_cache" not in st.session_state:
-  if user_api_key:
-    data, rem, err = fetch_odds_api(user_api_key, sport_key)
-    if err:
-      st.error(f"Errore download API: {err}")
-    elif data:
-      st.session_state["league_matches_cache"] = data
-      st.session_state["api_rem"] = rem
-  else:
-    st.error("Chiave ODDS_API_KEY non configurata nei Secrets.")
+  with col_btn:
+    st.write("")
+    st.write("")
+    scan_trigger = st.button("AVVIA SCANNER GIORNATA", use_container_width=True)
 
-matches = st.session_state.get("league_matches_cache", [])
+  if scan_trigger or "league_matches_cache" not in st.session_state:
+    if user_api_key:
+      data, rem, err = fetch_odds_api(user_api_key, sport_key)
+      if err:
+        st.error(f"Errore download API: {err}")
+      elif data:
+        st.session_state["league_matches_cache"] = data
+        st.session_state["api_rem"] = rem
+    else:
+      st.error("Chiave ODDS_API_KEY non configurata nei Secrets.")
 
-if matches:
-  all_value_bets = run_league_scanner(matches, bankroll, kelly_fraction, min_ev)
+  matches = st.session_state.get("league_matches_cache", [])
 
-  st.markdown("---")
-  st.markdown("### TOP 5 VALUE BETS RILEVATE")
+  if matches:
+    all_value_bets = run_league_scanner(
+        matches, current_bankroll, kelly_fraction, min_ev
+    )
 
-  if all_value_bets:
-    top_5 = all_value_bets[:5]
-    table_rows = []
+    st.markdown("---")
+    st.markdown("### TOP 5 VALUE BETS RILEVATE")
 
-    for idx, bet in enumerate(top_5):
-      pos = idx + 1
+    if all_value_bets:
+      top_5 = all_value_bets[:5]
+      table_rows = []
 
-      if user_tier == "Utente Premium":
-        table_rows.append({
-            "POS": f"#{pos}",
-            "PARTITA": bet["Partita"],
-            "DATA": bet["Data"],
-            "MERCATO": bet["Mercato"],
-            "QUOTA": f"{bet['Quota Media']:.2f}",
-            "PROBABILITA": f"{bet['Probabilita']*100:.1f}%",
-            "EXPECTED VALUE": f"{bet['EV']*100:+.2f}%",
-            "STAKE CONSIGLIATO": f"{bet['Stake']:.2f} €",
-        })
-      else:
-        # Logica Utente Free: visibili solo le posizioni #4 e #5
-        if pos in [4, 5]:
+      for idx, bet in enumerate(top_5):
+        pos = idx + 1
+        if is_premium or pos in [4, 5]:
           table_rows.append({
               "POS": f"#{pos}",
               "PARTITA": bet["Partita"],
@@ -704,61 +887,84 @@ if matches:
               "STAKE CONSIGLIATO": "---",
           })
 
-    st.table(pd.DataFrame(table_rows))
+      st.table(pd.DataFrame(table_rows))
+
+      st.markdown("### REGISTRA GIOCATA NEL TUO BANKROLL")
+      col_reg1, col_reg2 = st.columns([3, 1])
+      with col_reg1:
+        bet_options = [
+            f"#{i+1} | {b['Partita']} | {b['Mercato']} @ {b['Quota Media']:.2f} (Stake: {b['Stake']:.2f} €)"
+            for i, b in enumerate(top_5)
+            if is_premium or (i + 1) in [4, 5]
+        ]
+        if bet_options:
+          selected_bet_idx = st.selectbox(
+              "Seleziona Scommessa da Registrare",
+              range(len(bet_options)),
+              format_func=lambda x: bet_options[x],
+          )
+      with col_reg2:
+        st.write("")
+        st.write("")
+        if bet_options and st.button(
+            "SALVA NEL DATABASE", use_container_width=True
+        ):
+          chosen = [
+              b
+              for i, b in enumerate(top_5)
+              if is_premium or (i + 1) in [4, 5]
+          ][selected_bet_idx]
+          save_user_bet(
+              st.session_state.user.id,
+              chosen["Partita"],
+              chosen["Mercato"],
+              chosen["Quota Media"],
+              chosen["Stake"],
+              chosen["EV"],
+          )
+          st.success("Scommessa registrata con successo.")
+          st.rerun()
+    else:
+      st.info("Nessuna giocata di valore rilevata per questo turno.")
+
+with tab_bets:
+  st.markdown("### STORICO PERSONALE SCOMMESSE")
+  user_bets = fetch_user_bets(st.session_state.user.id)
+
+  if not user_bets.empty:
+    st.dataframe(user_bets, use_container_width=True)
+
+    st.markdown("### CHIUDI ESITO SCOMMESSA")
+    pending = user_bets[user_bets["status"] == "IN CORSO"]
+
+    if not pending.empty:
+      col_u1, col_u2, col_u3 = st.columns([2, 1, 1])
+      with col_u1:
+        bet_to_update = st.selectbox(
+            "Scommessa da Concludere",
+            pending["id"].tolist(),
+            format_func=lambda x: (
+                f"ID {x} |"
+                f" {pending.loc[pending['id']==x, 'match'].values[0]} -"
+                f" {pending.loc[pending['id']==x, 'market'].values[0]}"
+            ),
+        )
+      with col_u2:
+        new_status = st.selectbox("Esito", ["VINTA", "PERSA"])
+      with col_u3:
+        st.write("")
+        st.write("")
+        if st.button("AGGIORNA ESITO", use_container_width=True):
+          row = pending[pending["id"] == bet_to_update].iloc[0]
+          update_bet_status(
+              bet_to_update,
+              new_status,
+              float(row["odds"]),
+              float(row["stake"]),
+          )
+          st.success("Esito registrato. Bankroll ricalcolato.")
+          st.rerun()
+    else:
+      st.info("Non hai scommesse in corso.")
   else:
-    st.info(
-        "Nessuna opportunita di valore matematico rilevata con la soglia EV"
-        " attuale. Prova ad abbassare la soglia nella barra laterale."
-    )
-
-  # Sezione Dettaglio Singolo Match
-  st.markdown("---")
-  st.markdown("### APPROFONDIMENTO SINGOLA PARTITA")
-
-  match_labels = [
-      f"{m.get('home_team')} vs {m.get('away_team')} ({m.get('commence_time', '')[:10]})"
-      for m in matches
-  ]
-  selected_label = st.selectbox("Seleziona Incontro", match_labels)
-  chosen_match = next(
-      m
-      for m in matches
-      if f"{m.get('home_team')} vs {m.get('away_team')} ({m.get('commence_time', '')[:10]})"
-      == selected_label
-  )
-
-  h_team = chosen_match.get("home_team")
-  a_team = chosen_match.get("away_team")
-  h_met = get_team_metrics(h_team)
-  a_met = get_team_metrics(a_team)
-
-  c1, c2 = st.columns(2)
-  with c1:
-    st.markdown(
-        f"""
-        <div class="metric-card">
-            <h4 style="margin-top:0;">{h_team} (CASA)</h4>
-            <p>Efficienza Offensiva: <b>{h_met['att']:.2f}x</b></p>
-            <p>Concessione Difensiva: <b>{h_met['def']:.2f}x</b></p>
-            <p>xG Medio: <b>{h_met['xg']:.2f}</b></p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-  with c2:
-    st.markdown(
-        f"""
-        <div class="metric-card">
-            <h4 style="margin-top:0;">{a_team} (TRASFERTA)</h4>
-            <p>Efficienza Offensiva: <b>{a_met['att']:.2f}x</b></p>
-            <p>Concessione Difensiva: <b>{a_met['def']:.2f}x</b></p>
-            <p>xG Medio: <b>{a_met['xg']:.2f}</b></p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-else:
-  st.info(
-      "Clicca su 'AVVIA SCANNER GIORNATA' per analizzare le quote del campionato"
-      " selezionato."
-  )
+    st.info("Non hai ancora salvato alcuna scommessa.")
