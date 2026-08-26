@@ -144,7 +144,7 @@ def get_headers(token=None):
   }
 
 
-# Funzioni Autenticazione HTTP Supabase
+# Funzioni Autenticazione Supabase
 def login_user(email, password):
   if not SB_URL or not SB_KEY:
     return False, "Chiavi Supabase mancanti nei Secrets."
@@ -191,7 +191,7 @@ def register_user(email, password):
         timeout=10,
     )
     if res.status_code in [200, 201]:
-      return True, "Registrazione completata. Ora puoi accedere."
+      return True, "Registrazione completata. Puoi accedere ora."
     err = (
         res.json().get("msg")
         or res.json().get("error_description")
@@ -202,28 +202,10 @@ def register_user(email, password):
     return False, str(e)
 
 
-def reset_password_request(email):
-  if not SB_URL or not SB_KEY:
-    return False, "Chiavi Supabase mancanti."
-  url = f"{SB_URL}/auth/v1/recover"
-  try:
-    res = requests.post(
-        url, json={"email": email}, headers=get_headers(), timeout=10
-    )
-    if res.status_code in [200, 201]:
-      return (
-          True,
-          "Se l'email esiste, riceverai un link per reimpostare la password.",
-      )
-    return False, "Impossibile elaborare la richiesta."
-  except Exception as e:
-    return False, str(e)
-
-
-def change_user_password(new_password):
+def update_user_password(new_password):
   token = st.session_state.get("access_token")
-  if not token or not SB_URL:
-    return False, "Sessione non valida. Effettua nuovamente il login."
+  if not token:
+    return False, "Sessione scaduta. Effettua nuovamente il login."
   url = f"{SB_URL}/auth/v1/user"
   try:
     res = requests.put(
@@ -234,7 +216,11 @@ def change_user_password(new_password):
     )
     if res.status_code == 200:
       return True, "Password aggiornata con successo."
-    err = res.json().get("msg") or "Errore durante l'aggiornamento."
+    err = (
+        res.json().get("msg")
+        or res.json().get("error_description")
+        or "Impossibile aggiornare la password."
+    )
     return False, err
   except Exception as e:
     return False, str(e)
@@ -261,8 +247,8 @@ def redeem_vip_code(user_id, code_input):
       except Exception:
         pass
     st.session_state.user_tier = "premium"
-    return True, "Codice valido. Piano Premium attivato con successo."
-  return False, "Codice VIP non valido o scaduto."
+    return True, "Codice valido. Piano Premium attivato."
+  return False, "Codice promozionale non valido."
 
 
 # Schermata Login / Registrazione
@@ -272,11 +258,7 @@ if st.session_state.user is None:
 
   auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
   with auth_col2:
-    tab_log, tab_reg, tab_rec = st.tabs([
-        "Accedi al Tuo Account",
-        "Crea Nuovo Account",
-        "Password Dimenticata",
-    ])
+    tab_log, tab_reg = st.tabs(["Accedi al Tuo Account", "Crea Nuovo Account"])
 
     with tab_log:
       log_email = st.text_input("Email", key="log_email")
@@ -308,22 +290,10 @@ if st.session_state.user is None:
           st.warning(
               "Inserisci un'email valida e una password di almeno 6 caratteri."
           )
-
-    with tab_rec:
-      rec_email = st.text_input("Inserisci la tua email", key="rec_email")
-      if st.button("INVIA LINK DI RESET", use_container_width=True):
-        if rec_email:
-          ok, msg = reset_password_request(rec_email)
-          if ok:
-            st.success(msg)
-          else:
-            st.error(msg)
-        else:
-          st.warning("Inserisci l'indirizzo email.")
   st.stop()
 
 
-# Funzioni Database HTTP per Scommesse Utente
+# Funzioni Database Cloud Scommesse
 def fetch_user_bets(user_id):
   if SB_URL and SB_KEY:
     token = st.session_state.get("access_token")
@@ -964,8 +934,9 @@ if not is_premium:
       unsafe_allow_html=True,
   )
 
+# Schede Principali
 tab_scanner, tab_bets, tab_account = st.tabs(
-    ["Scanner Value Bets", "Registro Scommesse Personale", "Profilo & Sicurezza"]
+    ["Scanner Value Bets", "Registro Scommesse", "Gestione Account"]
 )
 
 with tab_scanner:
@@ -1116,32 +1087,34 @@ with tab_bets:
     st.info("Non hai ancora salvato alcuna scommessa.")
 
 with tab_account:
-  st.markdown("### DETTAGLI ACCOUNT")
-  st.markdown(f"**Email di Registrazione:** `{user_email}`")
-  st.markdown(f"**ID Utente Supabase:** `{st.session_state.user.get('id')}`")
-  st.markdown(
-      f"**Piano di Abbonamento Attuale:** `{'PREMIUM' if is_premium else 'FREE'}`"
-  )
+  st.markdown("### GESTIONE ACCOUNT")
 
-  st.markdown("---")
-  st.markdown("### MODIFICA PASSWORD DI ACCESSO")
+  with st.expander("Il Mio Profilo", expanded=True):
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+      st.markdown(f"**Email:** `{user_email}`")
+      st.markdown(f"**Stato Abbonamento:** `{tier_label}`")
+    with col_p2:
+      st.markdown(f"**ID Utente:** `{st.session_state.user.get('id')}`")
 
-  acc_c1, acc_c2 = st.columns(2)
-  with acc_c1:
+  with st.expander("Modifica Password"):
     new_pwd = st.text_input(
-        "Nuova Password (min. 6 caratteri)", type="password"
+        "Nuova Password (min. 6 caratteri)",
+        type="password",
+        key="chg_pwd",
     )
-  with acc_c2:
-    conf_pwd = st.text_input("Conferma Nuova Password", type="password")
+    conf_pwd = st.text_input(
+        "Conferma Nuova Password", type="password", key="conf_pwd"
+    )
 
-  if st.button("AGGIORNA PASSWORD", use_container_width=False):
-    if not new_pwd or len(new_pwd) < 6:
-      st.error("La password deve contenere almeno 6 caratteri.")
-    elif new_pwd != conf_pwd:
-      st.error("Le password inserite non coincidono.")
-    else:
-      ok, msg = change_user_password(new_pwd)
-      if ok:
-        st.success(msg)
+    if st.button("AGGIORNA PASSWORD", use_container_width=True):
+      if len(new_pwd) < 6:
+        st.warning("La password deve contenere almeno 6 caratteri.")
+      elif new_pwd != conf_pwd:
+        st.error("Le password inserite non coincidono.")
       else:
-        st.error(msg)
+        ok, msg = update_user_password(new_pwd)
+        if ok:
+          st.success(msg)
+        else:
+          st.error(f"Errore: {msg}")
