@@ -475,7 +475,8 @@ class ValueEngine:
     return round(bankroll * f_star * fraction, 2)
 
 
-# Funzione Recupero Palinsesto da The Odds API
+# Caching Temporizzato a 30 Minuti (1800 secondi) per salvare chiamate API
+@st.cache_data(ttl=1800, show_spinner=False)
 def fetch_odds_api(api_key, sport_key):
   url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?apiKey={api_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
   try:
@@ -560,7 +561,7 @@ def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
 
 # Header Istituzionale
 st.title("QUANTITATIVE VALUE BET ANALYZER")
-st.caption("Modello Dixon-Coles Corretto | Scanner Massivo di Giornata")
+st.caption("Motore Algoritmico Dixon-Coles | Scanner Massivo di Giornata")
 
 # Sidebar: Configurazione & Profilo Utente
 st.sidebar.markdown("### ACCOUNT & ACCESSO")
