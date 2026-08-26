@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS: Tema Dark Fintech ad alto impatto visivo
+# Styling CSS Dark Fintech
 st.markdown(
     """
     <style>
@@ -25,7 +25,6 @@ st.markdown(
         color: #F3F4F6;
     }
     
-    /* Header e Titoli */
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Inter', sans-serif;
         font-weight: 700;
@@ -33,50 +32,36 @@ st.markdown(
         letter-spacing: -0.02em;
     }
     
-    /* Sidebar */
     section[data-testid="stSidebar"] {
         background-color: #0F172A;
         border-right: 1px solid #1E293B;
     }
     
-    /* Card Container */
     .metric-card {
         background-color: #111827;
         border: 1px solid #1F2937;
         border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 15px;
+        padding: 16px;
+        margin-bottom: 12px;
     }
     
-    .badge-value {
-        background-color: rgba(16, 185, 129, 0.15);
-        color: #10B981;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 4px;
+    .trial-banner {
+        background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%);
         border: 1px solid #10B981;
-        font-family: 'JetBrains Mono', monospace;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
     }
     
-    .badge-no-value {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: #EF4444;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 4px;
-        border: 1px solid #EF4444;
-        font-family: 'JetBrains Mono', monospace;
-    }
-    
-    /* Bottoni */
     .stButton>button {
         background-color: #10B981;
         color: #064E3B;
-        font-weight: 600;
+        font-weight: 700;
         border-radius: 6px;
         border: none;
-        padding: 10px 24px;
+        padding: 12px 24px;
         transition: all 0.2s ease-in-out;
+        letter-spacing: 0.03em;
     }
     
     .stButton>button:hover {
@@ -84,7 +69,6 @@ st.markdown(
         color: #FFFFFF;
     }
     
-    /* Tabelle */
     div[data-testid="stTable"] {
         border-radius: 8px;
         overflow: hidden;
@@ -130,7 +114,7 @@ if "bet_history" not in st.session_state:
       ]
   )
 
-# Database Statistico Ponderato Integrato (Top Leghe)
+# Database Statistico Ponderato Integrato
 TEAM_METRICS = {
     # Serie A
     "Inter": {
@@ -400,14 +384,13 @@ def get_team_metrics(team_name):
   return DEFAULT_BENCHMARK
 
 
-# Motore Matematico Avanzato Dixon-Coles con Matrice Tau (tau)
+# Motore Dixon-Coles con Matrice Tau
 class FullDixonColesEngine:
 
   def __init__(
       self, home_metrics, away_metrics, home_advantage=1.12, rho=-0.11
   ):
     self.rho = rho
-    # Calcolo intensita di gol attesi (lambda e mu)
     self.lambda_home = (
         home_metrics["att"]
         * away_metrics["def"]
@@ -429,8 +412,7 @@ class FullDixonColesEngine:
       return 1.0 + (self.lambda_home * self.rho)
     elif x == 1 and y == 1:
       return 1.0 - self.rho
-    else:
-      return 1.0
+    return 1.0
 
   def generate_score_matrix(self, max_goals=6):
     matrix = np.zeros((max_goals + 1, max_goals + 1))
@@ -440,7 +422,6 @@ class FullDixonColesEngine:
         p_a = poisson.pmf(a, self.lambda_away)
         matrix[h, a] = self.tau(h, a) * p_h * p_a
 
-    # Normalizzazione probabilistica per somma pari a 1
     total_p = np.sum(matrix)
     if total_p > 0:
       matrix = matrix / total_p
@@ -451,7 +432,6 @@ class FullDixonColesEngine:
     prob_1 = float(np.sum(np.tril(matrix, -1)))
     prob_x = float(np.sum(np.diag(matrix)))
     prob_2 = float(np.sum(np.triu(matrix, 1)))
-
     prob_over25 = float(
         np.sum([
             matrix[h, a]
@@ -461,7 +441,6 @@ class FullDixonColesEngine:
         ])
     )
     prob_under25 = 1.0 - prob_over25
-
     prob_gg = float(
         np.sum([matrix[h, a] for h in range(1, 7) for a in range(1, 7)])
     )
@@ -496,7 +475,7 @@ class ValueEngine:
     return round(bankroll * f_star * fraction, 2)
 
 
-# Funzione Recupero Dati da The Odds API
+# Funzione Recupero Palinsesto da The Odds API
 def fetch_odds_api(api_key, sport_key):
   url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?apiKey={api_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
   try:
@@ -509,15 +488,85 @@ def fetch_odds_api(api_key, sport_key):
     return None, None, str(e)
 
 
+# Scanner Massivo di Giornata
+def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
+  detected_opportunities = []
+
+  for match in matches:
+    h_team = match.get("home_team")
+    a_team = match.get("away_team")
+    match_title = f"{h_team} vs {a_team}"
+    commence_date = match.get("commence_time", "")[:10]
+
+    h_metrics = get_team_metrics(h_team)
+    a_metrics = get_team_metrics(a_team)
+
+    dc = FullDixonColesEngine(h_metrics, a_metrics)
+    model_probs = dc.get_probabilities()
+
+    bookmakers = match.get("bookmakers", [])
+    h2h_1, h2h_x, h2h_2, ov25, un25 = [], [], [], [], []
+
+    for b in bookmakers:
+      for m in b.get("markets", []):
+        if m["key"] == "h2h":
+          for o in m.get("outcomes", []):
+            if o["name"] == h_team:
+              h2h_1.append(o["price"])
+            elif o["name"] == a_team:
+              h2h_2.append(o["price"])
+            elif o["name"] == "Draw":
+              h2h_x.append(o["price"])
+        elif m["key"] == "totals":
+          for o in m.get("outcomes", []):
+            if o.get("name") == "Over" and o.get("point") == 2.5:
+              ov25.append(o["price"])
+            elif o.get("name") == "Under" and o.get("point") == 2.5:
+              un25.append(o["price"])
+
+    odds_map = {}
+    if h2h_1:
+      odds_map["1"] = float(np.mean(h2h_1))
+    if h2h_x:
+      odds_map["X"] = float(np.mean(h2h_x))
+    if h2h_2:
+      odds_map["2"] = float(np.mean(h2h_2))
+    if ov25:
+      odds_map["Over 2.5"] = float(np.mean(ov25))
+    if un25:
+      odds_map["Under 2.5"] = float(np.mean(un25))
+
+    for market, quota in odds_map.items():
+      p = model_probs.get(market, 0.0)
+      ev = ValueEngine.calculate_ev(p, quota)
+
+      if ev >= min_ev:
+        stake = ValueEngine.calculate_kelly_stake(
+            p, quota, bankroll, kelly_fraction
+        )
+        detected_opportunities.append({
+            "Partita": match_title,
+            "Data": commence_date,
+            "Mercato": market,
+            "Quota Media": quota,
+            "Probabilita": p,
+            "EV": ev,
+            "Stake": stake,
+        })
+
+  detected_opportunities.sort(key=lambda x: x["EV"], reverse=True)
+  return detected_opportunities
+
+
 # Header Istituzionale
 st.title("QUANTITATIVE VALUE BET ANALYZER")
-st.caption("Modello Dixon-Coles Corretto | Analisi Statistica e Value Detection")
+st.caption("Modello Dixon-Coles Corretto | Scanner Massivo di Giornata")
 
-# Barra Laterale: Parametri Finanziari & Credenziali
-st.sidebar.markdown("### AUTENTICAZIONE")
+# Sidebar: Configurazione & Profilo Utente
+st.sidebar.markdown("### ACCOUNT & ACCESSO")
 app_pwd = st.secrets.get("APP_PASSWORD", "")
 user_pwd = st.sidebar.text_input(
-    "Password Accesso", type="password", placeholder="Inserisci credenziali..."
+    "Password Accesso", type="password", placeholder="Credenziali..."
 )
 
 if app_pwd and user_pwd != app_pwd:
@@ -525,18 +574,18 @@ if app_pwd and user_pwd != app_pwd:
   st.warning("Accesso Riservato. Inserisci la password nella barra laterale.")
   st.stop()
 
+# Switch Piano Utente per Test e Gestione Accessi
+user_tier = st.sidebar.selectbox(
+    "Piano Utente", ["Utente Premium", "Utente Free"], index=0
+)
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("### GESTIONE DEL CAPITALE")
 bankroll = st.sidebar.number_input(
     "Bankroll Operativo (€)", min_value=10.0, value=1000.0, step=50.0
 )
 kelly_fraction = st.sidebar.slider(
-    "Frazione di Kelly",
-    min_value=0.05,
-    max_value=0.50,
-    value=0.25,
-    step=0.05,
-    help="Valore raccomandato: 0.25 (Quarter Kelly)",
+    "Frazione di Kelly", min_value=0.05, max_value=0.50, value=0.25, step=0.05
 )
 min_ev = (
     st.sidebar.slider(
@@ -547,8 +596,7 @@ min_ev = (
 
 user_api_key = st.secrets.get("ODDS_API_KEY", "")
 
-# Struttura Campionati
-LEAGUE_KEYS = {
+ALL_LEAGUES = {
     "Serie A (Italia)": "soccer_italy_serie_a",
     "Premier League (Inghilterra)": "soccer_epl",
     "La Liga (Spagna)": "soccer_spain_la_liga",
@@ -558,150 +606,158 @@ LEAGUE_KEYS = {
     "Europa League": "soccer_uefa_europa_league",
 }
 
-# Sezione Principale: Analisi Turno
-st.markdown("### SELEZIONE CAMPIONATO & DOWNLOAD AUTOMATICO")
-col_sel1, col_sel2 = st.columns([2, 1])
+# Restrizione Campionati in base al Piano
+if user_tier == "Utente Free":
+  available_leagues = {"Serie A (Italia)": "soccer_italy_serie_a"}
+else:
+  available_leagues = ALL_LEAGUES
 
-with col_sel1:
-  selected_league = st.selectbox(
-      "Seleziona Torneo", list(LEAGUE_KEYS.keys()), index=0
+# Banner Promozionale Prova Gratuita per Utenti Free
+if user_tier == "Utente Free":
+  st.markdown(
+      """
+        <div class="trial-banner">
+            <h4 style="margin:0 0 6px 0; color:#10B981;">PROVA GRATUITA DI 7 GIORNI DISPONIBILE</h4>
+            <p style="margin:0; font-size:0.92rem; color:#D1D5DB;">
+                Attiva ora il piano <b>Premium</b>: sblocchi l'accesso a tutti i campionati europei e visualizzi le <b>Top 3 Value Bets con EV massimo</b>. Nessun addebito per i primi 7 giorni.
+            </p>
+        </div>
+        """,
+      unsafe_allow_html=True,
   )
-  sport_key = LEAGUE_KEYS[selected_league]
 
-with col_sel2:
+# Sezione Scanner
+st.markdown("### SCANNER AUTOMATICO DI GIORNATA")
+col_l, col_btn = st.columns([2, 1])
+
+with col_l:
+  selected_league = st.selectbox(
+      "Seleziona Torneo", list(available_leagues.keys()), index=0
+  )
+  sport_key = available_leagues[selected_league]
+
+with col_btn:
   st.write("")
   st.write("")
-  sync_btn = st.button("AGGIORNA QUOTE E STATISTICHE", use_container_width=True)
+  scan_trigger = st.button("AVVIA SCANNER GIORNATA", use_container_width=True)
 
-if sync_btn or "cached_matches" not in st.session_state:
+if scan_trigger or "league_matches_cache" not in st.session_state:
   if user_api_key:
     data, rem, err = fetch_odds_api(user_api_key, sport_key)
     if err:
       st.error(f"Errore download API: {err}")
     elif data:
-      st.session_state["cached_matches"] = data
-      st.session_state["cached_rem"] = rem
-      st.success(f"Dati caricati con successo. Chiamate API rimanenti: {rem}")
+      st.session_state["league_matches_cache"] = data
+      st.session_state["api_rem"] = rem
   else:
-    st.error("Chiave ODDS_API_KEY non rilevata nei Secrets.")
+    st.error("Chiave ODDS_API_KEY non configurata nei Secrets.")
 
-matches_data = st.session_state.get("cached_matches", [])
+matches = st.session_state.get("league_matches_cache", [])
 
-if matches_data:
+if matches:
+  all_value_bets = run_league_scanner(matches, bankroll, kelly_fraction, min_ev)
+
   st.markdown("---")
-  st.markdown("### ANALISI DETTAGLIATA INCONTRO")
+  st.markdown("### TOP 5 VALUE BETS RILEVATE")
+
+  if all_value_bets:
+    top_5 = all_value_bets[:5]
+    table_rows = []
+
+    for idx, bet in enumerate(top_5):
+      pos = idx + 1
+
+      if user_tier == "Utente Premium":
+        table_rows.append({
+            "POS": f"#{pos}",
+            "PARTITA": bet["Partita"],
+            "DATA": bet["Data"],
+            "MERCATO": bet["Mercato"],
+            "QUOTA": f"{bet['Quota Media']:.2f}",
+            "PROBABILITA": f"{bet['Probabilita']*100:.1f}%",
+            "EXPECTED VALUE": f"{bet['EV']*100:+.2f}%",
+            "STAKE CONSIGLIATO": f"{bet['Stake']:.2f} €",
+        })
+      else:
+        # Logica Utente Free: visibili solo le posizioni #4 e #5
+        if pos in [4, 5]:
+          table_rows.append({
+              "POS": f"#{pos}",
+              "PARTITA": bet["Partita"],
+              "DATA": bet["Data"],
+              "MERCATO": bet["Mercato"],
+              "QUOTA": f"{bet['Quota Media']:.2f}",
+              "PROBABILITA": f"{bet['Probabilita']*100:.1f}%",
+              "EXPECTED VALUE": f"{bet['EV']*100:+.2f}%",
+              "STAKE CONSIGLIATO": f"{bet['Stake']:.2f} €",
+          })
+        else:
+          table_rows.append({
+              "POS": f"#{pos}",
+              "PARTITA": bet["Partita"],
+              "DATA": bet["Data"],
+              "MERCATO": "[BLOCCATO - PIANO PREMIUM]",
+              "QUOTA": "---",
+              "PROBABILITA": "---",
+              "EXPECTED VALUE": "---",
+              "STAKE CONSIGLIATO": "---",
+          })
+
+    st.table(pd.DataFrame(table_rows))
+  else:
+    st.info(
+        "Nessuna opportunita di valore matematico rilevata con la soglia EV"
+        " attuale. Prova ad abbassare la soglia nella barra laterale."
+    )
+
+  # Sezione Dettaglio Singolo Match
+  st.markdown("---")
+  st.markdown("### APPROFONDIMENTO SINGOLA PARTITA")
 
   match_labels = [
       f"{m.get('home_team')} vs {m.get('away_team')} ({m.get('commence_time', '')[:10]})"
-      for m in matches_data
+      for m in matches
   ]
-  selected_label = st.selectbox("Seleziona Partita in Palinsesto", match_labels)
+  selected_label = st.selectbox("Seleziona Incontro", match_labels)
   chosen_match = next(
       m
-      for m in matches_data
+      for m in matches
       if f"{m.get('home_team')} vs {m.get('away_team')} ({m.get('commence_time', '')[:10]})"
       == selected_label
   )
 
   h_team = chosen_match.get("home_team")
   a_team = chosen_match.get("away_team")
+  h_met = get_team_metrics(h_team)
+  a_met = get_team_metrics(a_team)
 
-  # Recupero metriche statistiche automatiche
-  h_metrics = get_team_metrics(h_team)
-  a_metrics = get_team_metrics(a_team)
-
-  # Calcolo probabilita Dixon-Coles con matrice Tau
-  dc = FullDixonColesEngine(h_metrics, a_metrics)
-  model_probs = dc.get_probabilities()
-
-  # Estrazione quote medie dai bookmaker
-  bookmakers = chosen_match.get("bookmakers", [])
-  h2h_1, h2h_x, h2h_2, ov25, un25 = [], [], [], [], []
-
-  for b in bookmakers:
-    for m in b.get("markets", []):
-      if m["key"] == "h2h":
-        for o in m.get("outcomes", []):
-          if o["name"] == h_team:
-            h2h_1.append(o["price"])
-          elif o["name"] == a_team:
-            h2h_2.append(o["price"])
-          elif o["name"] == "Draw":
-            h2h_x.append(o["price"])
-      elif m["key"] == "totals":
-        for o in m.get("outcomes", []):
-          if o.get("name") == "Over" and o.get("point") == 2.5:
-            ov25.append(o["price"])
-          elif o.get("name") == "Under" and o.get("point") == 2.5:
-            un25.append(o["price"])
-
-  q_1 = float(np.mean(h2h_1)) if h2h_1 else 2.10
-  q_x = float(np.mean(h2h_x)) if h2h_x else 3.30
-  q_2 = float(np.mean(h2h_2)) if h2h_2 else 3.50
-  q_ov25 = float(np.mean(ov25)) if ov25 else 1.95
-  q_un25 = float(np.mean(un25)) if un25 else 1.85
-
-  odds_map = {
-      "1": q_1,
-      "X": q_x,
-      "2": q_2,
-      "Over 2.5": q_ov25,
-      "Under 2.5": q_un25,
-  }
-
-  # Analisi di Valore e Stake Kelly
-  results_rows = []
-  for market, quota in odds_map.items():
-    p = model_probs[market]
-    ev = ValueEngine.calculate_ev(p, quota)
-    stake = (
-        ValueEngine.calculate_kelly_stake(p, quota, bankroll, kelly_fraction)
-        if ev >= min_ev
-        else 0.0
-    )
-    is_val = ev >= min_ev
-
-    results_rows.append({
-        "MERCATO": market,
-        "PROBABILITA STIMATA": f"{p*100:.1f}%",
-        "QUOTA MEDIA": f"{quota:.2f}",
-        "EXPECTED VALUE": f"{ev*100:+.2f}%",
-        "STAKE CONSIGLIATO": f"{stake:.2f} €" if is_val else "0.00 €",
-        "STATUS": "VALORE" if is_val else "NO VALORE",
-    })
-
-  # Visualizzazione Risultati Tabellari
-  st.table(pd.DataFrame(results_rows))
-
-  # Note Tecniche sull'Incontro
-  col_info1, col_info2 = st.columns(2)
-  with col_info1:
+  c1, c2 = st.columns(2)
+  with c1:
     st.markdown(
         f"""
         <div class="metric-card">
             <h4 style="margin-top:0;">{h_team} (CASA)</h4>
-            <p>Indice Efficienza Offensiva: <b>{h_metrics['att']:.2f}x</b></p>
-            <p>Indice Concessione Difensiva: <b>{h_metrics['def']:.2f}x</b></p>
-            <p>xG Medio Atteso: <b>{h_metrics['xg']:.2f}</b></p>
+            <p>Efficienza Offensiva: <b>{h_met['att']:.2f}x</b></p>
+            <p>Concessione Difensiva: <b>{h_met['def']:.2f}x</b></p>
+            <p>xG Medio: <b>{h_met['xg']:.2f}</b></p>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
-  with col_info2:
+  with c2:
     st.markdown(
         f"""
         <div class="metric-card">
             <h4 style="margin-top:0;">{a_team} (TRASFERTA)</h4>
-            <p>Indice Efficienza Offensiva: <b>{a_metrics['att']:.2f}x</b></p>
-            <p>Indice Concessione Difensiva: <b>{a_metrics['def']:.2f}x</b></p>
-            <p>xG Medio Atteso: <b>{a_metrics['xg']:.2f}</b></p>
+            <p>Efficienza Offensiva: <b>{a_met['att']:.2f}x</b></p>
+            <p>Concessione Difensiva: <b>{a_met['def']:.2f}x</b></p>
+            <p>xG Medio: <b>{a_met['xg']:.2f}</b></p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 else:
   st.info(
-      "Nessun evento caricato. Clicca sul pulsante 'AGGIORNA QUOTE E"
-      " STATISTICHE' per interrogare il palinsesto."
+      "Clicca su 'AVVIA SCANNER GIORNATA' per analizzare le quote del campionato"
+      " selezionato."
   )
