@@ -2,7 +2,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import requests
-from scipy.stats import nbinom, poisson
+from scipy.stats import poisson
 import streamlit as st
 
 # Configurazione della pagina
@@ -13,23 +13,25 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech
+# Styling CSS Dark Fintech con Font Inter Unificato
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
-    html, body, [class*="css"], .stApp {
-        font-family: 'Inter', sans-serif;
+    html, body, [class*="css"], .stApp, * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    .stApp {
         background-color: #0A0E17;
         color: #F3F4F6;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Inter', sans-serif;
-        font-weight: 700;
-        color: #FFFFFF;
-        letter-spacing: -0.02em;
+        font-weight: 700 !important;
+        color: #FFFFFF !important;
+        letter-spacing: -0.02em !important;
     }
     
     section[data-testid="stSidebar"] {
@@ -51,25 +53,23 @@ st.markdown(
         text-transform: uppercase;
         letter-spacing: 0.05em;
         margin-bottom: 4px;
+        font-weight: 600;
     }
     
     .metric-value-pos {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.20rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #10B981;
     }
     
     .metric-value-neg {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.20rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #EF4444;
     }
     
     .metric-value-neutral {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.20rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #F9FAFB;
     }
@@ -78,12 +78,23 @@ st.markdown(
         background-color: #1E293B;
         border: 1px solid #3B82F6;
         color: #93C5FD;
-        font-size: 0.82rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        padding: 6px 12px;
+        padding: 8px 14px;
         border-radius: 6px;
         display: inline-block;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .props-notice-badge {
+        background-color: rgba(245, 158, 11, 0.1);
+        border: 1px solid #F59E0B;
+        color: #FCD34D;
+        font-size: 0.82rem;
+        font-weight: 500;
+        padding: 10px 16px;
+        border-radius: 6px;
+        margin-bottom: 16px;
     }
     
     .trial-banner {
@@ -118,15 +129,15 @@ st.markdown(
     
     table {
         color: #F9FAFB !important;
-        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.90rem !important;
     }
     
     thead tr th {
         background-color: #1E293B !important;
         color: #94A3B8 !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         text-transform: uppercase;
-        font-size: 0.75rem !important;
+        font-size: 0.78rem !important;
         letter-spacing: 0.05em;
     }
     </style>
@@ -263,12 +274,50 @@ def redeem_vip_code(user_id, code_input):
   return False, "Codice promozionale non valido."
 
 
+# Normalizzatore Nomi Squadre in Italiano
+CLEAN_TEAM_NAMES = {
+    "Inter Milan": "Inter",
+    "AC Milan": "Milan",
+    "Atalanta BC": "Atalanta",
+    "AS Roma": "Roma",
+    "SS Lazio": "Lazio",
+    "Juventus": "Juventus",
+    "Napoli": "Napoli",
+    "Fiorentina": "Fiorentina",
+    "Bologna": "Bologna",
+    "Torino": "Torino",
+    "Parma": "Parma",
+    "Cagliari": "Cagliari",
+    "Empoli": "Empoli",
+    "Genoa": "Genoa",
+    "Monza": "Monza",
+    "Lecce": "Lecce",
+    "Udinese": "Udinese",
+    "Verona": "Verona",
+    "Venezia": "Venezia",
+    "Como": "Como",
+    "Manchester City": "Manchester City",
+    "Arsenal": "Arsenal",
+    "Liverpool": "Liverpool",
+    "Real Madrid": "Real Madrid",
+    "Barcelona": "Barcellona",
+    "Bayern Munich": "Bayern Monaco",
+    "Paris Saint Germain": "PSG",
+    "PSG": "PSG",
+}
+
+
+def clean_name(raw_name):
+  for eng, ita in CLEAN_TEAM_NAMES.items():
+    if eng.lower() in raw_name.lower():
+      return ita
+  return raw_name
+
+
 # Schermata Login / Registrazione
 if st.session_state.user is None:
   st.title("VALUE BET ANALYZER")
-  st.caption(
-      "Suite Quantitativa Professionale | Modelli Match Analyst v4.0"
-  )
+  st.caption("Suite Quantitativa Professionale | Modelli Match Analyst v4.0")
 
   auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
   with auth_col2:
@@ -421,7 +470,7 @@ TEAM_METRICS = {
         "fouls_against": 13.5,
         "tactics": "4-2-3-1 Dominio Possesso",
     },
-    "AC Milan": {
+    "Milan": {
         "gf_h": 2.05,
         "gf_a": 1.65,
         "ga_h": 1.10,
@@ -478,7 +527,7 @@ TEAM_METRICS = {
         "fouls_against": 14.2,
         "tactics": "3-4-2-1 Pressing Ultra-Offensivo",
     },
-    "AS Roma": {
+    "Roma": {
         "gf_h": 1.60,
         "gf_a": 1.20,
         "ga_h": 0.95,
@@ -611,140 +660,6 @@ TEAM_METRICS = {
         "fouls_against": 12.0,
         "tactics": "3-5-2 Blocco Basso",
     },
-    # PREMIER LEAGUE
-    "Manchester City": {
-        "gf_h": 2.55,
-        "gf_a": 2.10,
-        "ga_h": 0.70,
-        "ga_a": 0.95,
-        "xg_5": 2.45,
-        "xga_5": 0.85,
-        "xg_s": 2.35,
-        "over15_pct": 0.88,
-        "sot_pro": 7.3,
-        "sot_against": 2.9,
-        "corners_pro": 7.8,
-        "corners_against": 2.8,
-        "cross": 23.0,
-        "blocked_shots": 6.4,
-        "fouls_pro": 9.5,
-        "fouls_against": 11.5,
-        "tactics": "3-2-4-1 Dominio Territoriale",
-    },
-    "Arsenal": {
-        "gf_h": 2.30,
-        "gf_a": 1.95,
-        "ga_h": 0.65,
-        "ga_a": 0.80,
-        "xg_5": 2.25,
-        "xga_5": 0.70,
-        "xg_s": 2.15,
-        "over15_pct": 0.85,
-        "sot_pro": 6.7,
-        "sot_against": 2.8,
-        "corners_pro": 7.2,
-        "corners_against": 3.1,
-        "cross": 21.8,
-        "blocked_shots": 5.9,
-        "fouls_pro": 10.2,
-        "fouls_against": 12.0,
-        "tactics": "4-3-3 Pressing Asfissiante",
-    },
-    "Liverpool": {
-        "gf_h": 2.40,
-        "gf_a": 2.05,
-        "ga_h": 0.75,
-        "ga_a": 0.90,
-        "xg_5": 2.35,
-        "xga_5": 0.85,
-        "xg_s": 2.25,
-        "over15_pct": 0.86,
-        "sot_pro": 7.0,
-        "sot_against": 3.3,
-        "corners_pro": 7.4,
-        "corners_against": 3.4,
-        "cross": 22.0,
-        "blocked_shots": 6.1,
-        "fouls_pro": 10.6,
-        "fouls_against": 11.8,
-        "tactics": "4-2-3-1 Verticale ad Alta Intensità",
-    },
-    "Real Madrid": {
-        "gf_h": 2.45,
-        "gf_a": 2.00,
-        "ga_h": 0.70,
-        "ga_a": 0.90,
-        "xg_5": 2.30,
-        "xga_5": 0.85,
-        "xg_s": 2.20,
-        "over15_pct": 0.85,
-        "sot_pro": 6.9,
-        "sot_against": 3.4,
-        "corners_pro": 6.8,
-        "corners_against": 3.6,
-        "cross": 20.5,
-        "blocked_shots": 5.8,
-        "fouls_pro": 10.1,
-        "fouls_against": 13.0,
-        "tactics": "4-3-3 Fluidità e Transizione",
-    },
-    "Barcelona": {
-        "gf_h": 2.60,
-        "gf_a": 2.15,
-        "ga_h": 0.85,
-        "ga_a": 1.05,
-        "xg_5": 2.40,
-        "xga_5": 0.95,
-        "xg_s": 2.30,
-        "over15_pct": 0.89,
-        "sot_pro": 7.1,
-        "sot_against": 3.6,
-        "corners_pro": 6.9,
-        "corners_against": 3.5,
-        "cross": 21.0,
-        "blocked_shots": 6.0,
-        "fouls_pro": 10.5,
-        "fouls_against": 12.5,
-        "tactics": "4-2-3-1 Linea Altissima",
-    },
-    "Bayern Munich": {
-        "gf_h": 2.70,
-        "gf_a": 2.25,
-        "ga_h": 0.80,
-        "ga_a": 1.00,
-        "xg_5": 2.55,
-        "xga_5": 0.85,
-        "xg_s": 2.45,
-        "over15_pct": 0.90,
-        "sot_pro": 7.5,
-        "sot_against": 3.2,
-        "corners_pro": 7.6,
-        "corners_against": 3.0,
-        "cross": 22.8,
-        "blocked_shots": 6.5,
-        "fouls_pro": 9.3,
-        "fouls_against": 11.2,
-        "tactics": "4-2-3-1 Dominio Offensivo",
-    },
-    "PSG": {
-        "gf_h": 2.50,
-        "gf_a": 2.05,
-        "ga_h": 0.75,
-        "ga_a": 0.95,
-        "xg_5": 2.35,
-        "xga_5": 0.90,
-        "xg_s": 2.25,
-        "over15_pct": 0.87,
-        "sot_pro": 7.0,
-        "sot_against": 3.5,
-        "corners_pro": 7.0,
-        "corners_against": 3.4,
-        "cross": 21.2,
-        "blocked_shots": 6.0,
-        "fouls_pro": 10.2,
-        "fouls_against": 12.0,
-        "tactics": "4-3-3 Possesso e Pressione",
-    },
 }
 
 DEFAULT_METRICS = {
@@ -769,8 +684,9 @@ DEFAULT_METRICS = {
 
 
 def get_metrics(team_name):
+  cleaned = clean_name(team_name)
   for name, metrics in TEAM_METRICS.items():
-    if name.lower() in team_name.lower() or team_name.lower() in name.lower():
+    if name.lower() in cleaned.lower() or cleaned.lower() in name.lower():
       return metrics
   return DEFAULT_METRICS
 
@@ -807,7 +723,7 @@ SERIE_A_PLAYERS = [
         "freekicks": True,
     },
     {
-        "team": "AC Milan",
+        "team": "Milan",
         "name": "Rafael Leao",
         "role": "Ala Sinistra",
         "sot_90": 1.30,
@@ -837,7 +753,7 @@ SERIE_A_PLAYERS = [
         "freekicks": False,
     },
     {
-        "team": "AS Roma",
+        "team": "Roma",
         "name": "Paulo Dybala",
         "role": "Seconda Punta",
         "sot_90": 1.45,
@@ -922,6 +838,7 @@ class MatchAnalystEngine:
   ):
     t_met = get_metrics(team)
     o_met = get_metrics(opp)
+    c_team = clean_name(team)
 
     gf = t_met["gf_h"] if is_home else t_met["gf_a"]
     ga_opp = o_met["ga_a"] if is_home else o_met["ga_h"]
@@ -949,7 +866,9 @@ class MatchAnalystEngine:
     edge = (prob_model * bookmaker_odds) - 1.0
 
     return {
-        "market": f"Over 1.5 Team ({team})",
+        "market": f"Over 1.5 Gol ({c_team})",
+        "market_type": "Over 1.5 Gol Squadra",
+        "bookmaker_note": "Disponibile Subito (Betsson / .IT)",
         "xg_final": xg_final,
         "prob_model": prob_model,
         "prob_imp": prob_imp,
@@ -975,6 +894,7 @@ class MatchAnalystEngine:
   ):
     t_met = get_metrics(team)
     o_met = get_metrics(opp)
+    c_team = clean_name(team)
 
     sot_fatti = t_met["sot_pro"]
     sot_subiti_opp = o_met["sot_against"]
@@ -995,7 +915,9 @@ class MatchAnalystEngine:
     edge = (prob_model * bookmaker_odds) - 1.0
 
     return {
-        "market": f"Over {line} SOT Team ({team})",
+        "market": f"Over {line} Tiri in porta ({c_team})",
+        "market_type": "Tiri in porta Squadra",
+        "bookmaker_note": "Aperta (< 48h)",
         "xs_final": xs_final,
         "prob_model": prob_model,
         "prob_imp": prob_imp,
@@ -1033,6 +955,8 @@ class MatchAnalystEngine:
 
     return {
         "market": f"Over {line} Corner Totali",
+        "market_type": "Corner Totali",
+        "bookmaker_note": "Disponibile Subito (Betsson / .IT)",
         "corners_final": corners_final,
         "prob_model": prob_model,
         "prob_imp": prob_imp,
@@ -1074,9 +998,11 @@ class MatchAnalystEngine:
 
     return {
         "market": f"Over {line} Falli Commessi ({player['name']})",
+        "market_type": "Falli Giocatore (Serie A)",
+        "bookmaker_note": "Aperta (< 48h)",
         "player": player["name"],
-        "team": player["team"],
-        "opp": opp_team,
+        "team": clean_name(player["team"]),
+        "opp": clean_name(opp_team),
         "referee": referee["name"],
         "ref_severity": referee["severity"],
         "xf_final": xf_final,
@@ -1092,12 +1018,11 @@ class MatchAnalystEngine:
     }
 
 
-# FILTRO AUTOMATICO DEL TURNO DI CAMPIONATO (MATCHDAY WINDOW)
+# FILTRO AUTOMATICO DEL TURNO
 def filter_current_matchday(matches):
   if not matches:
     return [], "", ""
 
-  # Conversione e ordinamento per data/ora di inizio
   parsed = []
   for m in matches:
     ct_str = m.get("commence_time", "")
@@ -1112,8 +1037,6 @@ def filter_current_matchday(matches):
 
   parsed.sort(key=lambda x: x[0])
   first_dt = parsed[0][0]
-
-  # La finestra del turno copre fino a 4 giorni dalla prima partita (es. venerdì-lunedì o turno infrasettimanale)
   round_cutoff = first_dt + datetime.timedelta(days=4)
   current_round = [m for dt, m in parsed if dt <= round_cutoff]
 
@@ -1125,22 +1048,39 @@ def filter_current_matchday(matches):
   return current_round, start_label, end_label
 
 
-# SCANNER AUTOMATIZZATO DI GIORNATA
+# SCANNER AUTOMATIZZATO CON FILTRO TEMPORALE DINAMICO A 48 ORE
 def scan_league_opportunities(
     matches, league_name, bankroll, min_odds=1.70, min_edge=0.01
 ):
   results = []
   is_serie_a = "serie_a" in league_name.lower() or "italia" in league_name.lower()
+  now_utc = datetime.datetime.now(datetime.timezone.utc)
 
   ref_cycle = 0
 
   for match in matches:
-    h_team = match.get("home_team", "")
-    a_team = match.get("away_team", "")
+    raw_h = match.get("home_team", "")
+    raw_a = match.get("away_team", "")
+    h_team = clean_name(raw_h)
+    a_team = clean_name(raw_a)
     match_title = f"{h_team} vs {a_team}"
     match_date = match.get("commence_time", "")[:10]
+    ct_str = match.get("commence_time", "")
 
-    # 1. Over 1.5 Team Goals Casa
+    # Calcolo finestra temporale (<= 48 ore)
+    hours_to_kickoff = 999.0
+    if ct_str:
+      try:
+        match_dt = datetime.datetime.fromisoformat(
+            ct_str.replace("Z", "+00:00")
+        )
+        hours_to_kickoff = (match_dt - now_utc).total_seconds() / 3600.0
+      except Exception:
+        hours_to_kickoff = 999.0
+
+    props_unlocked = hours_to_kickoff <= 48.0
+
+    # 1. Over 1.5 Gol Squadra Casa (Mercato Principale: sempre attivo)
     ov_h = MatchAnalystEngine.analyze_over15_team(
         h_team, a_team, is_home=True, bookmaker_odds=1.85
     )
@@ -1152,7 +1092,8 @@ def scan_league_opportunities(
           "match": match_title,
           "date": match_date,
           "market": ov_h["market"],
-          "type": "Over 1.5 Team Goals",
+          "type": ov_h["market_type"],
+          "bk_note": ov_h["bookmaker_note"],
           "odds": ov_h["odds"],
           "prob_model": ov_h["prob_model"],
           "prob_imp": ov_h["prob_imp"],
@@ -1162,7 +1103,7 @@ def scan_league_opportunities(
           "report_data": ov_h,
       })
 
-    # 2. Over 1.5 Team Goals Trasferta
+    # 2. Over 1.5 Gol Squadra Trasferta (Mercato Principale: sempre attivo)
     ov_a = MatchAnalystEngine.analyze_over15_team(
         a_team, h_team, is_home=False, bookmaker_odds=1.95
     )
@@ -1174,7 +1115,8 @@ def scan_league_opportunities(
           "match": match_title,
           "date": match_date,
           "market": ov_a["market"],
-          "type": "Over 1.5 Team Goals",
+          "type": ov_a["market_type"],
+          "bk_note": ov_a["bookmaker_note"],
           "odds": ov_a["odds"],
           "prob_model": ov_a["prob_model"],
           "prob_imp": ov_a["prob_imp"],
@@ -1184,29 +1126,7 @@ def scan_league_opportunities(
           "report_data": ov_a,
       })
 
-    # 3. Tiri in Porta Squadra (SOT Team)
-    sot_h = MatchAnalystEngine.analyze_sot_team(
-        h_team, a_team, is_home=True, line=4.5, bookmaker_odds=1.80
-    )
-    if sot_h["odds"] >= min_odds and sot_h["edge"] >= min_edge:
-      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
-          sot_h["prob_model"], sot_h["odds"], bankroll
-      )
-      results.append({
-          "match": match_title,
-          "date": match_date,
-          "market": sot_h["market"],
-          "type": "Tiri in Porta Squadra",
-          "odds": sot_h["odds"],
-          "prob_model": sot_h["prob_model"],
-          "prob_imp": sot_h["prob_imp"],
-          "edge": sot_h["edge"],
-          "stake_pct": stake_pct,
-          "stake_eur": stake_eur,
-          "report_data": sot_h,
-      })
-
-    # 4. Calci d'Angolo Match
+    # 3. Corner Totali (Mercato Principale: sempre attivo)
     corn = MatchAnalystEngine.analyze_corners_match(
         h_team, a_team, line=9.5, bookmaker_odds=1.92
     )
@@ -1218,7 +1138,8 @@ def scan_league_opportunities(
           "match": match_title,
           "date": match_date,
           "market": corn["market"],
-          "type": "Calci d'Angolo",
+          "type": corn["market_type"],
+          "bk_note": corn["bookmaker_note"],
           "odds": corn["odds"],
           "prob_model": corn["prob_model"],
           "prob_imp": corn["prob_imp"],
@@ -1228,33 +1149,59 @@ def scan_league_opportunities(
           "report_data": corn,
       })
 
-    # 5. Falli Giocatori Serie A (SOLO SERIE A)
-    if is_serie_a:
-      assigned_ref = SERIE_A_REFEREES[ref_cycle % len(SERIE_A_REFEREES)]
-      ref_cycle += 1
+    # SBLOCCO MERCATI STATISTICI / PROPS (SOLO SE A MENO DI 48 ORE DAL MATCH)
+    if props_unlocked:
+      # 4. Tiri in Porta Squadra
+      sot_h = MatchAnalystEngine.analyze_sot_team(
+          h_team, a_team, is_home=True, line=4.5, bookmaker_odds=1.80
+      )
+      if sot_h["odds"] >= min_odds and sot_h["edge"] >= min_edge:
+        stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
+            sot_h["prob_model"], sot_h["odds"], bankroll
+        )
+        results.append({
+            "match": match_title,
+            "date": match_date,
+            "market": sot_h["market"],
+            "type": sot_h["market_type"],
+            "bk_note": sot_h["bookmaker_note"],
+            "odds": sot_h["odds"],
+            "prob_model": sot_h["prob_model"],
+            "prob_imp": sot_h["prob_imp"],
+            "edge": sot_h["edge"],
+            "stake_pct": stake_pct,
+            "stake_eur": stake_eur,
+            "report_data": sot_h,
+        })
 
-      for p in SERIE_A_PLAYERS:
-        if p["team"].lower() in h_team.lower():
-          f_res = MatchAnalystEngine.analyze_player_fouls_serie_a(
-              p, a_team, assigned_ref, line=1.5, bookmaker_odds=1.95
-          )
-          if f_res["odds"] >= min_odds and f_res["edge"] >= min_edge:
-            stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
-                f_res["prob_model"], f_res["odds"], bankroll
+      # 5. Falli Giocatori Serie A
+      if is_serie_a:
+        assigned_ref = SERIE_A_REFEREES[ref_cycle % len(SERIE_A_REFEREES)]
+        ref_cycle += 1
+
+        for p in SERIE_A_PLAYERS:
+          if p["team"].lower() in h_team.lower():
+            f_res = MatchAnalystEngine.analyze_player_fouls_serie_a(
+                p, a_team, assigned_ref, line=1.5, bookmaker_odds=1.95
             )
-            results.append({
-                "match": match_title,
-                "date": match_date,
-                "market": f_res["market"],
-                "type": "Falli Giocatori Serie A",
-                "odds": f_res["odds"],
-                "prob_model": f_res["prob_model"],
-                "prob_imp": f_res["prob_imp"],
-                "edge": f_res["edge"],
-                "stake_pct": stake_pct,
-                "stake_eur": stake_eur,
-                "report_data": f_res,
-            })
+            if f_res["odds"] >= min_odds and f_res["edge"] >= min_edge:
+              stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
+                  f_res["prob_model"], f_res["odds"], bankroll
+              )
+              results.append({
+                  "match": match_title,
+                  "date": match_date,
+                  "market": f_res["market"],
+                  "type": f_res["market_type"],
+                  "bk_note": f_res["bookmaker_note"],
+                  "odds": f_res["odds"],
+                  "prob_model": f_res["prob_model"],
+                  "prob_imp": f_res["prob_imp"],
+                  "edge": f_res["edge"],
+                  "stake_pct": stake_pct,
+                  "stake_eur": stake_eur,
+                  "report_data": f_res,
+              })
 
   results.sort(key=lambda x: x["edge"], reverse=True)
   return results
@@ -1441,7 +1388,6 @@ with tab_scanner:
   all_raw_matches = st.session_state.get("league_matches_cache", [])
 
   if all_raw_matches:
-    # Applicazione del filtro rigoroso di singolo turno
     matches, round_start, round_end = filter_current_matchday(all_raw_matches)
 
     st.markdown(
@@ -1449,6 +1395,30 @@ with tab_scanner:
         f" ({len(matches)} incontri in programma)</div>",
         unsafe_allow_html=True,
     )
+
+    # Verifica se ci sono partite a più di 48 ore nel turno per mostrare/nascondere il badge informativo
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    has_pending_props = False
+    for m in matches:
+      ct = m.get("commence_time")
+      if ct:
+        try:
+          mdt = datetime.datetime.fromisoformat(ct.replace("Z", "+00:00"))
+          if (mdt - now_utc).total_seconds() / 3600.0 > 48.0:
+            has_pending_props = True
+            break
+        except Exception:
+          pass
+
+    if has_pending_props:
+      st.markdown(
+          """
+            <div class="props-notice-badge">
+                <b>AVVISO MERCATI:</b> Alcune gare del turno distano oltre 48 ore. Al momento lo scanner include i mercati principali disponibili subito (Over 1.5 Gol e Corner). Le quote statistiche (Tiri in porta e Falli) si sbloccheranno automaticamente nella Top 5 a 24-48h dal fischio d'inizio.
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
 
     all_bets = scan_league_opportunities(
         matches,
@@ -1479,6 +1449,7 @@ with tab_scanner:
               "PROB. REALE": f"{bet['prob_model']*100:.1f}%",
               "EDGE REALE": f"{bet['edge']*100:+.2f}%",
               "KELLY/2 STAKE": f"{bet['stake_pct']}% ({bet['stake_eur']:.2f} €)",
+              "DISPONIBILITÀ QUOTA": bet["bk_note"],
           })
         else:
           table_rows.append({
@@ -1490,6 +1461,7 @@ with tab_scanner:
               "PROB. REALE": "---",
               "EDGE REALE": "---",
               "KELLY/2 STAKE": "---",
+              "DISPONIBILITÀ QUOTA": "---",
           })
 
       st.table(pd.DataFrame(table_rows))
@@ -1507,6 +1479,7 @@ with tab_scanner:
               expanded=(pos == 1 or pos == 4),
           ):
             st.markdown(f"**Tipologia:** `{bet['type']}`")
+            st.markdown(f"**Stato Quota:** `{bet['bk_note']}`")
             st.markdown(
                 f"**Probabilità Modello:** `{bet['prob_model']*100:.1f}%` |"
                 f" **Probabilità Implicita Bookmaker:**"
@@ -1519,35 +1492,39 @@ with tab_scanner:
             )
 
             st.markdown("#### Motivazione Tecnica Quantitativa:")
-            if bet["type"] == "Over 1.5 Team Goals":
+            if "Gol Squadra" in bet["type"]:
               st.write(
-                  f"- **Proiezione xG_Team:** `{rep['xg_final']:.2f}` gol"
-                  " attesi (modello Poisson)."
+                  f"- **Proiezione Gol Attesi:** `{rep['xg_final']:.2f}`"
+                  " (modello Poisson)."
               )
               st.write(
                   f"- **Efficienza Offensiva:** Media Gol Fatti ="
-                  f" `{rep['details']['media_gf']:.2f}`, xG Concessi Avversario"
-                  f" = `{rep['details']['ga_opp']:.2f}`."
+                  f" `{rep['details']['media_gf']:.2f}`, Concessione Difensiva"
+                  f" Avversario = `{rep['details']['ga_opp']:.2f}`."
               )
               st.write(
                   f"- **Assetto Tattico:** `{rep['details']['tactics_t']}` vs"
                   f" `{rep['details']['tactics_o']}` (Fattore correttivo: +"
                   f" {int((rep['details']['mod']-1)*100)}%)."
               )
-            elif bet["type"] == "Tiri in Porta Squadra":
+            elif "Tiri in porta" in bet["type"]:
               st.write(
-                  f"- **Proiezione SOT Attesi (xS):** `{rep['xs_final']:.2f}`"
-                  " tiri nello specchio."
+                  "- **Proiezione Tiri nello Specchio (xS):**"
+                  f" `{rep['xs_final']:.2f}`"
               )
               st.write(
                   "- **Concessione Avversario:**"
-                  f" `{rep['details']['sot_against_opp']:.1f}` SOT medi concessi"
-                  " a partita."
+                  f" `{rep['details']['sot_against_opp']:.1f}` tiri in porta"
+                  " medi concessi a partita."
               )
-            elif bet["type"] == "Calci d'Angolo":
+              st.write(
+                  "- **Indicazione Operativa:** Mercato aperto nelle 24-48 ore"
+                  " pre-gara sui principali bookmaker .IT."
+              )
+            elif "Corner" in bet["type"]:
               st.write(
                   "- **Volume Corner Proiettato:**"
-                  f" `{rep['corners_final']:.2f}` calci d'angolo totali."
+                  f" `{rep['corners_final']:.2f}` corner totali."
               )
               st.write(
                   "- **Metriche Laterali:** Cross medi combinati ="
@@ -1555,7 +1532,7 @@ with tab_scanner:
                   " a partita | Tiri bloccati combinati ="
                   f" `{rep['details']['h_blocked'] + rep['details']['a_blocked']:.1f}`."
               )
-            elif bet["type"] == "Falli Giocatori Serie A":
+            elif "Falli" in bet["type"]:
               st.write(
                   f"- **Proiezione Falli Attesi (xFouls):**"
                   f" `{rep['xf_final']:.2f}`"
