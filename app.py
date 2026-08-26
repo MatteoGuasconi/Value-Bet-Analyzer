@@ -13,19 +13,30 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech con Font Inter Unificato
+# Styling CSS Dark Fintech Corretto (Senza conflitti icone ed expander)
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
-    html, body, [class*="css"], .stApp, * {
+    html, body, .stApp {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        background-color: #0A0E17 !important;
+        color: #F3F4F6 !important;
     }
     
-    .stApp {
-        background-color: #0A0E17;
-        color: #F3F4F6;
+    h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    /* Protezione icone native di sistema Streamlit */
+    [data-testid="stIconMaterial"], [class*="material-symbols"], i {
+        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+    }
+    
+    /* Header superiore scuro */
+    header[data-testid="stHeader"] {
+        background-color: #0A0E17 !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
@@ -35,10 +46,11 @@ st.markdown(
     }
     
     section[data-testid="stSidebar"] {
-        background-color: #0F172A;
-        border-right: 1px solid #1E293B;
+        background-color: #0F172A !important;
+        border-right: 1px solid #1E293B !important;
     }
     
+    /* Card Metriche */
     .metric-card {
         background-color: #111827;
         border: 1px solid #1F2937;
@@ -106,18 +118,18 @@ st.markdown(
     }
     
     .stButton>button {
-        background-color: #10B981;
-        color: #064E3B;
-        font-weight: 700;
-        border-radius: 6px;
-        border: none;
-        padding: 10px 20px;
-        transition: all 0.2s ease-in-out;
+        background-color: #10B981 !important;
+        color: #064E3B !important;
+        font-weight: 700 !important;
+        border-radius: 6px !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        transition: all 0.2s ease-in-out !important;
     }
     
     .stButton>button:hover {
-        background-color: #059669;
-        color: #FFFFFF;
+        background-color: #059669 !important;
+        color: #FFFFFF !important;
     }
     
     div[data-testid="stTable"] {
@@ -139,6 +151,41 @@ st.markdown(
         text-transform: uppercase;
         font-size: 0.78rem !important;
         letter-spacing: 0.05em;
+    }
+    
+    /* FIX COMPLETO EXPANDER E HOVER */
+    div[data-testid="stExpander"] {
+        background-color: #111827 !important;
+        border: 1px solid #1F2937 !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px !important;
+        overflow: hidden !important;
+    }
+    
+    div[data-testid="stExpander"] summary {
+        background-color: #1E293B !important;
+        color: #F9FAFB !important;
+        font-weight: 600 !important;
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+    }
+    
+    div[data-testid="stExpander"] summary:hover {
+        background-color: #334155 !important;
+        color: #FFFFFF !important;
+    }
+    
+    div[data-testid="stExpander"] details[open] > summary {
+        border-bottom-left-radius: 0px !important;
+        border-bottom-right-radius: 0px !important;
+        border-bottom: 1px solid #1F2937 !important;
+        background-color: #1E293B !important;
+    }
+    
+    div[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+        background-color: #111827 !important;
+        padding: 16px 20px !important;
+        color: #F3F4F6 !important;
     }
     </style>
 """,
@@ -317,7 +364,7 @@ def clean_name(raw_name):
 # Schermata Login / Registrazione
 if st.session_state.user is None:
   st.title("VALUE BET ANALYZER")
-  st.caption("Suite Quantitativa Professionale | Modelli Match Analyst v4.0")
+  st.caption("Suite Quantitativa Professionale | Modelli Match Analyst v4.0")[cite: 7]
 
   auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
   with auth_col2:
@@ -1396,7 +1443,7 @@ with tab_scanner:
         unsafe_allow_html=True,
     )
 
-    # Verifica se ci sono partite a più di 48 ore nel turno per mostrare/nascondere il badge informativo
+    # Controllo per mostrare o nascondere automaticamente il badge
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     has_pending_props = False
     for m in matches:
@@ -1496,27 +1543,27 @@ with tab_scanner:
               st.write(
                   f"- **Proiezione Gol Attesi:** `{rep['xg_final']:.2f}`"
                   " (modello Poisson)."
-              )
+              )[cite: 1]
               st.write(
                   f"- **Efficienza Offensiva:** Media Gol Fatti ="
                   f" `{rep['details']['media_gf']:.2f}`, Concessione Difensiva"
                   f" Avversario = `{rep['details']['ga_opp']:.2f}`."
-              )
+              )[cite: 1]
               st.write(
                   f"- **Assetto Tattico:** `{rep['details']['tactics_t']}` vs"
                   f" `{rep['details']['tactics_o']}` (Fattore correttivo: +"
                   f" {int((rep['details']['mod']-1)*100)}%)."
-              )
+              )[cite: 1]
             elif "Tiri in porta" in bet["type"]:
               st.write(
                   "- **Proiezione Tiri nello Specchio (xS):**"
                   f" `{rep['xs_final']:.2f}`"
-              )
+              )[cite: 4, 6]
               st.write(
                   "- **Concessione Avversario:**"
                   f" `{rep['details']['sot_against_opp']:.1f}` tiri in porta"
                   " medi concessi a partita."
-              )
+              )[cite: 4]
               st.write(
                   "- **Indicazione Operativa:** Mercato aperto nelle 24-48 ore"
                   " pre-gara sui principali bookmaker .IT."
@@ -1525,27 +1572,27 @@ with tab_scanner:
               st.write(
                   "- **Volume Corner Proiettato:**"
                   f" `{rep['corners_final']:.2f}` corner totali."
-              )
+              )[cite: 5]
               st.write(
                   "- **Metriche Laterali:** Cross medi combinati ="
                   f" `{rep['details']['h_cross'] + rep['details']['a_cross']:.1f}`"
                   " a partita | Tiri bloccati combinati ="
                   f" `{rep['details']['h_blocked'] + rep['details']['a_blocked']:.1f}`."
-              )
+              )[cite: 5]
             elif "Falli" in bet["type"]:
               st.write(
                   f"- **Proiezione Falli Attesi (xFouls):**"
                   f" `{rep['xf_final']:.2f}`"
-              )
+              )[cite: 2]
               st.write(
                   f"- **Designazione AIA:** Arbitro `{rep['referee']}` (Media:"
                   f" `{rep['details']['ref_avg']:.1f}` falli a partita -"
                   f" Severità: `{rep['ref_severity']}`)."
-              )
+              )[cite: 2]
               st.write(
                   f"- **Duello di Zona:** Avversario diretto subisce"
                   f" `{rep['details']['opp_fouls_s']:.1f}` falli a partita."
-              )
+              )[cite: 2]
 
       st.markdown("---")
       st.markdown("### REGISTRA GIOCATA NEL TUO BANKROLL")
@@ -1586,7 +1633,7 @@ with tab_scanner:
     else:
       st.info(
           f"Nessuna giocata statistica supera la soglia Edge selezionata ({min_edge_pct:.1f}%)."
-      )
+      )[cite: 1, 2, 3, 4, 5, 7]
 
 with tab_bets:
   st.markdown("### STORICO PERSONALE SCOMMESSE")
