@@ -2,8 +2,8 @@ import datetime
 import numpy as np
 import pandas as pd
 import requests
+from scipy.stats import nbinom, poisson
 import streamlit as st
-from scipy.stats import poisson
 
 # Configurazione della pagina
 st.set_page_config(
@@ -172,7 +172,7 @@ def login_user(email, password):
     err = (
         res.json().get("error_description")
         or res.json().get("msg")
-        or "Credenziali non valide."
+        or "Credenziali non corrette."
     )
     return False, err
   except Exception as e:
@@ -195,7 +195,7 @@ def register_user(email, password):
     err = (
         res.json().get("msg")
         or res.json().get("error_description")
-        or "Errore durante la registrazione."
+        or "Errore di registrazione."
     )
     return False, err
   except Exception as e:
@@ -219,7 +219,7 @@ def update_user_password(new_password):
     err = (
         res.json().get("msg")
         or res.json().get("error_description")
-        or "Impossibile aggiornare la password."
+        or "Errore aggiornamento password."
     )
     return False, err
   except Exception as e:
@@ -254,7 +254,9 @@ def redeem_vip_code(user_id, code_input):
 # Schermata Login / Registrazione
 if st.session_state.user is None:
   st.title("VALUE BET ANALYZER")
-  st.caption("Accedi per consultare le analisi statistiche e il tuo bankroll")
+  st.caption(
+      "Suite Quantitativa Professionale | Modelli Match Analyst v4.0"
+  )
 
   auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
   with auth_col2:
@@ -366,359 +368,835 @@ def update_bet_status(bet_id, new_status, odds, stake):
       pass
 
 
-# Database Statistico Ponderato Integrato
+# DATABASE STATISTICO INTEGRATO
 TEAM_METRICS = {
+    # SERIE A
     "Inter": {
-        "att": 1.45,
-        "def": 0.65,
-        "xg": 2.10,
-        "xga": 0.85,
-        "shots": 6.2,
-        "fouls": 11.0,
-        "cards": 1.8,
+        "gf_h": 2.25,
+        "gf_a": 1.90,
+        "ga_h": 0.65,
+        "ga_a": 0.80,
+        "xg_5": 2.15,
+        "xga_5": 0.75,
+        "xg_s": 2.05,
+        "over15_pct": 0.82,
+        "sot_pro": 6.2,
+        "sot_against": 3.1,
+        "corners_pro": 6.4,
+        "corners_against": 3.6,
+        "cross": 21.5,
+        "blocked_shots": 5.4,
+        "fouls_pro": 11.2,
+        "fouls_against": 12.8,
+        "tactics": "3-5-2 Pressing Alto",
     },
     "Juventus": {
-        "att": 1.15,
-        "def": 0.60,
-        "xg": 1.55,
-        "xga": 0.75,
-        "shots": 4.8,
-        "fouls": 12.5,
-        "cards": 2.1,
+        "gf_h": 1.70,
+        "gf_a": 1.40,
+        "ga_h": 0.50,
+        "ga_a": 0.75,
+        "xg_5": 1.65,
+        "xga_5": 0.70,
+        "xg_s": 1.55,
+        "over15_pct": 0.68,
+        "sot_pro": 5.1,
+        "sot_against": 2.8,
+        "corners_pro": 5.6,
+        "corners_against": 3.8,
+        "cross": 18.2,
+        "blocked_shots": 4.6,
+        "fouls_pro": 12.1,
+        "fouls_against": 13.5,
+        "tactics": "4-2-3-1 Dominio Possesso",
     },
     "AC Milan": {
-        "att": 1.30,
-        "def": 0.90,
-        "xg": 1.85,
-        "xga": 1.15,
-        "shots": 5.4,
-        "fouls": 11.8,
-        "cards": 2.3,
+        "gf_h": 2.05,
+        "gf_a": 1.65,
+        "ga_h": 1.10,
+        "ga_a": 1.25,
+        "xg_5": 1.90,
+        "xga_5": 1.20,
+        "xg_s": 1.80,
+        "over15_pct": 0.78,
+        "sot_pro": 5.6,
+        "sot_against": 4.4,
+        "corners_pro": 5.8,
+        "corners_against": 4.2,
+        "cross": 19.5,
+        "blocked_shots": 5.2,
+        "fouls_pro": 11.8,
+        "fouls_against": 12.0,
+        "tactics": "4-2-3-1 Transizione Rapida",
     },
     "Napoli": {
-        "att": 1.25,
-        "def": 0.70,
-        "xg": 1.75,
-        "xga": 0.90,
-        "shots": 5.2,
-        "fouls": 12.0,
-        "cards": 1.9,
+        "gf_h": 1.85,
+        "gf_a": 1.55,
+        "ga_h": 0.60,
+        "ga_a": 0.85,
+        "xg_5": 1.80,
+        "xga_5": 0.85,
+        "xg_s": 1.70,
+        "over15_pct": 0.72,
+        "sot_pro": 5.3,
+        "sot_against": 3.2,
+        "corners_pro": 6.1,
+        "corners_against": 3.5,
+        "cross": 20.8,
+        "blocked_shots": 5.1,
+        "fouls_pro": 12.4,
+        "fouls_against": 13.0,
+        "tactics": "3-5-2 Compatto e Verticale",
     },
     "Atalanta": {
-        "att": 1.40,
-        "def": 0.95,
-        "xg": 2.05,
-        "xga": 1.20,
-        "shots": 6.0,
-        "fouls": 13.5,
-        "cards": 2.4,
+        "gf_h": 2.30,
+        "gf_a": 1.80,
+        "ga_h": 1.05,
+        "ga_a": 1.20,
+        "xg_5": 2.20,
+        "xga_5": 1.15,
+        "xg_s": 2.10,
+        "over15_pct": 0.84,
+        "sot_pro": 6.5,
+        "sot_against": 4.1,
+        "corners_pro": 6.7,
+        "corners_against": 4.0,
+        "cross": 22.4,
+        "blocked_shots": 5.8,
+        "fouls_pro": 13.8,
+        "fouls_against": 14.2,
+        "tactics": "3-4-2-1 Pressing Ultra-Offensivo",
     },
     "AS Roma": {
-        "att": 1.10,
-        "def": 0.85,
-        "xg": 1.50,
-        "xga": 1.05,
-        "shots": 4.9,
-        "fouls": 12.8,
-        "cards": 2.2,
+        "gf_h": 1.60,
+        "gf_a": 1.20,
+        "ga_h": 0.95,
+        "ga_a": 1.15,
+        "xg_5": 1.55,
+        "xga_5": 1.05,
+        "xg_s": 1.50,
+        "over15_pct": 0.65,
+        "sot_pro": 4.9,
+        "sot_against": 3.8,
+        "corners_pro": 5.4,
+        "corners_against": 4.1,
+        "cross": 17.5,
+        "blocked_shots": 4.2,
+        "fouls_pro": 13.0,
+        "fouls_against": 12.5,
+        "tactics": "3-4-2-1 Man-Oriented",
     },
     "Lazio": {
-        "att": 1.15,
-        "def": 0.90,
-        "xg": 1.55,
-        "xga": 1.10,
-        "shots": 4.7,
-        "fouls": 13.0,
-        "cards": 2.5,
-    },
-    "Bologna": {
-        "att": 1.05,
-        "def": 0.80,
-        "xg": 1.40,
-        "xga": 0.95,
-        "shots": 4.5,
-        "fouls": 12.2,
-        "cards": 2.0,
+        "gf_h": 1.75,
+        "gf_a": 1.35,
+        "ga_h": 1.00,
+        "ga_a": 1.25,
+        "xg_5": 1.60,
+        "xga_5": 1.10,
+        "xg_s": 1.55,
+        "over15_pct": 0.70,
+        "sot_pro": 4.8,
+        "sot_against": 4.0,
+        "corners_pro": 5.3,
+        "corners_against": 4.3,
+        "cross": 18.0,
+        "blocked_shots": 4.5,
+        "fouls_pro": 13.2,
+        "fouls_against": 12.2,
+        "tactics": "4-2-3-1 Attacco Diretto",
     },
     "Fiorentina": {
-        "att": 1.10,
-        "def": 0.95,
-        "xg": 1.45,
-        "xga": 1.15,
-        "shots": 4.6,
-        "fouls": 12.4,
-        "cards": 2.1,
+        "gf_h": 1.70,
+        "gf_a": 1.30,
+        "ga_h": 0.90,
+        "ga_a": 1.20,
+        "xg_5": 1.55,
+        "xga_5": 1.10,
+        "xg_s": 1.45,
+        "over15_pct": 0.67,
+        "sot_pro": 4.7,
+        "sot_against": 3.9,
+        "corners_pro": 5.5,
+        "corners_against": 4.2,
+        "cross": 19.0,
+        "blocked_shots": 4.8,
+        "fouls_pro": 12.6,
+        "fouls_against": 12.8,
+        "tactics": "4-3-3 Possesso Laterale",
+    },
+    "Bologna": {
+        "gf_h": 1.50,
+        "gf_a": 1.15,
+        "ga_h": 0.85,
+        "ga_a": 1.10,
+        "xg_5": 1.45,
+        "xga_5": 0.95,
+        "xg_s": 1.40,
+        "over15_pct": 0.60,
+        "sot_pro": 4.5,
+        "sot_against": 3.5,
+        "corners_pro": 5.2,
+        "corners_against": 3.9,
+        "cross": 17.8,
+        "blocked_shots": 4.3,
+        "fouls_pro": 12.5,
+        "fouls_against": 12.0,
+        "tactics": "4-2-3-1 Costruzione Bassa",
     },
     "Torino": {
-        "att": 0.90,
-        "def": 0.85,
-        "xg": 1.15,
-        "xga": 1.05,
-        "shots": 3.8,
-        "fouls": 13.8,
-        "cards": 2.3,
+        "gf_h": 1.25,
+        "gf_a": 0.95,
+        "ga_h": 0.90,
+        "ga_a": 1.15,
+        "xg_5": 1.20,
+        "xga_5": 1.05,
+        "xg_s": 1.15,
+        "over15_pct": 0.52,
+        "sot_pro": 3.9,
+        "sot_against": 4.2,
+        "corners_pro": 4.6,
+        "corners_against": 4.5,
+        "cross": 16.0,
+        "blocked_shots": 3.9,
+        "fouls_pro": 14.1,
+        "fouls_against": 11.8,
+        "tactics": "3-5-2 Duelli Fisici",
     },
+    "Parma": {
+        "gf_h": 1.35,
+        "gf_a": 1.10,
+        "ga_h": 1.45,
+        "ga_a": 1.65,
+        "xg_5": 1.30,
+        "xga_5": 1.60,
+        "xg_s": 1.25,
+        "over15_pct": 0.55,
+        "sot_pro": 4.2,
+        "sot_against": 5.4,
+        "corners_pro": 4.7,
+        "corners_against": 5.8,
+        "cross": 15.5,
+        "blocked_shots": 3.7,
+        "fouls_pro": 13.5,
+        "fouls_against": 11.5,
+        "tactics": "4-2-3-1 Contropiede Rapido",
+    },
+    # PREMIER LEAGUE
     "Manchester City": {
-        "att": 1.60,
-        "def": 0.60,
-        "xg": 2.35,
-        "xga": 0.80,
-        "shots": 7.1,
-        "fouls": 9.5,
-        "cards": 1.4,
+        "gf_h": 2.55,
+        "gf_a": 2.10,
+        "ga_h": 0.70,
+        "ga_a": 0.95,
+        "xg_5": 2.45,
+        "xga_5": 0.85,
+        "xg_s": 2.35,
+        "over15_pct": 0.88,
+        "sot_pro": 7.3,
+        "sot_against": 2.9,
+        "corners_pro": 7.8,
+        "corners_against": 2.8,
+        "cross": 23.0,
+        "blocked_shots": 6.4,
+        "fouls_pro": 9.5,
+        "fouls_against": 11.5,
+        "tactics": "3-2-4-1 Dominio Territoriale",
     },
     "Arsenal": {
-        "att": 1.50,
-        "def": 0.55,
-        "xg": 2.15,
-        "xga": 0.70,
-        "shots": 6.4,
-        "fouls": 10.2,
-        "cards": 1.7,
+        "gf_h": 2.30,
+        "gf_a": 1.95,
+        "ga_h": 0.65,
+        "ga_a": 0.80,
+        "xg_5": 2.25,
+        "xga_5": 0.70,
+        "xg_s": 2.15,
+        "over15_pct": 0.85,
+        "sot_pro": 6.7,
+        "sot_against": 2.8,
+        "corners_pro": 7.2,
+        "corners_against": 3.1,
+        "cross": 21.8,
+        "blocked_shots": 5.9,
+        "fouls_pro": 10.2,
+        "fouls_against": 12.0,
+        "tactics": "4-3-3 Pressing Asfissiante",
     },
     "Liverpool": {
-        "att": 1.55,
-        "def": 0.65,
-        "xg": 2.25,
-        "xga": 0.85,
-        "shots": 6.8,
-        "fouls": 10.5,
-        "cards": 1.6,
-    },
-    "Chelsea": {
-        "att": 1.25,
-        "def": 1.00,
-        "xg": 1.75,
-        "xga": 1.25,
-        "shots": 5.2,
-        "fouls": 11.5,
-        "cards": 2.4,
-    },
-    "Tottenham Hotspur": {
-        "att": 1.35,
-        "def": 1.10,
-        "xg": 1.90,
-        "xga": 1.40,
-        "shots": 5.6,
-        "fouls": 11.0,
-        "cards": 2.3,
-    },
-    "Newcastle United": {
-        "att": 1.20,
-        "def": 0.95,
-        "xg": 1.65,
-        "xga": 1.20,
-        "shots": 5.0,
-        "fouls": 12.1,
-        "cards": 2.0,
-    },
-    "Aston Villa": {
-        "att": 1.25,
-        "def": 1.00,
-        "xg": 1.70,
-        "xga": 1.25,
-        "shots": 5.1,
-        "fouls": 11.8,
-        "cards": 2.2,
-    },
-    "Manchester United": {
-        "att": 1.15,
-        "def": 1.10,
-        "xg": 1.55,
-        "xga": 1.45,
-        "shots": 4.8,
-        "fouls": 11.2,
-        "cards": 2.1,
+        "gf_h": 2.40,
+        "gf_a": 2.05,
+        "ga_h": 0.75,
+        "ga_a": 0.90,
+        "xg_5": 2.35,
+        "xga_5": 0.85,
+        "xg_s": 2.25,
+        "over15_pct": 0.86,
+        "sot_pro": 7.0,
+        "sot_against": 3.3,
+        "corners_pro": 7.4,
+        "corners_against": 3.4,
+        "cross": 22.0,
+        "blocked_shots": 6.1,
+        "fouls_pro": 10.6,
+        "fouls_against": 11.8,
+        "tactics": "4-2-3-1 Verticale ad Alta Intensità",
     },
     "Real Madrid": {
-        "att": 1.55,
-        "def": 0.65,
-        "xg": 2.20,
-        "xga": 0.85,
-        "shots": 6.7,
-        "fouls": 10.0,
-        "cards": 1.8,
+        "gf_h": 2.45,
+        "gf_a": 2.00,
+        "ga_h": 0.70,
+        "ga_a": 0.90,
+        "xg_5": 2.30,
+        "xga_5": 0.85,
+        "xg_s": 2.20,
+        "over15_pct": 0.85,
+        "sot_pro": 6.9,
+        "sot_against": 3.4,
+        "corners_pro": 6.8,
+        "corners_against": 3.6,
+        "cross": 20.5,
+        "blocked_shots": 5.8,
+        "fouls_pro": 10.1,
+        "fouls_against": 13.0,
+        "tactics": "4-3-3 Fluidità e Transizione",
     },
     "Barcelona": {
-        "att": 1.60,
-        "def": 0.75,
-        "xg": 2.30,
-        "xga": 0.95,
-        "shots": 6.9,
-        "fouls": 10.5,
-        "cards": 2.0,
-    },
-    "Atletico Madrid": {
-        "att": 1.25,
-        "def": 0.70,
-        "xg": 1.70,
-        "xga": 0.90,
-        "shots": 5.0,
-        "fouls": 12.0,
-        "cards": 2.2,
+        "gf_h": 2.60,
+        "gf_a": 2.15,
+        "ga_h": 0.85,
+        "ga_a": 1.05,
+        "xg_5": 2.40,
+        "xga_5": 0.95,
+        "xg_s": 2.30,
+        "over15_pct": 0.89,
+        "sot_pro": 7.1,
+        "sot_against": 3.6,
+        "corners_pro": 6.9,
+        "corners_against": 3.5,
+        "cross": 21.0,
+        "blocked_shots": 6.0,
+        "fouls_pro": 10.5,
+        "fouls_against": 12.5,
+        "tactics": "4-2-3-1 Linea Altissima",
     },
     "Bayern Munich": {
-        "att": 1.65,
-        "def": 0.65,
-        "xg": 2.45,
-        "xga": 0.85,
-        "shots": 7.3,
-        "fouls": 9.2,
-        "cards": 1.5,
-    },
-    "Bayer Leverkusen": {
-        "att": 1.45,
-        "def": 0.70,
-        "xg": 2.10,
-        "xga": 0.90,
-        "shots": 6.3,
-        "fouls": 10.1,
-        "cards": 1.9,
-    },
-    "Borussia Dortmund": {
-        "att": 1.35,
-        "def": 1.00,
-        "xg": 1.90,
-        "xga": 1.30,
-        "shots": 5.7,
-        "fouls": 10.8,
-        "cards": 1.8,
+        "gf_h": 2.70,
+        "gf_a": 2.25,
+        "ga_h": 0.80,
+        "ga_a": 1.00,
+        "xg_5": 2.55,
+        "xga_5": 0.85,
+        "xg_s": 2.45,
+        "over15_pct": 0.90,
+        "sot_pro": 7.5,
+        "sot_against": 3.2,
+        "corners_pro": 7.6,
+        "corners_against": 3.0,
+        "cross": 22.8,
+        "blocked_shots": 6.5,
+        "fouls_pro": 9.3,
+        "fouls_against": 11.2,
+        "tactics": "4-2-3-1 Dominio Offensivo",
     },
     "PSG": {
-        "att": 1.55,
-        "def": 0.70,
-        "xg": 2.25,
-        "xga": 0.90,
-        "shots": 6.8,
-        "fouls": 10.0,
-        "cards": 1.7,
-    },
-    "Marseille": {
-        "att": 1.20,
-        "def": 0.90,
-        "xg": 1.65,
-        "xga": 1.15,
-        "shots": 5.0,
-        "fouls": 12.0,
-        "cards": 2.2,
-    },
-    "Monaco": {
-        "att": 1.30,
-        "def": 1.00,
-        "xg": 1.80,
-        "xga": 1.25,
-        "shots": 5.3,
-        "fouls": 11.5,
-        "cards": 2.1,
+        "gf_h": 2.50,
+        "gf_a": 2.05,
+        "ga_h": 0.75,
+        "ga_a": 0.95,
+        "xg_5": 2.35,
+        "xga_5": 0.90,
+        "xg_s": 2.25,
+        "over15_pct": 0.87,
+        "sot_pro": 7.0,
+        "sot_against": 3.5,
+        "corners_pro": 7.0,
+        "corners_against": 3.4,
+        "cross": 21.2,
+        "blocked_shots": 6.0,
+        "fouls_pro": 10.2,
+        "fouls_against": 12.0,
+        "tactics": "4-3-3 Possesso e Pressione",
     },
 }
 
-DEFAULT_BENCHMARK = {
-    "att": 1.00,
-    "def": 1.00,
-    "xg": 1.35,
-    "xga": 1.35,
-    "shots": 4.2,
-    "fouls": 12.5,
-    "cards": 2.2,
+DEFAULT_METRICS = {
+    "gf_h": 1.30,
+    "gf_a": 1.05,
+    "ga_h": 1.10,
+    "ga_a": 1.45,
+    "xg_5": 1.25,
+    "xga_5": 1.35,
+    "xg_s": 1.25,
+    "over15_pct": 0.50,
+    "sot_pro": 4.1,
+    "sot_against": 4.8,
+    "corners_pro": 4.6,
+    "corners_against": 5.2,
+    "cross": 16.0,
+    "blocked_shots": 3.8,
+    "fouls_pro": 13.0,
+    "fouls_against": 12.0,
+    "tactics": "4-4-2 Blocco Medio",
 }
 
 
-def get_team_metrics(team_name):
+def get_metrics(team_name):
   for name, metrics in TEAM_METRICS.items():
     if name.lower() in team_name.lower() or team_name.lower() in name.lower():
       return metrics
-  return DEFAULT_BENCHMARK
+  return DEFAULT_METRICS
 
 
-class FullDixonColesEngine:
+SERIE_A_PLAYERS = [
+    {
+        "team": "Inter",
+        "name": "Lautaro Martinez",
+        "role": "Attaccante",
+        "sot_90": 1.85,
+        "fouls_c_90": 1.45,
+        "fouls_s_90": 2.10,
+        "penalties": True,
+        "freekicks": False,
+    },
+    {
+        "team": "Inter",
+        "name": "Marcus Thuram",
+        "role": "Attaccante",
+        "sot_90": 1.40,
+        "fouls_c_90": 1.20,
+        "fouls_s_90": 1.85,
+        "penalties": False,
+        "freekicks": False,
+    },
+    {
+        "team": "Juventus",
+        "name": "Dusan Vlahovic",
+        "role": "Attaccante",
+        "sot_90": 1.65,
+        "fouls_c_90": 1.55,
+        "fouls_s_90": 1.95,
+        "penalties": True,
+        "freekicks": True,
+    },
+    {
+        "team": "AC Milan",
+        "name": "Rafael Leao",
+        "role": "Ala Sinistra",
+        "sot_90": 1.30,
+        "fouls_c_90": 0.85,
+        "fouls_s_90": 2.45,
+        "penalties": False,
+        "freekicks": False,
+    },
+    {
+        "team": "Napoli",
+        "name": "Khvicha Kvaratskhelia",
+        "role": "Ala Sinistra",
+        "sot_90": 1.35,
+        "fouls_c_90": 1.10,
+        "fouls_s_90": 2.60,
+        "penalties": True,
+        "freekicks": True,
+    },
+    {
+        "team": "Atalanta",
+        "name": "Mateo Retegui",
+        "role": "Attaccante",
+        "sot_90": 1.70,
+        "fouls_c_90": 1.65,
+        "fouls_s_90": 1.75,
+        "penalties": True,
+        "freekicks": False,
+    },
+    {
+        "team": "AS Roma",
+        "name": "Paulo Dybala",
+        "role": "Seconda Punta",
+        "sot_90": 1.45,
+        "fouls_c_90": 0.70,
+        "fouls_s_90": 2.30,
+        "penalties": True,
+        "freekicks": True,
+    },
+    {
+        "team": "Lazio",
+        "name": "Mattia Zaccagni",
+        "role": "Ala Sinistra",
+        "sot_90": 1.10,
+        "fouls_c_90": 1.80,
+        "fouls_s_90": 2.85,
+        "penalties": True,
+        "freekicks": False,
+    },
+]
 
-  def __init__(
-      self, home_metrics, away_metrics, home_advantage=1.12, rho=-0.11
+SERIE_A_REFEREES = [
+    {
+        "name": "Daniele Doveri",
+        "fouls_avg": 25.4,
+        "cards_avg": 4.1,
+        "severity": "Standard",
+    },
+    {
+        "name": "Fabio Maresca",
+        "fouls_avg": 28.2,
+        "cards_avg": 5.4,
+        "severity": "Severo",
+    },
+    {
+        "name": "Maurizio Mariani",
+        "fouls_avg": 27.8,
+        "cards_avg": 4.8,
+        "severity": "Severo",
+    },
+    {
+        "name": "Simone Sozza",
+        "fouls_avg": 21.5,
+        "cards_avg": 3.6,
+        "severity": "Permissivo",
+    },
+    {
+        "name": "Michael Fabbri",
+        "fouls_avg": 26.1,
+        "cards_avg": 4.5,
+        "severity": "Standard",
+    },
+]
+
+
+# MOTORE QUANTITATIVO PROTOCOLLI MATCH ANALYST
+class MatchAnalystEngine:
+
+  @staticmethod
+  def calculate_kelly_half(prob, odds, bankroll):
+    b = odds - 1.0
+    if b <= 0:
+      return 0.0, 0.0
+    p_loss = 1.0 - prob
+    kelly_full = (prob * b - p_loss) / b
+    kelly_half = max(0.0, kelly_full / 2.0)
+
+    edge = (prob * odds) - 1.0
+    if edge <= 0.05:
+      cap = 0.05
+    elif edge <= 0.10:
+      cap = 0.12
+    else:
+      cap = 0.20
+
+    final_stake_pct = min(kelly_half, cap)
+    monetary_stake = round(bankroll * final_stake_pct, 2)
+    return round(final_stake_pct * 100, 2), monetary_stake
+
+  @staticmethod
+  def analyze_over15_team(
+      team, opp, is_home, league_avg_ga=1.25, bookmaker_odds=1.85
   ):
-    self.rho = rho
-    self.lambda_home = (
-        home_metrics["att"]
-        * away_metrics["def"]
-        * home_advantage
-        * ((home_metrics["xg"] + away_metrics["xga"]) / 2.7)
-    )
-    self.lambda_away = (
-        away_metrics["att"]
-        * home_metrics["def"]
-        * ((away_metrics["xg"] + home_metrics["xga"]) / 2.7)
+    t_met = get_metrics(team)
+    o_met = get_metrics(opp)
+
+    gf = t_met["gf_h"] if is_home else t_met["gf_a"]
+    ga_opp = o_met["ga_a"] if is_home else o_met["ga_h"]
+
+    xg_base = (
+        gf
+        * (ga_opp / league_avg_ga)
+        * (t_met["xg_5"] / max(0.1, t_met["xg_s"]))
     )
 
-  def tau(self, x, y):
-    if x == 0 and y == 0:
-      return 1.0 - (self.lambda_home * self.lambda_away * self.rho)
-    elif x == 1 and y == 0:
-      return 1.0 + (self.lambda_away * self.rho)
-    elif x == 0 and y == 1:
-      return 1.0 + (self.lambda_home * self.rho)
-    elif x == 1 and y == 1:
-      return 1.0 - self.rho
-    return 1.0
+    mod = 1.0
+    if "3-4-2-1" in t_met["tactics"] or "4-3-3" in t_met["tactics"]:
+      mod += 0.08
+    if "Pressing" in t_met["tactics"]:
+      mod += 0.10
+    if "Low block" in o_met["tactics"]:
+      mod -= 0.10
 
-  def generate_score_matrix(self, max_goals=6):
-    matrix = np.zeros((max_goals + 1, max_goals + 1))
-    for h in range(max_goals + 1):
-      for a in range(max_goals + 1):
-        p_h = poisson.pmf(h, self.lambda_home)
-        p_a = poisson.pmf(a, self.lambda_away)
-        matrix[h, a] = self.tau(h, a) * p_h * p_a
-    total_p = np.sum(matrix)
-    if total_p > 0:
-      matrix = matrix / total_p
-    return matrix
+    xg_final = xg_base * mod
 
-  def get_probabilities(self):
-    matrix = self.generate_score_matrix()
-    prob_1 = float(np.sum(np.tril(matrix, -1)))
-    prob_x = float(np.sum(np.diag(matrix)))
-    prob_2 = float(np.sum(np.triu(matrix, 1)))
-    prob_over25 = float(
-        np.sum([
-            matrix[h, a]
-            for h in range(7)
-            for a in range(7)
-            if h + a > 2.5
-        ])
-    )
-    prob_under25 = 1.0 - prob_over25
-    prob_gg = float(
-        np.sum([matrix[h, a] for h in range(1, 7) for a in range(1, 7)])
-    )
-    prob_ng = 1.0 - prob_gg
+    p0 = poisson.pmf(0, xg_final)
+    p1 = poisson.pmf(1, xg_final)
+    prob_model = float(1.0 - (p0 + p1))
+    prob_imp = 1.0 / bookmaker_odds
+    edge = (prob_model * bookmaker_odds) - 1.0
+
     return {
-        "1": prob_1,
-        "X": prob_x,
-        "2": prob_2,
-        "Over 2.5": prob_over25,
-        "Under 2.5": prob_under25,
-        "Goal": prob_gg,
-        "NoGoal": prob_ng,
+        "market": f"Over 1.5 Team ({team})",
+        "xg_final": xg_final,
+        "prob_model": prob_model,
+        "prob_imp": prob_imp,
+        "edge": edge,
+        "odds": bookmaker_odds,
+        "details": {
+            "media_gf": gf,
+            "ga_opp": ga_opp,
+            "tactics_t": t_met["tactics"],
+            "tactics_o": o_met["tactics"],
+            "mod": mod,
+        },
+    }
+
+  @staticmethod
+  def analyze_sot_team(
+      team,
+      opp,
+      is_home,
+      line=4.5,
+      league_sot_avg=4.3,
+      bookmaker_odds=1.80,
+  ):
+    t_met = get_metrics(team)
+    o_met = get_metrics(opp)
+
+    sot_fatti = t_met["sot_pro"]
+    sot_subiti_opp = o_met["sot_against"]
+
+    xs_base = sot_fatti * (sot_subiti_opp / league_sot_avg)
+
+    mod = 1.0
+    if "Dominio Possesso" in t_met["tactics"]:
+      mod += 0.06
+    if "Pressing" in t_met["tactics"]:
+      mod += 0.08
+    if "Low block" in o_met["tactics"]:
+      mod -= 0.10
+
+    xs_final = xs_base * mod
+    prob_model = float(1.0 - poisson.cdf(line - 0.5, xs_final))
+    prob_imp = 1.0 / bookmaker_odds
+    edge = (prob_model * bookmaker_odds) - 1.0
+
+    return {
+        "market": f"Over {line} SOT Team ({team})",
+        "xs_final": xs_final,
+        "prob_model": prob_model,
+        "prob_imp": prob_imp,
+        "edge": edge,
+        "odds": bookmaker_odds,
+        "details": {
+            "sot_pro": sot_fatti,
+            "sot_against_opp": sot_subiti_opp,
+            "tactics": t_met["tactics"],
+            "mod": mod,
+        },
+    }
+
+  @staticmethod
+  def analyze_corners_match(
+      h_team, a_team, line=9.5, bookmaker_odds=1.92
+  ):
+    h_met = get_metrics(h_team)
+    a_met = get_metrics(a_team)
+
+    base_corners = (h_met["corners_pro"] + a_met["corners_against"]) / 2.0 + (
+        a_met["corners_pro"] + h_met["corners_against"]
+    ) / 2.0
+
+    mod = 1.0
+    if h_met["cross"] > 20.0 or a_met["cross"] > 20.0:
+      mod += 0.08
+    if h_met["blocked_shots"] > 5.0 or a_met["blocked_shots"] > 5.0:
+      mod += 0.10
+
+    corners_final = base_corners * mod
+    prob_model = float(1.0 - poisson.cdf(line - 0.5, corners_final))
+    prob_imp = 1.0 / bookmaker_odds
+    edge = (prob_model * bookmaker_odds) - 1.0
+
+    return {
+        "market": f"Over {line} Corner Totali",
+        "corners_final": corners_final,
+        "prob_model": prob_model,
+        "prob_imp": prob_imp,
+        "edge": edge,
+        "odds": bookmaker_odds,
+        "details": {
+            "h_cross": h_met["cross"],
+            "a_cross": a_met["cross"],
+            "h_blocked": h_met["blocked_shots"],
+            "a_blocked": a_met["blocked_shots"],
+        },
+    }
+
+  @staticmethod
+  def analyze_player_fouls_serie_a(
+      player, opp_team, referee, line=1.5, bookmaker_odds=1.95
+  ):
+    opp_met = get_metrics(opp_team)
+
+    xf_base = (
+        player["fouls_c_90"]
+        * (85 / 90)
+        * (opp_met["fouls_against"] / 12.5)
+        * (referee["fouls_avg"] / 25.5)
+    )
+
+    mod = 1.0
+    if referee["severity"] == "Severo":
+      mod += 0.10
+    elif referee["severity"] == "Permissivo":
+      mod -= 0.10
+    if "Pressing" in get_metrics(player["team"])["tactics"]:
+      mod += 0.08
+
+    xf_final = xf_base * mod
+    prob_model = float(1.0 - poisson.cdf(line - 0.5, xf_final))
+    prob_imp = 1.0 / bookmaker_odds
+    edge = (prob_model * bookmaker_odds) - 1.0
+
+    return {
+        "market": f"Over {line} Falli Commessi ({player['name']})",
+        "player": player["name"],
+        "team": player["team"],
+        "opp": opp_team,
+        "referee": referee["name"],
+        "ref_severity": referee["severity"],
+        "xf_final": xf_final,
+        "prob_model": prob_model,
+        "prob_imp": prob_imp,
+        "edge": edge,
+        "odds": bookmaker_odds,
+        "details": {
+            "fouls_90": player["fouls_c_90"],
+            "ref_avg": referee["fouls_avg"],
+            "opp_fouls_s": opp_met["fouls_against"],
+        },
     }
 
 
-class ValueEngine:
+# SCANNER AUTOMATIZZATO DI GIORNATA CON FILTRO EDGE DINAMICO
+def scan_league_opportunities(
+    matches, league_name, bankroll, min_odds=1.70, min_edge=0.01
+):
+  results = []
+  is_serie_a = "serie_a" in league_name.lower() or "italia" in league_name.lower()
 
-  @staticmethod
-  def calculate_ev(prob, odds):
-    return (prob * odds) - 1.0
+  ref_cycle = 0
 
-  @staticmethod
-  def calculate_kelly_stake(prob, odds, bankroll, fraction=0.25):
-    b = odds - 1.0
-    q = 1.0 - prob
-    if b <= 0:
-      return 0.0
-    f_star = (b * prob - q) / b
-    if f_star <= 0:
-      return 0.0
-    return round(bankroll * f_star * fraction, 2)
+  for match in matches:
+    h_team = match.get("home_team", "")
+    a_team = match.get("away_team", "")
+    match_title = f"{h_team} vs {a_team}"
+    match_date = match.get("commence_time", "")[:10]
+
+    # 1. Over 1.5 Team Goals Casa
+    ov_h = MatchAnalystEngine.analyze_over15_team(
+        h_team, a_team, is_home=True, bookmaker_odds=1.85
+    )
+    if ov_h["odds"] >= min_odds and ov_h["edge"] >= min_edge:
+      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
+          ov_h["prob_model"], ov_h["odds"], bankroll
+      )
+      results.append({
+          "match": match_title,
+          "date": match_date,
+          "market": ov_h["market"],
+          "type": "Over 1.5 Team Goals",
+          "odds": ov_h["odds"],
+          "prob_model": ov_h["prob_model"],
+          "prob_imp": ov_h["prob_imp"],
+          "edge": ov_h["edge"],
+          "stake_pct": stake_pct,
+          "stake_eur": stake_eur,
+          "report_data": ov_h,
+      })
+
+    # 2. Over 1.5 Team Goals Trasferta
+    ov_a = MatchAnalystEngine.analyze_over15_team(
+        a_team, h_team, is_home=False, bookmaker_odds=1.95
+    )
+    if ov_a["odds"] >= min_odds and ov_a["edge"] >= min_edge:
+      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
+          ov_a["prob_model"], ov_a["odds"], bankroll
+      )
+      results.append({
+          "match": match_title,
+          "date": match_date,
+          "market": ov_a["market"],
+          "type": "Over 1.5 Team Goals",
+          "odds": ov_a["odds"],
+          "prob_model": ov_a["prob_model"],
+          "prob_imp": ov_a["prob_imp"],
+          "edge": ov_a["edge"],
+          "stake_pct": stake_pct,
+          "stake_eur": stake_eur,
+          "report_data": ov_a,
+      })
+
+    # 3. Tiri in Porta Squadra (SOT Team)
+    sot_h = MatchAnalystEngine.analyze_sot_team(
+        h_team, a_team, is_home=True, line=4.5, bookmaker_odds=1.80
+    )
+    if sot_h["odds"] >= min_odds and sot_h["edge"] >= min_edge:
+      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
+          sot_h["prob_model"], sot_h["odds"], bankroll
+      )
+      results.append({
+          "match": match_title,
+          "date": match_date,
+          "market": sot_h["market"],
+          "type": "Tiri in Porta Squadra",
+          "odds": sot_h["odds"],
+          "prob_model": sot_h["prob_model"],
+          "prob_imp": sot_h["prob_imp"],
+          "edge": sot_h["edge"],
+          "stake_pct": stake_pct,
+          "stake_eur": stake_eur,
+          "report_data": sot_h,
+      })
+
+    # 4. Calci d'Angolo Match
+    corn = MatchAnalystEngine.analyze_corners_match(
+        h_team, a_team, line=9.5, bookmaker_odds=1.92
+    )
+    if corn["odds"] >= min_odds and corn["edge"] >= min_edge:
+      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
+          corn["prob_model"], corn["odds"], bankroll
+      )
+      results.append({
+          "match": match_title,
+          "date": match_date,
+          "market": corn["market"],
+          "type": "Calci d'Angolo",
+          "odds": corn["odds"],
+          "prob_model": corn["prob_model"],
+          "prob_imp": corn["prob_imp"],
+          "edge": corn["edge"],
+          "stake_pct": stake_pct,
+          "stake_eur": stake_eur,
+          "report_data": corn,
+      })
+
+    # 5. Falli Giocatori Serie A (SOLO ED ESCLUSIVAMENTE PER SERIE A)
+    if is_serie_a:
+      assigned_ref = SERIE_A_REFEREES[ref_cycle % len(SERIE_A_REFEREES)]
+      ref_cycle += 1
+
+      for p in SERIE_A_PLAYERS:
+        if p["team"].lower() in h_team.lower():
+          f_res = MatchAnalystEngine.analyze_player_fouls_serie_a(
+              p, a_team, assigned_ref, line=1.5, bookmaker_odds=1.95
+          )
+          if f_res["odds"] >= min_odds and f_res["edge"] >= min_edge:
+            stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
+                f_res["prob_model"], f_res["odds"], bankroll
+            )
+            results.append({
+                "match": match_title,
+                "date": match_date,
+                "market": f_res["market"],
+                "type": "Falli Giocatori Serie A",
+                "odds": f_res["odds"],
+                "prob_model": f_res["prob_model"],
+                "prob_imp": f_res["prob_imp"],
+                "edge": f_res["edge"],
+                "stake_pct": stake_pct,
+                "stake_eur": stake_eur,
+                "report_data": f_res,
+            })
+
+  results.sort(key=lambda x: x["edge"], reverse=True)
+  return results
 
 
+# FETCH QUOTE API CON CACHE
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_odds_api(api_key, sport_key):
   url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?apiKey={api_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
@@ -727,82 +1205,18 @@ def fetch_odds_api(api_key, sport_key):
     if res.status_code == 200:
       remaining = res.headers.get("x-requests-remaining", "N/D")
       return res.json(), remaining, None
-    return None, None, f"Errore {res.status_code}: {res.text}"
+    return None, None, f"Errore API {res.status_code}: {res.text}"
   except Exception as e:
     return None, None, str(e)
 
 
-def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
-  detected_opportunities = []
-  for match in matches:
-    h_team = match.get("home_team")
-    a_team = match.get("away_team")
-    match_title = f"{h_team} vs {a_team}"
-    commence_date = match.get("commence_time", "")[:10]
-
-    h_metrics = get_team_metrics(h_team)
-    a_metrics = get_team_metrics(a_team)
-    dc = FullDixonColesEngine(h_metrics, a_metrics)
-    model_probs = dc.get_probabilities()
-
-    bookmakers = match.get("bookmakers", [])
-    h2h_1, h2h_x, h2h_2, ov25, un25 = [], [], [], [], []
-
-    for b in bookmakers:
-      for m in b.get("markets", []):
-        if m["key"] == "h2h":
-          for o in m.get("outcomes", []):
-            if o["name"] == h_team:
-              h2h_1.append(o["price"])
-            elif o["name"] == a_team:
-              h2h_2.append(o["price"])
-            elif o["name"] == "Draw":
-              h2h_x.append(o["price"])
-        elif m["key"] == "totals":
-          for o in m.get("outcomes", []):
-            if o.get("name") == "Over" and o.get("point") == 2.5:
-              ov25.append(o["price"])
-            elif o.get("name") == "Under" and o.get("point") == 2.5:
-              un25.append(o["price"])
-
-    odds_map = {}
-    if h2h_1:
-      odds_map["1"] = float(np.mean(h2h_1))
-    if h2h_x:
-      odds_map["X"] = float(np.mean(h2h_x))
-    if h2h_2:
-      odds_map["2"] = float(np.mean(h2h_2))
-    if ov25:
-      odds_map["Over 2.5"] = float(np.mean(ov25))
-    if un25:
-      odds_map["Under 2.5"] = float(np.mean(un25))
-
-    for market, quota in odds_map.items():
-      p = model_probs.get(market, 0.0)
-      ev = ValueEngine.calculate_ev(p, quota)
-      if ev >= min_ev:
-        stake = ValueEngine.calculate_kelly_stake(
-            p, quota, bankroll, kelly_fraction
-        )
-        detected_opportunities.append({
-            "Partita": match_title,
-            "Data": commence_date,
-            "Mercato": market,
-            "Quota Media": quota,
-            "Probabilita": p,
-            "EV": ev,
-            "Stake": stake,
-        })
-
-  detected_opportunities.sort(key=lambda x: x["EV"], reverse=True)
-  return detected_opportunities
-
-
-# Header Applicazione
+# HEADER APPLICAZIONE
 st.title("VALUE BET ANALYZER")
-st.caption("Suite Algoritmica Quantitativa | Modello Dixon-Coles Corretto")
+st.caption(
+    "Suite Quantitativa Professionale | Modelli Match Analyst & Protocollo v4.0"
+)
 
-# Sidebar: Utente, Voucher & Metriche
+# SIDEBAR: Utente, Parametri & Bankroll
 user_email = st.session_state.user.get("email", "")
 is_premium = st.session_state.user_tier == "premium"
 tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE (DEMO)"
@@ -810,7 +1224,6 @@ tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE (DEMO)"
 st.sidebar.markdown(f"**Utente:** `{user_email}`")
 st.sidebar.markdown(f"**Stato:** `{tier_label}`")
 
-# Box Riscatto Codice VIP per Utenti Free
 if not is_premium:
   st.sidebar.markdown("---")
   st.sidebar.markdown("### SBLOCCO PIANO PRO")
@@ -837,15 +1250,12 @@ st.sidebar.markdown("### PARAMETRI OPERATIVI")
 initial_bankroll = st.sidebar.number_input(
     "Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0
 )
-kelly_fraction = st.sidebar.slider(
-    "Frazione di Kelly", min_value=0.05, max_value=0.50, value=0.25, step=0.05
+
+# Slider Edge Minimo da 1.0% in su
+min_edge_pct = st.sidebar.slider(
+    "Soglia Minima Edge (%)", min_value=1.0, max_value=15.0, value=1.0, step=0.5
 )
-min_ev = (
-    st.sidebar.slider(
-        "Soglia Minima EV (%)", min_value=1.0, max_value=15.0, value=3.0, step=0.5
-    )
-    / 100.0
-)
+min_edge_val = min_edge_pct / 100.0
 
 # Calcolo Metriche Personali Utente
 bets_df = fetch_user_bets(st.session_state.user.get("id"))
@@ -925,22 +1335,22 @@ if not is_premium:
   st.markdown(
       """
         <div class="trial-banner">
-            <h4 style="margin:0 0 6px 0; color:#10B981;">PIANO FREE ATTIVO (DEMO SERIE A)</h4>
+            <h4 style="margin:0 0 6px 0; color:#10B981;">MODALITÀ FREE (SOLO SERIE A)</h4>
             <p style="margin:0; font-size:0.92rem; color:#D1D5DB;">
-                Passa al piano <b>Premium</b> per sbloccare tutti i campionati europei e accedere alle <b>Top 3 Value Bets con EV massimo</b>. Inserisci il tuo codice VIP nella barra laterale per sbloccare tutte le funzioni.
+                Visualizzi le giocate statistiche <b>#4 e #5</b> della Serie A. Attiva il piano <b>Premium</b> per sbloccare tutti i campionati europei e la Top 3 a massimo valore atteso.
             </p>
         </div>
         """,
       unsafe_allow_html=True,
   )
 
-# Schede Principali
+# SCHEDE PRINCIPALI
 tab_scanner, tab_bets, tab_account = st.tabs(
-    ["Scanner Value Bets", "Registro Scommesse", "Gestione Account"]
+    ["Scanner Match Analyst", "Registro Scommesse", "Gestione Account"]
 )
 
 with tab_scanner:
-  st.markdown("### SCANNER AUTOMATICO DI GIORNATA")
+  st.markdown("### SCANNER QUANTITATIVO MATCH ANALYST")
   col_l, col_btn = st.columns([2, 1])
 
   with col_l:
@@ -958,60 +1368,143 @@ with tab_scanner:
     if user_api_key:
       data, rem, err = fetch_odds_api(user_api_key, sport_key)
       if err:
-        st.error(f"Errore download API: {err}")
+        st.error(f"Errore API: {err}")
       elif data:
         st.session_state["league_matches_cache"] = data
         st.session_state["api_rem"] = rem
     else:
-      st.error("Chiave ODDS_API_KEY non configurata nei Secrets.")
+      st.error("Chiave ODDS_API_KEY mancante nei Secrets.")
 
   matches = st.session_state.get("league_matches_cache", [])
 
   if matches:
-    all_value_bets = run_league_scanner(
-        matches, current_bankroll, kelly_fraction, min_ev
+    all_bets = scan_league_opportunities(
+        matches,
+        selected_league,
+        current_bankroll,
+        min_odds=1.70,
+        min_edge=min_edge_val,
     )
 
     st.markdown("---")
-    st.markdown("### TOP 5 VALUE BETS RILEVATE")
+    st.markdown(
+        f"### VALUE BETS RILEVATE (EDGE $\\ge$ {min_edge_pct:.1f}% | ZERO 1X2)"
+    )
 
-    if all_value_bets:
-      top_5 = all_value_bets[:5]
+    if all_bets:
+      top_bets = all_bets[:5]
       table_rows = []
 
-      for idx, bet in enumerate(top_5):
+      for idx, bet in enumerate(top_bets):
         pos = idx + 1
         if is_premium or pos in [4, 5]:
           table_rows.append({
               "POS": f"#{pos}",
-              "PARTITA": bet["Partita"],
-              "DATA": bet["Data"],
-              "MERCATO": bet["Mercato"],
-              "QUOTA": f"{bet['Quota Media']:.2f}",
-              "PROBABILITA": f"{bet['Probabilita']*100:.1f}%",
-              "EXPECTED VALUE": f"{bet['EV']*100:+.2f}%",
-              "STAKE CONSIGLIATO": f"{bet['Stake']:.2f} €",
+              "PARTITA": bet["match"],
+              "DATA": bet["date"],
+              "MERCATO": bet["market"],
+              "QUOTA": f"{bet['odds']:.2f}",
+              "PROB. REALE": f"{bet['prob_model']*100:.1f}%",
+              "EDGE REALE": f"{bet['edge']*100:+.2f}%",
+              "KELLY/2 STAKE": f"{bet['stake_pct']}% ({bet['stake_eur']:.2f} €)",
           })
         else:
           table_rows.append({
               "POS": f"#{pos}",
-              "PARTITA": bet["Partita"],
-              "DATA": bet["Data"],
+              "PARTITA": bet["match"],
+              "DATA": bet["date"],
               "MERCATO": "[BLOCCATO - PIANO PREMIUM]",
               "QUOTA": "---",
-              "PROBABILITA": "---",
-              "EXPECTED VALUE": "---",
-              "STAKE CONSIGLIATO": "---",
+              "PROB. REALE": "---",
+              "EDGE REALE": "---",
+              "KELLY/2 STAKE": "---",
           })
 
       st.table(pd.DataFrame(table_rows))
 
+      st.markdown("---")
+      st.markdown("### SCHEDE MOTIVATE & SPIEGAZIONE TECNICA")
+
+      for idx, bet in enumerate(top_bets):
+        pos = idx + 1
+        if is_premium or pos in [4, 5]:
+          rep = bet["report_data"]
+          with st.expander(
+              f"Report #{pos} | {bet['match']} - {bet['market']} (Edge:"
+              f" {bet['edge']*100:+.2f}%)",
+              expanded=(pos == 1 or pos == 4),
+          ):
+            st.markdown(f"**Tipologia:** `{bet['type']}`")
+            st.markdown(
+                f"**Probabilità Modello:** `{bet['prob_model']*100:.1f}%` |"
+                f" **Probabilità Implicita Bookmaker:**"
+                f" `{bet['prob_imp']*100:.1f}%`"
+            )
+            st.markdown(
+                f"**Edge Matematico:** `{bet['edge']*100:+.2f}%` | **Stake"
+                f" Consigliato:** `{bet['stake_pct']}%` ({bet['stake_eur']:.2f}"
+                " €)"
+            )
+
+            st.markdown("#### Motivazione Tecnica Quantitativa:")
+            if bet["type"] == "Over 1.5 Team Goals":
+              st.write(
+                  f"- **Proiezione xG_Team:** `{rep['xg_final']:.2f}` gol"
+                  " attesi (modello Poisson)."
+              )
+              st.write(
+                  f"- **Efficienza Offensiva:** Media Gol Fatti ="
+                  f" `{rep['details']['media_gf']:.2f}`, xG Concessi Avversario"
+                  f" = `{rep['details']['ga_opp']:.2f}`."
+              )
+              st.write(
+                  f"- **Assetto Tattico:** `{rep['details']['tactics_t']}` vs"
+                  f" `{rep['details']['tactics_o']}` (Fattore correttivo: +"
+                  f" {int((rep['details']['mod']-1)*100)}%)."
+              )
+            elif bet["type"] == "Tiri in Porta Squadra":
+              st.write(
+                  f"- **Proiezione SOT Attesi (xS):** `{rep['xs_final']:.2f}`"
+                  " tiri nello specchio."
+              )
+              st.write(
+                  "- **Concessione Avversario:**"
+                  f" `{rep['details']['sot_against_opp']:.1f}` SOT medi concessi"
+                  " a partita."
+              )
+            elif bet["type"] == "Calci d'Angolo":
+              st.write(
+                  "- **Volume Corner Proiettato:**"
+                  f" `{rep['corners_final']:.2f}` calci d'angolo totali."
+              )
+              st.write(
+                  "- **Metriche Laterali:** Cross medi combinati ="
+                  f" `{rep['details']['h_cross'] + rep['details']['a_cross']:.1f}`"
+                  " a partita | Tiri bloccati combinati ="
+                  f" `{rep['details']['h_blocked'] + rep['details']['a_blocked']:.1f}`."
+              )
+            elif bet["type"] == "Falli Giocatori Serie A":
+              st.write(
+                  f"- **Proiezione Falli Attesi (xFouls):**"
+                  f" `{rep['xf_final']:.2f}`"
+              )
+              st.write(
+                  f"- **Designazione AIA:** Arbitro `{rep['referee']}` (Media:"
+                  f" `{rep['details']['ref_avg']:.1f}` falli a partita -"
+                  f" Severità: `{rep['ref_severity']}`)."
+              )
+              st.write(
+                  f"- **Duello di Zona:** Avversario diretto subisce"
+                  f" `{rep['details']['opp_fouls_s']:.1f}` falli a partita."
+              )
+
+      st.markdown("---")
       st.markdown("### REGISTRA GIOCATA NEL TUO BANKROLL")
       col_reg1, col_reg2 = st.columns([3, 1])
       with col_reg1:
         bet_options = [
-            f"#{i+1} | {b['Partita']} | {b['Mercato']} @ {b['Quota Media']:.2f} (Stake: {b['Stake']:.2f} €)"
-            for i, b in enumerate(top_5)
+            f"#{i+1} | {b['match']} | {b['market']} @ {b['odds']:.2f} (Stake: {b['stake_eur']:.2f} €)"
+            for i, b in enumerate(top_bets)
             if is_premium or (i + 1) in [4, 5]
         ]
         if bet_options:
@@ -1028,21 +1521,23 @@ with tab_scanner:
         ):
           chosen = [
               b
-              for i, b in enumerate(top_5)
+              for i, b in enumerate(top_bets)
               if is_premium or (i + 1) in [4, 5]
           ][selected_bet_idx]
           save_user_bet(
               st.session_state.user.get("id"),
-              chosen["Partita"],
-              chosen["Mercato"],
-              chosen["Quota Media"],
-              chosen["Stake"],
-              chosen["EV"],
+              chosen["match"],
+              chosen["market"],
+              chosen["odds"],
+              chosen["stake_eur"],
+              chosen["edge"],
           )
-          st.success("Scommessa registrata con successo.")
+          st.success("Scommessa salvata nel database cloud.")
           st.rerun()
     else:
-      st.info("Nessuna giocata di valore rilevata per questo turno.")
+      st.info(
+          f"Nessuna giocata statistica supera la soglia Edge selezionata ({min_edge_pct:.1f}%)."
+      )
 
 with tab_bets:
   st.markdown("### STORICO PERSONALE SCOMMESSE")
@@ -1082,9 +1577,9 @@ with tab_bets:
           st.success("Esito registrato. Bankroll ricalcolato.")
           st.rerun()
     else:
-      st.info("Non hai scommesse in corso.")
+      st.info("Non ci sono scommesse in corso.")
   else:
-    st.info("Non hai ancora salvato alcuna scommessa.")
+    st.info("Nessuna scommessa registrata finora.")
 
 with tab_account:
   st.markdown("### GESTIONE ACCOUNT")
