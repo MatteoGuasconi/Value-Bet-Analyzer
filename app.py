@@ -7,23 +7,29 @@ from scipy.stats import poisson
 
 # Configurazione della pagina
 st.set_page_config(
-    page_title="VALUE BET ANALYZER | QUANTITATIVE BETTING SUITE",
+    page_title="VALUE BET ANALYZER",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Inizializzazione Client Supabase
+# Inizializzazione e Diagnostica Client Supabase
 supabase_client = None
-try:
-  from supabase import create_client
+db_init_error = None
 
-  sb_url = st.secrets.get("SUPABASE_URL", "")
-  sb_key = st.secrets.get("SUPABASE_KEY", "")
-  if sb_url and sb_key:
+sb_url = st.secrets.get("SUPABASE_URL", "")
+sb_key = st.secrets.get("SUPABASE_KEY", "")
+
+if not sb_url or not sb_key:
+  db_init_error = "Chiavi SUPABASE_URL o SUPABASE_KEY mancanti nei Secrets di Streamlit."
+else:
+  try:
+    from supabase import create_client
     supabase_client = create_client(sb_url, sb_key)
-except Exception:
-  supabase_client = None
+  except ImportError:
+    db_init_error = "Libreria 'supabase' non ancora installata dal server. Fai 'Reboot app' da Manage app."
+  except Exception as e:
+    db_init_error = f"Errore inizializzazione Supabase: {str(e)}"
 
 # Styling CSS Dark Fintech
 st.markdown(
@@ -144,7 +150,7 @@ if "user_tier" not in st.session_state:
 # Funzioni Autenticazione Supabase
 def login_user(email, password):
   if not supabase_client:
-    return False, "Database non collegato."
+    return False, db_init_error or "Database non collegato."
   try:
     res = supabase_client.auth.sign_in_with_password(
         {"email": email, "password": password}
@@ -167,7 +173,7 @@ def login_user(email, password):
 
 def register_user(email, password):
   if not supabase_client:
-    return False, "Database non collegato."
+    return False, db_init_error or "Database non collegato."
   try:
     res = supabase_client.auth.sign_up({"email": email, "password": password})
     if res.user:
@@ -204,7 +210,7 @@ def redeem_vip_code(user_id, code_input):
 
 # Schermata Login / Registrazione
 if st.session_state.user is None:
-  st.title("QUANTITATIVE VALUE BET ANALYZER")
+  st.title("VALUE BET ANALYZER")
   st.caption("Accedi per consultare le analisi statistiche e il tuo bankroll")
 
   auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
@@ -518,15 +524,6 @@ TEAM_METRICS = {
         "fouls": 10.1,
         "cards": 1.9,
     },
-    "Borussia Dortmund": {
-        "att": 1.35,
-        "def": 1.00,
-        "xg": 1.90,
-        "xga": 1.30,
-        "shots": 5.7,
-        "fouls": 10.8,
-        "cards": 1.8,
-    },
     "PSG": {
         "att": 1.55,
         "def": 0.70,
@@ -535,24 +532,6 @@ TEAM_METRICS = {
         "shots": 6.8,
         "fouls": 10.0,
         "cards": 1.7,
-    },
-    "Marseille": {
-        "att": 1.20,
-        "def": 0.90,
-        "xg": 1.65,
-        "xga": 1.15,
-        "shots": 5.0,
-        "fouls": 12.0,
-        "cards": 2.2,
-    },
-    "Monaco": {
-        "att": 1.30,
-        "def": 1.00,
-        "xg": 1.80,
-        "xga": 1.25,
-        "shots": 5.3,
-        "fouls": 11.5,
-        "cards": 2.1,
     },
 }
 
@@ -742,7 +721,7 @@ def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
 
 
 # Header Applicazione
-st.title("QUANTITATIVE VALUE BET ANALYZER")
+st.title("VALUE BET ANALYZER")
 st.caption("Suite Algoritmica Quantitativa | Modello Dixon-Coles Corretto")
 
 # Sidebar: Utente, Voucher & Metriche
