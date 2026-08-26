@@ -13,24 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Inizializzazione e Diagnostica Client Supabase
-supabase_client = None
-db_init_error = None
-
-sb_url = st.secrets.get("SUPABASE_URL", "")
-sb_key = st.secrets.get("SUPABASE_KEY", "")
-
-if not sb_url or not sb_key:
-  db_init_error = "Chiavi SUPABASE_URL o SUPABASE_KEY mancanti nei Secrets di Streamlit."
-else:
-  try:
-    from supabase import create_client
-    supabase_client = create_client(sb_url, sb_key)
-  except ImportError:
-    db_init_error = "Libreria 'supabase' non ancora installata dal server. Fai 'Reboot app' da Manage app."
-  except Exception as e:
-    db_init_error = f"Errore inizializzazione Supabase: {str(e)}"
-
 # Styling CSS Dark Fintech
 st.markdown(
     """
@@ -140,67 +122,105 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Recupero Parametri Supabase dai Secrets
+SB_URL = st.secrets.get("SUPABASE_URL", "").rstrip("/")
+SB_KEY = st.secrets.get("SUPABASE_KEY", "")
+
 # Gestione Sessione Utente
 if "user" not in st.session_state:
   st.session_state.user = None
 if "user_tier" not in st.session_state:
   st.session_state.user_tier = "free"
+if "access_token" not in st.session_state:
+  st.session_state.access_token = None
 
 
-# Funzioni Autenticazione Supabase
+def get_headers(token=None):
+  auth_bearer = token or SB_KEY
+  return {
+      "apikey": SB_KEY,
+      "Authorization": f"Bearer {auth_bearer}",
+      "Content-Type": "application/json",
+  }
+
+
+# Funzioni Autenticazione HTTP Supabase
 def login_user(email, password):
-  if not supabase_client:
-    return False, db_init_error or "Database non collegato."
+  if not SB_URL or not SB_KEY:
+    return False, "Chiavi Supabase mancanti nei Secrets."
+  url = f"{SB_URL}/auth/v1/token?grant_type=password"
   try:
-    res = supabase_client.auth.sign_in_with_password(
-        {"email": email, "password": password}
+    res = requests.post(
+        url,
+        json={"email": email, "password": password},
+        headers=get_headers(),
+        timeout=10,
     )
-    if res.user:
-      st.session_state.user = res.user
-      profile = (
-          supabase_client.table("profiles")
-          .select("tier")
-          .eq("id", res.user.id)
-          .execute()
+    if res.status_code == 200:
+      data = res.json()
+      st.session_state.user = data.get("user")
+      st.session_state.access_token = data.get("access_token")
+
+      # Recupero Ruolo Utente da Profiles
+      u_id = data["user"]["id"]
+      prof_url = f"{SB_URL}/rest/v1/profiles?id=eq.{u_id}&select=tier"
+      prof_res = requests.get(
+          prof_url, headers=get_headers(data.get("access_token")), timeout=10
       )
-      if profile.data:
-        st.session_state.user_tier = profile.data[0].get("tier", "free")
+      if prof_res.status_code == 200 and prof_res.json():
+        st.session_state.user_tier = prof_res.json()[0].get("tier", "free")
       return True, None
-    return False, "Credenziali non valide."
+    err = (
+        res.json().get("error_description")
+        or res.json().get("msg")
+        or "Credenziali non valide."
+    )
+    return False, err
   except Exception as e:
     return False, str(e)
 
 
 def register_user(email, password):
-  if not supabase_client:
-    return False, db_init_error or "Database non collegato."
+  if not SB_URL or not SB_KEY:
+    return False, "Chiavi Supabase mancanti nei Secrets."
+  url = f"{SB_URL}/auth/v1/signup"
   try:
-    res = supabase_client.auth.sign_up({"email": email, "password": password})
-    if res.user:
-      return True, "Registrazione completata. Effettua ora il login."
-    return False, "Impossibile completare la registrazione."
+    res = requests.post(
+        url,
+        json={"email": email, "password": password},
+        headers=get_headers(),
+        timeout=10,
+    )
+    if res.status_code in [200, 201]:
+      return True, "Registrazione completata. Ora puoi accedere."
+    err = (
+        res.json().get("msg")
+        or res.json().get("error_description")
+        or "Errore durante la registrazione."
+    )
+    return False, err
   except Exception as e:
     return False, str(e)
 
 
 def logout_user():
-  if supabase_client:
-    try:
-      supabase_client.auth.sign_out()
-    except Exception:
-      pass
   st.session_state.user = None
   st.session_state.user_tier = "free"
+  st.session_state.access_token = None
 
 
 def redeem_vip_code(user_id, code_input):
   valid_promo_codes = ["Valuebet2026", "VIP2026", "PRO2026"]
   if code_input.strip() in valid_promo_codes:
-    if supabase_client:
+    if SB_URL and SB_KEY:
+      token = st.session_state.get("access_token")
+      url = f"{SB_URL}/rest/v1/profiles?id=eq.{user_id}"
+      hdrs = get_headers(token)
+      hdrs["Prefer"] = "return=representation"
       try:
-        supabase_client.table("profiles").update({"tier": "premium"}).eq(
-            "id", user_id
-        ).execute()
+        requests.patch(
+            url, json={"tier": "premium"}, headers=hdrs, timeout=10
+        )
       except Exception:
         pass
     st.session_state.user_tier = "premium"
@@ -250,19 +270,15 @@ if st.session_state.user is None:
   st.stop()
 
 
-# Funzioni Database Cloud Scommesse
+# Funzioni Database HTTP per Scommesse Utente
 def fetch_user_bets(user_id):
-  if supabase_client:
+  if SB_URL and SB_KEY:
+    token = st.session_state.get("access_token")
+    url = f"{SB_URL}/rest/v1/user_bets?user_id=eq.{user_id}&select=*&order=created_at.desc"
     try:
-      response = (
-          supabase_client.table("user_bets")
-          .select("*")
-          .eq("user_id", user_id)
-          .order("created_at", desc=True)
-          .execute()
-      )
-      if response.data:
-        return pd.DataFrame(response.data)
+      res = requests.get(url, headers=get_headers(token), timeout=10)
+      if res.status_code == 200 and res.json():
+        return pd.DataFrame(res.json())
     except Exception:
       pass
   return pd.DataFrame(
@@ -281,19 +297,24 @@ def fetch_user_bets(user_id):
 
 
 def save_user_bet(user_id, match, market, odds, stake, ev):
-  if supabase_client:
+  if SB_URL and SB_KEY:
+    token = st.session_state.get("access_token")
+    url = f"{SB_URL}/rest/v1/user_bets"
+    hdrs = get_headers(token)
+    hdrs["Prefer"] = "return=representation"
+    payload = {
+        "user_id": user_id,
+        "match": match,
+        "market": market,
+        "odds": float(odds),
+        "stake": float(stake),
+        "ev": float(ev),
+        "status": "IN CORSO",
+        "profit": 0.0,
+    }
     try:
-      supabase_client.table("user_bets").insert({
-          "user_id": user_id,
-          "match": match,
-          "market": market,
-          "odds": float(odds),
-          "stake": float(stake),
-          "ev": float(ev),
-          "status": "IN CORSO",
-          "profit": 0.0,
-      }).execute()
-      return True
+      res = requests.post(url, json=payload, headers=hdrs, timeout=10)
+      return res.status_code in [200, 201]
     except Exception:
       pass
   return False
@@ -306,11 +327,18 @@ def update_bet_status(bet_id, new_status, odds, stake):
   elif new_status == "PERSA":
     profit_val = round(-stake, 2)
 
-  if supabase_client:
+  if SB_URL and SB_KEY:
+    token = st.session_state.get("access_token")
+    url = f"{SB_URL}/rest/v1/user_bets?id=eq.{bet_id}"
+    hdrs = get_headers(token)
+    hdrs["Prefer"] = "return=representation"
     try:
-      supabase_client.table("user_bets").update(
-          {"status": new_status, "profit": profit_val}
-      ).eq("id", bet_id).execute()
+      requests.patch(
+          url,
+          json={"status": new_status, "profit": profit_val},
+          headers=hdrs,
+          timeout=10,
+      )
     except Exception:
       pass
 
@@ -725,7 +753,7 @@ st.title("VALUE BET ANALYZER")
 st.caption("Suite Algoritmica Quantitativa | Modello Dixon-Coles Corretto")
 
 # Sidebar: Utente, Voucher & Metriche
-user_email = st.session_state.user.email
+user_email = st.session_state.user.get("email", "")
 is_premium = st.session_state.user_tier == "premium"
 tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE (DEMO)"
 
@@ -743,7 +771,7 @@ if not is_premium:
   )
   if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True):
     if promo_code:
-      ok, msg = redeem_vip_code(st.session_state.user.id, promo_code)
+      ok, msg = redeem_vip_code(st.session_state.user.get("id"), promo_code)
       if ok:
         st.sidebar.success(msg)
         st.rerun()
@@ -770,7 +798,7 @@ min_ev = (
 )
 
 # Calcolo Metriche Personali Utente
-bets_df = fetch_user_bets(st.session_state.user.id)
+bets_df = fetch_user_bets(st.session_state.user.get("id"))
 total_profit = 0.0
 yield_pct = 0.0
 win_rate_pct = 0.0
@@ -953,7 +981,7 @@ with tab_scanner:
               if is_premium or (i + 1) in [4, 5]
           ][selected_bet_idx]
           save_user_bet(
-              st.session_state.user.id,
+              st.session_state.user.get("id"),
               chosen["Partita"],
               chosen["Mercato"],
               chosen["Quota Media"],
@@ -967,7 +995,7 @@ with tab_scanner:
 
 with tab_bets:
   st.markdown("### STORICO PERSONALE SCOMMESSE")
-  user_bets = fetch_user_bets(st.session_state.user.id)
+  user_bets = fetch_user_bets(st.session_state.user.get("id"))
 
   if not user_bets.empty:
     st.dataframe(user_bets, use_container_width=True)
