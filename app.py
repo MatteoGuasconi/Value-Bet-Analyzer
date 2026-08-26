@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech con Font Inter Unificato e Rimozione Toolbar
+# Styling CSS Dark Fintech - Palette A3: Frost Indigo
 st.markdown(
     """
     <style>
@@ -21,50 +21,49 @@ st.markdown(
     
     html, body, .stApp {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-        background-color: #0A0E17 !important;
-        color: #F3F4F6 !important;
+        background-color: #0B132B !important;
+        color: #F8FAFC !important;
     }
     
     h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
-    /* Nasconde completamente la toolbar superiore di Streamlit e il footer */
+    /* Nasconde toolbar e footer */
     [data-testid="stToolbar"] {
         visibility: hidden !important;
         display: none !important;
     }
-    
     footer {
         visibility: hidden !important;
         display: none !important;
     }
     
-    /* Protezione icone native di sistema Streamlit */
+    /* Protezione icone native */
     [data-testid="stIconMaterial"], [class*="material-symbols"], i {
         font-family: 'Material Symbols Rounded', 'Material Icons' !important;
     }
     
-    /* Header superiore scuro */
+    /* Header superiore */
     header[data-testid="stHeader"] {
-        background-color: #0A0E17 !important;
+        background-color: #0B132B !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
         font-weight: 700 !important;
-        color: #FFFFFF !important;
+        color: #F8FAFC !important;
         letter-spacing: -0.02em !important;
     }
     
     section[data-testid="stSidebar"] {
-        background-color: #0F172A !important;
-        border-right: 1px solid #1E293B !important;
+        background-color: #1C2541 !important;
+        border-right: 1px solid #2D3A5D !important;
     }
     
     /* Card Metriche Bankroll */
     .metric-card {
-        background-color: #111827;
-        border: 1px solid #1F2937;
+        background-color: #1C2541;
+        border: 1px solid #2D3A5D;
         border-radius: 8px;
         padding: 14px;
         margin-bottom: 10px;
@@ -72,7 +71,7 @@ st.markdown(
     
     .metric-title {
         font-size: 0.75rem;
-        color: #94A3B8;
+        color: #8597AC;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         margin-bottom: 4px;
@@ -82,25 +81,25 @@ st.markdown(
     .metric-value-pos {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #10B981;
+        color: #2DD4BF;
     }
     
     .metric-value-neg {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #EF4444;
+        color: #5E6F92;
     }
     
     .metric-value-neutral {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #F9FAFB;
+        color: #F8FAFC;
     }
     
     .round-badge {
-        background-color: #1E293B;
-        border: 1px solid #3B82F6;
-        color: #93C5FD;
+        background-color: #1C2541;
+        border: 1px solid #2D3A5D;
+        color: #8597AC;
         font-size: 0.85rem;
         font-weight: 600;
         padding: 8px 14px;
@@ -110,9 +109,9 @@ st.markdown(
     }
     
     .props-notice-badge {
-        background-color: rgba(245, 158, 11, 0.1);
-        border: 1px solid #F59E0B;
-        color: #FCD34D;
+        background-color: rgba(94, 111, 146, 0.15);
+        border: 1px solid #5E6F92;
+        color: #8597AC;
         font-size: 0.82rem;
         font-weight: 500;
         padding: 10px 16px;
@@ -121,16 +120,16 @@ st.markdown(
     }
     
     .trial-banner {
-        background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%);
-        border: 1px solid #10B981;
+        background: linear-gradient(90deg, rgba(45, 212, 191, 0.15) 0%, rgba(28, 37, 65, 0.8) 100%);
+        border: 1px solid #2DD4BF;
         border-radius: 8px;
         padding: 16px 20px;
         margin-bottom: 20px;
     }
     
     .stButton>button {
-        background-color: #10B981 !important;
-        color: #064E3B !important;
+        background-color: #2DD4BF !important;
+        color: #0B132B !important;
         font-weight: 700 !important;
         border-radius: 6px !important;
         border: none !important;
@@ -139,25 +138,25 @@ st.markdown(
     }
     
     .stButton>button:hover {
-        background-color: #059669 !important;
-        color: #FFFFFF !important;
+        background-color: #14B8A6 !important;
+        color: #0B132B !important;
     }
     
     div[data-testid="stTable"] {
         border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #1F2937;
-        background-color: #111827;
+        border: 1px solid #2D3A5D;
+        background-color: #1C2541;
     }
     
     table {
-        color: #F9FAFB !important;
+        color: #F8FAFC !important;
         font-size: 0.90rem !important;
     }
     
     thead tr th {
-        background-color: #1E293B !important;
-        color: #94A3B8 !important;
+        background-color: #0B132B !important;
+        color: #8597AC !important;
         font-weight: 700 !important;
         text-transform: uppercase;
         font-size: 0.78rem !important;
@@ -166,37 +165,37 @@ st.markdown(
     
     /* Styling Expander */
     div[data-testid="stExpander"] {
-        background-color: #111827 !important;
-        border: 1px solid #1F2937 !important;
+        background-color: #1C2541 !important;
+        border: 1px solid #2D3A5D !important;
         border-radius: 8px !important;
         margin-bottom: 12px !important;
         overflow: hidden !important;
     }
     
     div[data-testid="stExpander"] summary {
-        background-color: #1E293B !important;
-        color: #F9FAFB !important;
+        background-color: #0B132B !important;
+        color: #F8FAFC !important;
         font-weight: 600 !important;
         padding: 12px 16px !important;
         border-radius: 6px !important;
     }
     
     div[data-testid="stExpander"] summary:hover {
-        background-color: #334155 !important;
+        background-color: #2D3A5D !important;
         color: #FFFFFF !important;
     }
     
     div[data-testid="stExpander"] details[open] > summary {
         border-bottom-left-radius: 0px !important;
         border-bottom-right-radius: 0px !important;
-        border-bottom: 1px solid #1F2937 !important;
-        background-color: #1E293B !important;
+        border-bottom: 1px solid #2D3A5D !important;
+        background-color: #0B132B !important;
     }
     
     div[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
-        background-color: #111827 !important;
+        background-color: #1C2541 !important;
         padding: 16px 20px !important;
-        color: #F3F4F6 !important;
+        color: #F8FAFC !important;
     }
     </style>
 """,
@@ -375,9 +374,7 @@ def clean_name(raw_name):
 # Schermata Login / Registrazione
 if st.session_state.user is None:
   st.title("VALUE BET ANALYZER")
-  st.caption(
-      "Suite Qualitativa Professionale | L'A.I. Applicata Al Mondo Del Betting"
-  )
+  st.caption("Suite Qualitativa Professionale | L'A.I. Applicata Al Mondo Del Betting")
 
   auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
   with auth_col2:
@@ -719,6 +716,140 @@ TEAM_METRICS = {
         "fouls_pro": 13.6,
         "fouls_against": 12.0,
         "tactics": "3-5-2 Blocco Basso",
+    },
+    # PREMIER LEAGUE
+    "Manchester City": {
+        "gf_h": 2.55,
+        "gf_a": 2.10,
+        "ga_h": 0.70,
+        "ga_a": 0.95,
+        "xg_5": 2.45,
+        "xga_5": 0.85,
+        "xg_s": 2.35,
+        "over15_pct": 0.88,
+        "sot_pro": 7.3,
+        "sot_against": 2.9,
+        "corners_pro": 7.8,
+        "corners_against": 2.8,
+        "cross": 23.0,
+        "blocked_shots": 6.4,
+        "fouls_pro": 9.5,
+        "fouls_against": 11.5,
+        "tactics": "3-2-4-1 Dominio Territoriale",
+    },
+    "Arsenal": {
+        "gf_h": 2.30,
+        "gf_a": 1.95,
+        "ga_h": 0.65,
+        "ga_a": 0.80,
+        "xg_5": 2.25,
+        "xga_5": 0.70,
+        "xg_s": 2.15,
+        "over15_pct": 0.85,
+        "sot_pro": 6.7,
+        "sot_against": 2.8,
+        "corners_pro": 7.2,
+        "corners_against": 3.1,
+        "cross": 21.8,
+        "blocked_shots": 5.9,
+        "fouls_pro": 10.2,
+        "fouls_against": 12.0,
+        "tactics": "4-3-3 Pressing Asfissiante",
+    },
+    "Liverpool": {
+        "gf_h": 2.40,
+        "gf_a": 2.05,
+        "ga_h": 0.75,
+        "ga_a": 0.90,
+        "xg_5": 2.35,
+        "xga_5": 0.85,
+        "xg_s": 2.25,
+        "over15_pct": 0.86,
+        "sot_pro": 7.0,
+        "sot_against": 3.3,
+        "corners_pro": 7.4,
+        "corners_against": 3.4,
+        "cross": 22.0,
+        "blocked_shots": 6.1,
+        "fouls_pro": 10.6,
+        "fouls_against": 11.8,
+        "tactics": "4-2-3-1 Verticale ad Alta Intensità",
+    },
+    "Real Madrid": {
+        "gf_h": 2.45,
+        "gf_a": 2.00,
+        "ga_h": 0.70,
+        "ga_a": 0.90,
+        "xg_5": 2.30,
+        "xga_5": 0.85,
+        "xg_s": 2.20,
+        "over15_pct": 0.85,
+        "sot_pro": 6.9,
+        "sot_against": 3.4,
+        "corners_pro": 6.8,
+        "corners_against": 3.6,
+        "cross": 20.5,
+        "blocked_shots": 5.8,
+        "fouls_pro": 10.1,
+        "fouls_against": 13.0,
+        "tactics": "4-3-3 Fluidità e Transizione",
+    },
+    "Barcellona": {
+        "gf_h": 2.60,
+        "gf_a": 2.15,
+        "ga_h": 0.85,
+        "ga_a": 1.05,
+        "xg_5": 2.40,
+        "xga_5": 0.95,
+        "xg_s": 2.30,
+        "over15_pct": 0.89,
+        "sot_pro": 7.1,
+        "sot_against": 3.6,
+        "corners_pro": 6.9,
+        "corners_against": 3.5,
+        "cross": 21.0,
+        "blocked_shots": 6.0,
+        "fouls_pro": 10.5,
+        "fouls_against": 12.5,
+        "tactics": "4-2-3-1 Linea Altissima",
+    },
+    "Bayern Monaco": {
+        "gf_h": 2.70,
+        "gf_a": 2.25,
+        "ga_h": 0.80,
+        "ga_a": 1.00,
+        "xg_5": 2.55,
+        "xga_5": 0.85,
+        "xg_s": 2.45,
+        "over15_pct": 0.90,
+        "sot_pro": 7.5,
+        "sot_against": 3.2,
+        "corners_pro": 7.6,
+        "corners_against": 3.0,
+        "cross": 22.8,
+        "blocked_shots": 6.5,
+        "fouls_pro": 9.3,
+        "fouls_against": 11.2,
+        "tactics": "4-2-3-1 Dominio Offensivo",
+    },
+    "PSG": {
+        "gf_h": 2.50,
+        "gf_a": 2.05,
+        "ga_h": 0.75,
+        "ga_a": 0.95,
+        "xg_5": 2.35,
+        "xga_5": 0.90,
+        "xg_s": 2.25,
+        "over15_pct": 0.87,
+        "sot_pro": 7.0,
+        "sot_against": 3.5,
+        "corners_pro": 7.0,
+        "corners_against": 3.4,
+        "cross": 21.2,
+        "blocked_shots": 6.0,
+        "fouls_pro": 10.2,
+        "fouls_against": 12.0,
+        "tactics": "4-3-3 Possesso e Pressione",
     },
 }
 
@@ -1591,27 +1722,27 @@ with tab_scanner:
               st.write(
                   f"- **Proiezione Gol Attesi:** `{rep['xg_final']:.2f}`"
                   " (modello Poisson)."
-              )[cite: 1]
+              )
               st.write(
                   f"- **Efficienza Offensiva:** Media Gol Fatti ="
                   f" `{rep['details']['media_gf']:.2f}`, Concessione Difensiva"
                   f" Avversario = `{rep['details']['ga_opp']:.2f}`."
-              )[cite: 1]
+              )
               st.write(
                   f"- **Assetto Tattico:** `{rep['details']['tactics_t']}` vs"
                   f" `{rep['details']['tactics_o']}` (Fattore correttivo: +"
                   f" {int((rep['details']['mod']-1)*100)}%)."
-              )[cite: 1]
+              )
             elif "Tiri in porta" in bet["type"]:
               st.write(
                   "- **Proiezione Tiri nello Specchio (xS):**"
                   f" `{rep['xs_final']:.2f}`"
-              )[cite: 4, 6]
+              )
               st.write(
                   "- **Concessione Avversario:**"
                   f" `{rep['details']['sot_against_opp']:.1f}` tiri in porta"
                   " medi concessi a partita."
-              )[cite: 4]
+              )
               st.write(
                   "- **Indicazione Operativa:** Mercato aperto nelle 24-48 ore"
                   " pre-gara sui principali bookmaker .IT."
@@ -1620,27 +1751,27 @@ with tab_scanner:
               st.write(
                   "- **Volume Corner Proiettato:**"
                   f" `{rep['corners_final']:.2f}` corner totali."
-              )[cite: 5]
+              )
               st.write(
                   "- **Metriche Laterali:** Cross medi combinati ="
                   f" `{rep['details']['h_cross'] + rep['details']['a_cross']:.1f}`"
                   " a partita | Tiri bloccati combinati ="
                   f" `{rep['details']['h_blocked'] + rep['details']['a_blocked']:.1f}`."
-              )[cite: 5]
+              )
             elif "Falli" in bet["type"]:
               st.write(
                   f"- **Proiezione Falli Attesi (xFouls):**"
                   f" `{rep['xf_final']:.2f}`"
-              )[cite: 2]
+              )
               st.write(
                   f"- **Designazione AIA:** Arbitro `{rep['referee']}` (Media:"
                   f" `{rep['details']['ref_avg']:.1f}` falli a partita -"
                   f" Severità: `{rep['ref_severity']}`)."
-              )[cite: 2]
+              )
               st.write(
                   f"- **Duello di Zona:** Avversario diretto subisce"
                   f" `{rep['details']['opp_fouls_s']:.1f}` falli a partita."
-              )[cite: 2]
+              )
 
       st.markdown("---")
       st.markdown("### REGISTRA GIOCATA NEL TUO BANKROLL")
@@ -1652,11 +1783,11 @@ with tab_scanner:
             if is_premium or (i + 1) in [4, 5]
         ]
         if bet_options:
-          selected_bet_idx = st.selectbox(
-              "Seleziona Scommessa da Registrare",
-              range(len(bet_options)),
-              format_func=lambda x: bet_options[x],
-          )
+            selected_bet_idx = st.selectbox(
+                "Seleziona Scommessa da Registrare",
+                range(len(bet_options)),
+                format_func=lambda x: bet_options[x],
+            )
       with col_reg2:
         st.write("")
         st.write("")
@@ -1681,14 +1812,35 @@ with tab_scanner:
     else:
       st.info(
           f"Nessuna giocata statistica supera la soglia Edge selezionata ({min_edge_pct:.1f}%)."
-      )[cite: 1, 2, 3, 4, 5, 7]
+      )
 
 with tab_bets:
   st.markdown("### STORICO PERSONALE SCOMMESSE")
   user_bets = fetch_user_bets(st.session_state.user.get("id"))
 
   if not user_bets.empty:
-    st.dataframe(user_bets, use_container_width=True)
+    # Mostriamo una vista formattata
+    display_df = user_bets[["created_at", "match", "market", "odds", "stake", "status", "profit"]].copy()
+    display_df["created_at"] = pd.to_datetime(display_df["created_at"]).dt.strftime('%d/%m/%Y')
+    
+    # Formattazione e Colorazione Colonna Profilto
+    st.dataframe(
+        display_df,
+        column_config={
+            "created_at": "DATA",
+            "match": "PARTITA",
+            "market": "MERCATO",
+            "odds": st.column_config.NumberColumn("QUOTA", format="%.2f"),
+            "stake": st.column_config.NumberColumn("STAKE (€)", format="%.2f €"),
+            "status": "ESITO",
+            "profit": st.column_config.NumberColumn(
+                "PROFITTO/PERDITA (€)",
+                format="%.2f €"
+            )
+        },
+        use_container_width=True,
+        hide_index=True
+    )
 
     st.markdown("### CHIUDI ESITO SCOMMESSA")
     pending = user_bets[user_bets["status"] == "IN CORSO"]
