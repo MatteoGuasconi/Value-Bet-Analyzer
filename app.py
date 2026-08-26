@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech con Font Inter Unificato
+# Styling CSS Dark Fintech con Font Inter Unificato e Rimozione Toolbar
 st.markdown(
     """
     <style>
@@ -27,6 +27,17 @@ st.markdown(
     
     h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    /* Nasconde completamente la toolbar superiore di Streamlit e il footer */
+    [data-testid="stToolbar"] {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
+    footer {
+        visibility: hidden !important;
+        display: none !important;
     }
     
     /* Protezione icone native di sistema Streamlit */
@@ -50,7 +61,7 @@ st.markdown(
         border-right: 1px solid #1E293B !important;
     }
     
-    /* Card Metriche */
+    /* Card Metriche Bankroll */
     .metric-card {
         background-color: #111827;
         border: 1px solid #1F2937;
@@ -153,7 +164,7 @@ st.markdown(
         letter-spacing: 0.05em;
     }
     
-    /* FIX COMPLETO EXPANDER E HOVER */
+    /* Styling Expander */
     div[data-testid="stExpander"] {
         background-color: #111827 !important;
         border: 1px solid #1F2937 !important;
@@ -364,7 +375,9 @@ def clean_name(raw_name):
 # Schermata Login / Registrazione
 if st.session_state.user is None:
   st.title("VALUE BET ANALYZER")
-  st.caption("Suite Quantitativa Professionale | Modelli Match Analyst v4.0")
+  st.caption(
+      "Suite Qualitativa Professionale | L'A.I. Applicata Al Mondo Del Betting"
+  )
 
   auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
   with auth_col2:
@@ -859,13 +872,13 @@ SERIE_A_REFEREES = [
 class MatchAnalystEngine:
 
   @staticmethod
-  def calculate_kelly_half(prob, odds, bankroll):
+  def calculate_kelly_fraction(prob, odds, bankroll, kelly_fraction=0.50):
     b = odds - 1.0
     if b <= 0:
       return 0.0, 0.0
     p_loss = 1.0 - prob
     kelly_full = (prob * b - p_loss) / b
-    kelly_half = max(0.0, kelly_full / 2.0)
+    kelly_scaled = max(0.0, kelly_full * kelly_fraction)
 
     edge = (prob * odds) - 1.0
     if edge <= 0.05:
@@ -875,7 +888,7 @@ class MatchAnalystEngine:
     else:
       cap = 0.20
 
-    final_stake_pct = min(kelly_half, cap)
+    final_stake_pct = min(kelly_scaled, cap)
     monetary_stake = round(bankroll * final_stake_pct, 2)
     return round(final_stake_pct * 100, 2), monetary_stake
 
@@ -1097,7 +1110,12 @@ def filter_current_matchday(matches):
 
 # SCANNER AUTOMATIZZATO CON FILTRO TEMPORALE DINAMICO A 48 ORE
 def scan_league_opportunities(
-    matches, league_name, bankroll, min_odds=1.70, min_edge=0.01
+    matches,
+    league_name,
+    bankroll,
+    kelly_fraction=0.50,
+    min_odds=1.70,
+    min_edge=0.01,
 ):
   results = []
   is_serie_a = "serie_a" in league_name.lower() or "italia" in league_name.lower()
@@ -1114,7 +1132,6 @@ def scan_league_opportunities(
     match_date = match.get("commence_time", "")[:10]
     ct_str = match.get("commence_time", "")
 
-    # Calcolo finestra temporale (<= 48 ore)
     hours_to_kickoff = 999.0
     if ct_str:
       try:
@@ -1127,13 +1144,13 @@ def scan_league_opportunities(
 
     props_unlocked = hours_to_kickoff <= 48.0
 
-    # 1. Over 1.5 Gol Squadra Casa (Mercato Principale: sempre attivo)
+    # 1. Over 1.5 Gol Squadra Casa
     ov_h = MatchAnalystEngine.analyze_over15_team(
         h_team, a_team, is_home=True, bookmaker_odds=1.85
     )
     if ov_h["odds"] >= min_odds and ov_h["edge"] >= min_edge:
-      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
-          ov_h["prob_model"], ov_h["odds"], bankroll
+      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_fraction(
+          ov_h["prob_model"], ov_h["odds"], bankroll, kelly_fraction
       )
       results.append({
           "match": match_title,
@@ -1150,13 +1167,13 @@ def scan_league_opportunities(
           "report_data": ov_h,
       })
 
-    # 2. Over 1.5 Gol Squadra Trasferta (Mercato Principale: sempre attivo)
+    # 2. Over 1.5 Gol Squadra Trasferta
     ov_a = MatchAnalystEngine.analyze_over15_team(
         a_team, h_team, is_home=False, bookmaker_odds=1.95
     )
     if ov_a["odds"] >= min_odds and ov_a["edge"] >= min_edge:
-      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
-          ov_a["prob_model"], ov_a["odds"], bankroll
+      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_fraction(
+          ov_a["prob_model"], ov_a["odds"], bankroll, kelly_fraction
       )
       results.append({
           "match": match_title,
@@ -1173,13 +1190,13 @@ def scan_league_opportunities(
           "report_data": ov_a,
       })
 
-    # 3. Corner Totali (Mercato Principale: sempre attivo)
+    # 3. Corner Totali
     corn = MatchAnalystEngine.analyze_corners_match(
         h_team, a_team, line=9.5, bookmaker_odds=1.92
     )
     if corn["odds"] >= min_odds and corn["edge"] >= min_edge:
-      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
-          corn["prob_model"], corn["odds"], bankroll
+      stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_fraction(
+          corn["prob_model"], corn["odds"], bankroll, kelly_fraction
       )
       results.append({
           "match": match_title,
@@ -1196,15 +1213,15 @@ def scan_league_opportunities(
           "report_data": corn,
       })
 
-    # SBLOCCO MERCATI STATISTICI / PROPS (SOLO SE A MENO DI 48 ORE DAL MATCH)
+    # SBLOCCO MERCATI STATISTICI / PROPS (< 48h)
     if props_unlocked:
       # 4. Tiri in Porta Squadra
       sot_h = MatchAnalystEngine.analyze_sot_team(
           h_team, a_team, is_home=True, line=4.5, bookmaker_odds=1.80
       )
       if sot_h["odds"] >= min_odds and sot_h["edge"] >= min_edge:
-        stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
-            sot_h["prob_model"], sot_h["odds"], bankroll
+        stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_fraction(
+            sot_h["prob_model"], sot_h["odds"], bankroll, kelly_fraction
         )
         results.append({
             "match": match_title,
@@ -1232,8 +1249,8 @@ def scan_league_opportunities(
                 p, a_team, assigned_ref, line=1.5, bookmaker_odds=1.95
             )
             if f_res["odds"] >= min_odds and f_res["edge"] >= min_edge:
-              stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_half(
-                  f_res["prob_model"], f_res["odds"], bankroll
+              stake_pct, stake_eur = MatchAnalystEngine.calculate_kelly_fraction(
+                  f_res["prob_model"], f_res["odds"], bankroll, kelly_fraction
               )
               results.append({
                   "match": match_title,
@@ -1270,7 +1287,9 @@ def fetch_odds_api(api_key, sport_key):
 
 # HEADER APPLICAZIONE
 st.title("VALUE BET ANALYZER")
-st.caption("Suite Quantitativa Professionale | Modelli Match Analyst & Protocollo v4.0")
+st.caption(
+    "Suite Qualitativa Professionale | L'A.I. Applicata Al Mondo Del Betting"
+)
 
 # SIDEBAR: Utente, Parametri & Bankroll
 user_email = st.session_state.user.get("email", "")
@@ -1304,11 +1323,42 @@ if st.sidebar.button("LOGOUT", use_container_width=True):
 st.sidebar.markdown("---")
 st.sidebar.markdown("### PARAMETRI OPERATIVI")
 initial_bankroll = st.sidebar.number_input(
-    "Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0
+    "Bankroll Iniziale (€)",
+    min_value=10.0,
+    value=1000.0,
+    step=50.0,
+    help="Il capitale totale a disposizione dedicato alle giocate di valore.",
+)
+
+kelly_fraction = st.sidebar.select_slider(
+    "Frazione di Kelly",
+    options=[0.25, 0.50],
+    value=0.50,
+    format_func=lambda x: (
+        "0.25 (Prudente / Kelly/4)"
+        if x == 0.25
+        else "0.50 (Standard / Kelly Mezzato)"
+    ),
+    help=(
+        "Regola la formula di proporzionamento del capitale (Criterio di"
+        " Kelly). 0.50 (Kelly Mezzato) è lo standard quantitativo che protegge"
+        " il bankroll dalla varianza fisiologica, mentre 0.25 è una gestione"
+        " iper-prudenziale."
+    ),
 )
 
 min_edge_pct = st.sidebar.slider(
-    "Soglia Minima Edge (%)", min_value=1.0, max_value=15.0, value=1.0, step=0.5
+    "Soglia Minima Edge (%)",
+    min_value=1.0,
+    max_value=15.0,
+    value=1.0,
+    step=0.5,
+    help=(
+        "L'Edge rappresenta il vantaggio matematico percentuale stimato"
+        " rispetto alla quota implicita del bookmaker. Solo le giocate con un"
+        " vantaggio pari o superiore a questa soglia verranno mostrate nello"
+        " scanner."
+    ),
 )
 min_edge_val = min_edge_pct / 100.0
 
@@ -1401,11 +1451,11 @@ if not is_premium:
 
 # SCHEDE PRINCIPALI
 tab_scanner, tab_bets, tab_account = st.tabs(
-    ["Scanner Match Analyst", "Registro Scommesse", "Gestione Account"]
+    ["Scanner Value Bet", "Registro Scommesse", "Gestione Account"]
 )
 
 with tab_scanner:
-  st.markdown("### SCANNER QUANTITATIVO MATCH ANALYST")
+  st.markdown("### SCANNER QUALITATIVO DI VALUE BET")
   col_l, col_btn = st.columns([2, 1])
 
   with col_l:
@@ -1417,7 +1467,7 @@ with tab_scanner:
   with col_btn:
     st.write("")
     st.write("")
-    scan_trigger = st.button("AVVIA SCANNER GIORNATA", use_container_width=True)
+    scan_trigger = st.button("AVVIA SCANNER", use_container_width=True)
 
   if scan_trigger or "league_matches_cache" not in st.session_state:
     if user_api_key:
@@ -1468,6 +1518,7 @@ with tab_scanner:
         matches,
         selected_league,
         current_bankroll,
+        kelly_fraction=kelly_fraction,
         min_odds=1.70,
         min_edge=min_edge_val,
     )
@@ -1492,7 +1543,7 @@ with tab_scanner:
               "QUOTA": f"{bet['odds']:.2f}",
               "PROB. REALE": f"{bet['prob_model']*100:.1f}%",
               "EDGE REALE": f"{bet['edge']*100:+.2f}%",
-              "KELLY/2 STAKE": f"{bet['stake_pct']}% ({bet['stake_eur']:.2f} €)",
+              "STAKE CONSIGLIATO": f"{bet['stake_pct']}% ({bet['stake_eur']:.2f} €)",
               "DISPONIBILITÀ QUOTA": bet["bk_note"],
           })
         else:
@@ -1504,7 +1555,7 @@ with tab_scanner:
               "QUOTA": "---",
               "PROB. REALE": "---",
               "EDGE REALE": "---",
-              "KELLY/2 STAKE": "---",
+              "STAKE CONSIGLIATO": "---",
               "DISPONIBILITÀ QUOTA": "---",
           })
 
@@ -1540,27 +1591,27 @@ with tab_scanner:
               st.write(
                   f"- **Proiezione Gol Attesi:** `{rep['xg_final']:.2f}`"
                   " (modello Poisson)."
-              )
+              )[cite: 1]
               st.write(
                   f"- **Efficienza Offensiva:** Media Gol Fatti ="
                   f" `{rep['details']['media_gf']:.2f}`, Concessione Difensiva"
                   f" Avversario = `{rep['details']['ga_opp']:.2f}`."
-              )
+              )[cite: 1]
               st.write(
                   f"- **Assetto Tattico:** `{rep['details']['tactics_t']}` vs"
                   f" `{rep['details']['tactics_o']}` (Fattore correttivo: +"
                   f" {int((rep['details']['mod']-1)*100)}%)."
-              )
+              )[cite: 1]
             elif "Tiri in porta" in bet["type"]:
               st.write(
                   "- **Proiezione Tiri nello Specchio (xS):**"
                   f" `{rep['xs_final']:.2f}`"
-              )
+              )[cite: 4, 6]
               st.write(
                   "- **Concessione Avversario:**"
                   f" `{rep['details']['sot_against_opp']:.1f}` tiri in porta"
                   " medi concessi a partita."
-              )
+              )[cite: 4]
               st.write(
                   "- **Indicazione Operativa:** Mercato aperto nelle 24-48 ore"
                   " pre-gara sui principali bookmaker .IT."
@@ -1569,27 +1620,27 @@ with tab_scanner:
               st.write(
                   "- **Volume Corner Proiettato:**"
                   f" `{rep['corners_final']:.2f}` corner totali."
-              )
+              )[cite: 5]
               st.write(
                   "- **Metriche Laterali:** Cross medi combinati ="
                   f" `{rep['details']['h_cross'] + rep['details']['a_cross']:.1f}`"
                   " a partita | Tiri bloccati combinati ="
                   f" `{rep['details']['h_blocked'] + rep['details']['a_blocked']:.1f}`."
-              )
+              )[cite: 5]
             elif "Falli" in bet["type"]:
               st.write(
                   f"- **Proiezione Falli Attesi (xFouls):**"
                   f" `{rep['xf_final']:.2f}`"
-              )
+              )[cite: 2]
               st.write(
                   f"- **Designazione AIA:** Arbitro `{rep['referee']}` (Media:"
                   f" `{rep['details']['ref_avg']:.1f}` falli a partita -"
                   f" Severità: `{rep['ref_severity']}`)."
-              )
+              )[cite: 2]
               st.write(
                   f"- **Duello di Zona:** Avversario diretto subisce"
                   f" `{rep['details']['opp_fouls_s']:.1f}` falli a partita."
-              )
+              )[cite: 2]
 
       st.markdown("---")
       st.markdown("### REGISTRA GIOCATA NEL TUO BANKROLL")
@@ -1630,7 +1681,7 @@ with tab_scanner:
     else:
       st.info(
           f"Nessuna giocata statistica supera la soglia Edge selezionata ({min_edge_pct:.1f}%)."
-      )
+      )[cite: 1, 2, 3, 4, 5, 7]
 
 with tab_bets:
   st.markdown("### STORICO PERSONALE SCOMMESSE")
