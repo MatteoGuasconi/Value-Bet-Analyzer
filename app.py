@@ -74,6 +74,18 @@ st.markdown(
         color: #F9FAFB;
     }
     
+    .round-badge {
+        background-color: #1E293B;
+        border: 1px solid #3B82F6;
+        color: #93C5FD;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-bottom: 12px;
+    }
+    
     .trial-banner {
         background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%);
         border: 1px solid #10B981;
@@ -580,6 +592,25 @@ TEAM_METRICS = {
         "fouls_against": 11.5,
         "tactics": "4-2-3-1 Contropiede Rapido",
     },
+    "Cagliari": {
+        "gf_h": 1.20,
+        "gf_a": 0.90,
+        "ga_h": 1.35,
+        "ga_a": 1.60,
+        "xg_5": 1.15,
+        "xga_5": 1.50,
+        "xg_s": 1.15,
+        "over15_pct": 0.48,
+        "sot_pro": 3.8,
+        "sot_against": 5.2,
+        "corners_pro": 4.5,
+        "corners_against": 5.6,
+        "cross": 16.5,
+        "blocked_shots": 3.6,
+        "fouls_pro": 13.6,
+        "fouls_against": 12.0,
+        "tactics": "3-5-2 Blocco Basso",
+    },
     # PREMIER LEAGUE
     "Manchester City": {
         "gf_h": 2.55,
@@ -861,7 +892,7 @@ SERIE_A_REFEREES = [
 ]
 
 
-# MOTORE QUANTITATIVO PROTOCOLLI MATCH ANALYST
+# MOTORE QUANTITATIVO MATCH ANALYST
 class MatchAnalystEngine:
 
   @staticmethod
@@ -1061,7 +1092,40 @@ class MatchAnalystEngine:
     }
 
 
-# SCANNER AUTOMATIZZATO DI GIORNATA CON FILTRO EDGE DINAMICO
+# FILTRO AUTOMATICO DEL TURNO DI CAMPIONATO (MATCHDAY WINDOW)
+def filter_current_matchday(matches):
+  if not matches:
+    return [], "", ""
+
+  # Conversione e ordinamento per data/ora di inizio
+  parsed = []
+  for m in matches:
+    ct_str = m.get("commence_time", "")
+    try:
+      dt = datetime.datetime.fromisoformat(ct_str.replace("Z", "+00:00"))
+      parsed.append((dt, m))
+    except Exception:
+      pass
+
+  if not parsed:
+    return matches, "", ""
+
+  parsed.sort(key=lambda x: x[0])
+  first_dt = parsed[0][0]
+
+  # La finestra del turno copre fino a 4 giorni dalla prima partita (es. venerdì-lunedì o turno infrasettimanale)
+  round_cutoff = first_dt + datetime.timedelta(days=4)
+  current_round = [m for dt, m in parsed if dt <= round_cutoff]
+
+  start_label = first_dt.strftime("%d/%m/%Y")
+  end_label = max(dt for dt, m in parsed if dt <= round_cutoff).strftime(
+      "%d/%m/%Y"
+  )
+
+  return current_round, start_label, end_label
+
+
+# SCANNER AUTOMATIZZATO DI GIORNATA
 def scan_league_opportunities(
     matches, league_name, bankroll, min_odds=1.70, min_edge=0.01
 ):
@@ -1164,7 +1228,7 @@ def scan_league_opportunities(
           "report_data": corn,
       })
 
-    # 5. Falli Giocatori Serie A (SOLO ED ESCLUSIVAMENTE PER SERIE A)
+    # 5. Falli Giocatori Serie A (SOLO SERIE A)
     if is_serie_a:
       assigned_ref = SERIE_A_REFEREES[ref_cycle % len(SERIE_A_REFEREES)]
       ref_cycle += 1
@@ -1251,7 +1315,6 @@ initial_bankroll = st.sidebar.number_input(
     "Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0
 )
 
-# Slider Edge Minimo da 1.0% in su
 min_edge_pct = st.sidebar.slider(
     "Soglia Minima Edge (%)", min_value=1.0, max_value=15.0, value=1.0, step=0.5
 )
@@ -1337,7 +1400,7 @@ if not is_premium:
         <div class="trial-banner">
             <h4 style="margin:0 0 6px 0; color:#10B981;">MODALITÀ FREE (SOLO SERIE A)</h4>
             <p style="margin:0; font-size:0.92rem; color:#D1D5DB;">
-                Visualizzi le giocate statistiche <b>#4 e #5</b> della Serie A. Attiva il piano <b>Premium</b> per sbloccare tutti i campionati europei e la Top 3 a massimo valore atteso.
+                Visualizzi le giocate statistiche <b>#4 e #5</b> del turno in corso di Serie A. Attiva il piano <b>Premium</b> per sbloccare tutti i campionati europei e la Top 3 a massimo valore atteso.
             </p>
         </div>
         """,
@@ -1375,9 +1438,18 @@ with tab_scanner:
     else:
       st.error("Chiave ODDS_API_KEY mancante nei Secrets.")
 
-  matches = st.session_state.get("league_matches_cache", [])
+  all_raw_matches = st.session_state.get("league_matches_cache", [])
 
-  if matches:
+  if all_raw_matches:
+    # Applicazione del filtro rigoroso di singolo turno
+    matches, round_start, round_end = filter_current_matchday(all_raw_matches)
+
+    st.markdown(
+        f'<div class="round-badge">TURNO ATTIVO: {round_start} - {round_end}'
+        f" ({len(matches)} incontri in programma)</div>",
+        unsafe_allow_html=True,
+    )
+
     all_bets = scan_league_opportunities(
         matches,
         selected_league,
