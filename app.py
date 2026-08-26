@@ -151,7 +151,6 @@ def login_user(email, password):
     )
     if res.user:
       st.session_state.user = res.user
-      # Recupero tier utente da profiles
       profile = (
           supabase_client.table("profiles")
           .select("tier")
@@ -172,7 +171,7 @@ def register_user(email, password):
   try:
     res = supabase_client.auth.sign_up({"email": email, "password": password})
     if res.user:
-      return True, "Registrazione completata. Effettua il login."
+      return True, "Registrazione completata. Effettua ora il login."
     return False, "Impossibile completare la registrazione."
   except Exception as e:
     return False, str(e)
@@ -188,7 +187,22 @@ def logout_user():
   st.session_state.user_tier = "free"
 
 
-# Schermata di Autenticazione se l'utente non è loggato
+def redeem_vip_code(user_id, code_input):
+  valid_promo_codes = ["Valuebet2026", "VIP2026", "PRO2026"]
+  if code_input.strip() in valid_promo_codes:
+    if supabase_client:
+      try:
+        supabase_client.table("profiles").update({"tier": "premium"}).eq(
+            "id", user_id
+        ).execute()
+      except Exception:
+        pass
+    st.session_state.user_tier = "premium"
+    return True, "Codice valido. Piano Premium attivato con successo."
+  return False, "Codice VIP non valido o scaduto."
+
+
+# Schermata Login / Registrazione
 if st.session_state.user is None:
   st.title("QUANTITATIVE VALUE BET ANALYZER")
   st.caption("Accedi per consultare le analisi statistiche e il tuo bankroll")
@@ -213,7 +227,9 @@ if st.session_state.user is None:
 
     with tab_reg:
       reg_email = st.text_input("Email", key="reg_email")
-      reg_pwd = st.text_input("Password (min. 6 caratteri)", type="password", key="reg_pwd")
+      reg_pwd = st.text_input(
+          "Password (min. 6 caratteri)", type="password", key="reg_pwd"
+      )
       if st.button("REGISTRATI", use_container_width=True):
         if reg_email and len(reg_pwd) >= 6:
           ok, msg = register_user(reg_email, reg_pwd)
@@ -222,11 +238,13 @@ if st.session_state.user is None:
           else:
             st.error(f"Errore registrazione: {msg}")
         else:
-          st.warning("Inserisci un'email valida e una password di almeno 6 caratteri.")
+          st.warning(
+              "Inserisci un'email valida e una password di almeno 6 caratteri."
+          )
   st.stop()
 
 
-# Funzioni Database Cloud Filtrate per Utente
+# Funzioni Database Cloud Scommesse
 def fetch_user_bets(user_id):
   if supabase_client:
     try:
@@ -500,6 +518,15 @@ TEAM_METRICS = {
         "fouls": 10.1,
         "cards": 1.9,
     },
+    "Borussia Dortmund": {
+        "att": 1.35,
+        "def": 1.00,
+        "xg": 1.90,
+        "xga": 1.30,
+        "shots": 5.7,
+        "fouls": 10.8,
+        "cards": 1.8,
+    },
     "PSG": {
         "att": 1.55,
         "def": 0.70,
@@ -508,6 +535,24 @@ TEAM_METRICS = {
         "shots": 6.8,
         "fouls": 10.0,
         "cards": 1.7,
+    },
+    "Marseille": {
+        "att": 1.20,
+        "def": 0.90,
+        "xg": 1.65,
+        "xga": 1.15,
+        "shots": 5.0,
+        "fouls": 12.0,
+        "cards": 2.2,
+    },
+    "Monaco": {
+        "att": 1.30,
+        "def": 1.00,
+        "xg": 1.80,
+        "xga": 1.25,
+        "shots": 5.3,
+        "fouls": 11.5,
+        "cards": 2.1,
     },
 }
 
@@ -700,16 +745,31 @@ def run_league_scanner(matches, bankroll, kelly_fraction, min_ev):
 st.title("QUANTITATIVE VALUE BET ANALYZER")
 st.caption("Suite Algoritmica Quantitativa | Modello Dixon-Coles Corretto")
 
-# Sidebar: Utente & Metriche
+# Sidebar: Utente, Voucher & Metriche
 user_email = st.session_state.user.email
-tier_label = (
-    "PIANO PREMIUM"
-    if st.session_state.user_tier == "premium"
-    else "PIANO FREE (DEMO)"
-)
+is_premium = st.session_state.user_tier == "premium"
+tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE (DEMO)"
 
 st.sidebar.markdown(f"**Utente:** `{user_email}`")
 st.sidebar.markdown(f"**Stato:** `{tier_label}`")
+
+# Box Riscatto Codice VIP per Utenti Free
+if not is_premium:
+  st.sidebar.markdown("---")
+  st.sidebar.markdown("### SBLOCCO PIANO PRO")
+  promo_code = st.sidebar.text_input(
+      "Codice VIP / Tester",
+      placeholder="Inserisci codice...",
+      type="password",
+  )
+  if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True):
+    if promo_code:
+      ok, msg = redeem_vip_code(st.session_state.user.id, promo_code)
+      if ok:
+        st.sidebar.success(msg)
+        st.rerun()
+      else:
+        st.sidebar.error(msg)
 
 if st.sidebar.button("LOGOUT", use_container_width=True):
   logout_user()
@@ -800,7 +860,6 @@ ALL_LEAGUES = {
     "Europa League": "soccer_uefa_europa_league",
 }
 
-is_premium = st.session_state.user_tier == "premium"
 available_leagues = (
     ALL_LEAGUES if is_premium else {"Serie A (Italia)": "soccer_italy_serie_a"}
 )
@@ -811,7 +870,7 @@ if not is_premium:
         <div class="trial-banner">
             <h4 style="margin:0 0 6px 0; color:#10B981;">PIANO FREE ATTIVO (DEMO SERIE A)</h4>
             <p style="margin:0; font-size:0.92rem; color:#D1D5DB;">
-                Passa al piano <b>Premium</b> per sbloccare tutti i campionati europei e accedere alle <b>Top 3 Value Bets con EV massimo</b>.
+                Passa al piano <b>Premium</b> per sbloccare tutti i campionati europei e accedere alle <b>Top 3 Value Bets con EV massimo</b>. Inserisci il tuo codice VIP nella barra laterale per sbloccare tutte le funzioni.
             </p>
         </div>
         """,
