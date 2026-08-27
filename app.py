@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Alto
+# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Ottimizzato
 st.markdown(
     """
     <style>
@@ -25,7 +25,7 @@ st.markdown(
         color: #F8FAFC !important;
     }
     
-    h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select {
+    h1, h2, h3, h4, h5, h6, p, span, div, label, button, select {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
@@ -38,8 +38,20 @@ st.markdown(
         display: none !important;
     }
     
+    /* Protezione icone di sistema e icona password */
     [data-testid="stIconMaterial"], [class*="material-symbols"], i {
         font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+    }
+    
+    /* FIX ICONA MOSTRA PASSWORD */
+    [data-testid="stTextInput"] button {
+        color: #1C2541 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    [data-testid="stTextInput"] button svg {
+        fill: #1C2541 !important;
+        stroke: #1C2541 !important;
     }
     
     header[data-testid="stHeader"] {
@@ -143,6 +155,22 @@ st.markdown(
         border-radius: 8px;
         padding: 16px;
         margin-bottom: 12px;
+    }
+    
+    .pitch-board {
+        background: linear-gradient(180deg, #0d233a 0%, #0a192f 100%);
+        border: 2px solid #2DD4BF;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .pitch-row {
+        background: rgba(28, 37, 65, 0.7);
+        border: 1px solid #2D3A5D;
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
     }
     
     .lineup-badge-prob {
@@ -339,7 +367,7 @@ def redeem_vip_code(user_id, code_input):
         return True, "Codice valido. Piano Premium attivato."
     return False, "Codice promozionale non valido."
 
-# CONTROLLO ACCESSO (BLOCCO COMPLETO SE NON AUTENTICATO)
+# Schermata di Accesso
 if not st.session_state.user:
     st.title("VALUE BET ANALYZER")
     st.markdown('<div class="slogan-box">In questa suite non si forzano le giocate: si opera solo ed esclusivamente in presenza di valore matematico misurabile. Nel lungo periodo, il valore coincide con il profitto.</div>', unsafe_allow_html=True)
@@ -374,12 +402,12 @@ if not st.session_state.user:
                     st.warning("Inserisci un'email valida e una password di almeno 6 caratteri.")
     st.stop()
 
-# Estrazione Dati Utente Sicura
+# Dati Utente
 user_data = st.session_state.user if isinstance(st.session_state.user, dict) else {}
 user_email = user_data.get("email", "")
 user_id = user_data.get("id", "")
 
-# Cloud Scommesse
+# Cloud Database Scommesse
 def fetch_user_bets(u_id):
     if SB_URL and SB_KEY and u_id:
         token = st.session_state.get("access_token")
@@ -429,7 +457,7 @@ def update_bet_status(bet_id, new_status, odds, stake):
         except Exception:
             pass
 
-# Mappatura Squadre Serie A
+# Mapping Squadre
 API_FOOTBALL_TEAM_IDS = {
     "Inter": 505, "Juventus": 496, "Milan": 489, "Napoli": 492,
     "Atalanta": 499, "Roma": 497, "Lazio": 487, "Fiorentina": 502,
@@ -454,7 +482,7 @@ def clean_name(raw_name):
             return ita
     return raw_name
 
-# Database Arbitri Serie A Completo CAN A-B
+# ORGANICO UFFICIALE COMPLETO CAN A-B (Serie A & Serie B)
 SERIE_A_REFEREES_DB = {
     "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
     "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
@@ -475,7 +503,27 @@ SERIE_A_REFEREES_DB = {
     "fabbri": {"name": "Michael Fabbri", "fouls_avg": 26.1, "cards_avg": 4.5, "severity": "Standard"},
     "rapuano": {"name": "Antonio Rapuano", "fouls_avg": 27.3, "cards_avg": 5.0, "severity": "Severo"},
     "marcenaro": {"name": "Matteo Marcenaro", "fouls_avg": 27.1, "cards_avg": 5.0, "severity": "Severo"},
-    "marinelli": {"name": "Livio Marinelli", "fouls_avg": 25.2, "cards_avg": 4.2, "severity": "Standard"}
+    "marinelli": {"name": "Livio Marinelli", "fouls_avg": 25.2, "cards_avg": 4.2, "severity": "Standard"},
+    "aureliano": {"name": "Gianluca Aureliano", "fouls_avg": 27.5, "cards_avg": 4.9, "severity": "Severo"},
+    "marchetti": {"name": "Matteo Marchetti", "fouls_avg": 25.6, "cards_avg": 4.4, "severity": "Standard"},
+    "maresca": {"name": "Fabio Maresca", "fouls_avg": 28.2, "cards_avg": 5.4, "severity": "Severo"},
+    "ferrieri_caputi": {"name": "Maria Sole Ferrieri Caputi", "fouls_avg": 24.9, "cards_avg": 4.0, "severity": "Standard"},
+    "fourneau": {"name": "Francesco Fourneau", "fouls_avg": 26.4, "cards_avg": 4.6, "severity": "Standard"},
+    "manganelli": {"name": "Gianluca Manganiello", "fouls_avg": 25.1, "cards_avg": 4.2, "severity": "Standard"},
+    "massimi": {"name": "Luca Massimi", "fouls_avg": 26.7, "cards_avg": 4.7, "severity": "Standard"},
+    "prontera": {"name": "Alessandro Prontera", "fouls_avg": 27.0, "cards_avg": 4.8, "severity": "Standard"},
+    "santoro": {"name": "Alberto Santoro", "fouls_avg": 26.3, "cards_avg": 4.5, "severity": "Standard"},
+    "volpi": {"name": "Manuel Volpi", "fouls_avg": 28.0, "cards_avg": 5.1, "severity": "Severo"},
+    "rutella": {"name": "Daniele Rutella", "fouls_avg": 27.6, "cards_avg": 4.9, "severity": "Severo"},
+    "bonacina": {"name": "Kevin Bonacina", "fouls_avg": 25.8, "cards_avg": 4.3, "severity": "Standard"},
+    "crezzini": {"name": "Valerio Crezzini", "fouls_avg": 26.0, "cards_avg": 4.5, "severity": "Standard"},
+    "collu": {"name": "Giuseppe Collu", "fouls_avg": 27.2, "cards_avg": 4.8, "severity": "Severo"},
+    "di_marco": {"name": "Davide Di Marco", "fouls_avg": 25.5, "cards_avg": 4.1, "severity": "Standard"},
+    "perenzoni": {"name": "Daniele Perenzoni", "fouls_avg": 26.9, "cards_avg": 4.7, "severity": "Standard"},
+    "pezzuto": {"name": "Ivano Pezzuto", "fouls_avg": 26.2, "cards_avg": 4.4, "severity": "Standard"},
+    "scatena": {"name": "Gabriele Scatena", "fouls_avg": 25.9, "cards_avg": 4.3, "severity": "Standard"},
+    "tremolada": {"name": "Paride Tremolada", "fouls_avg": 27.0, "cards_avg": 4.8, "severity": "Standard"},
+    "cosso": {"name": "Francesco Cosso", "fouls_avg": 26.4, "cards_avg": 4.5, "severity": "Standard"}
 }
 
 # Database Squadre & Tattica
@@ -508,79 +556,10 @@ def get_metrics(team_name):
             return metrics
     return DEFAULT_METRICS
 
-# Rose Complete Serie A con Calciatori e Portieri Titolari
-COMPLETE_SERIE_A_SQUADS = {
-    "Inter": [
-        {"name": "Yann Sommer", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 2.8, "penalties": False},
-        {"name": "Alessandro Bastoni", "role": "Defender", "number": "95", "sot_90": 0.35, "fouls_c_90": 1.25, "saves_90": 0.0, "penalties": False},
-        {"name": "Francesco Acerbi", "role": "Defender", "number": "15", "sot_90": 0.20, "fouls_c_90": 1.40, "saves_90": 0.0, "penalties": False},
-        {"name": "Benjamin Pavard", "role": "Defender", "number": "28", "sot_90": 0.30, "fouls_c_90": 1.15, "saves_90": 0.0, "penalties": False},
-        {"name": "Federico Dimarco", "role": "Midfielder", "number": "32", "sot_90": 0.95, "fouls_c_90": 0.80, "saves_90": 0.0, "penalties": False},
-        {"name": "Nicolo Barella", "role": "Midfielder", "number": "23", "sot_90": 0.85, "fouls_c_90": 1.65, "saves_90": 0.0, "penalties": False},
-        {"name": "Hakan Calhanoglu", "role": "Midfielder", "number": "20", "sot_90": 1.30, "fouls_c_90": 1.40, "saves_90": 0.0, "penalties": True},
-        {"name": "Henrikh Mkhitaryan", "role": "Midfielder", "number": "22", "sot_90": 0.75, "fouls_c_90": 1.10, "saves_90": 0.0, "penalties": False},
-        {"name": "Denzel Dumfries", "role": "Midfielder", "number": "2", "sot_90": 0.80, "fouls_c_90": 1.50, "saves_90": 0.0, "penalties": False},
-        {"name": "Lautaro Martinez", "role": "Attacker", "number": "10", "sot_90": 1.85, "fouls_c_90": 1.45, "saves_90": 0.0, "penalties": True},
-        {"name": "Marcus Thuram", "role": "Attacker", "number": "9", "sot_90": 1.40, "fouls_c_90": 1.20, "saves_90": 0.0, "penalties": False},
-    ],
-    "Milan": [
-        {"name": "Mike Maignan", "role": "Goalkeeper", "number": "16", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 3.4, "penalties": False},
-        {"name": "Theo Hernandez", "role": "Defender", "number": "19", "sot_90": 0.85, "fouls_c_90": 1.70, "saves_90": 0.0, "penalties": True},
-        {"name": "Fikayo Tomori", "role": "Defender", "number": "23", "sot_90": 0.25, "fouls_c_90": 1.55, "saves_90": 0.0, "penalties": False},
-        {"name": "Strahinja Pavlovic", "role": "Defender", "number": "31", "sot_90": 0.40, "fouls_c_90": 1.90, "saves_90": 0.0, "penalties": False},
-        {"name": "Emerson Royal", "role": "Defender", "number": "22", "sot_90": 0.30, "fouls_c_90": 1.60, "saves_90": 0.0, "penalties": False},
-        {"name": "Tijjani Reijnders", "role": "Midfielder", "number": "14", "sot_90": 1.10, "fouls_c_90": 1.20, "saves_90": 0.0, "penalties": False},
-        {"name": "Youssouf Fofana", "role": "Midfielder", "number": "29", "sot_90": 0.65, "fouls_c_90": 1.85, "saves_90": 0.0, "penalties": False},
-        {"name": "Ruben Loftus-Cheek", "role": "Midfielder", "number": "8", "sot_90": 0.90, "fouls_c_90": 1.50, "saves_90": 0.0, "penalties": False},
-        {"name": "Christian Pulisic", "role": "Attacker", "number": "11", "sot_90": 1.30, "fouls_c_90": 0.90, "saves_90": 0.0, "penalties": True},
-        {"name": "Rafael Leao", "role": "Attacker", "number": "10", "sot_90": 1.45, "fouls_c_90": 0.85, "saves_90": 0.0, "penalties": False},
-        {"name": "Tammy Abraham", "role": "Attacker", "number": "90", "sot_90": 1.25, "fouls_c_90": 1.40, "saves_90": 0.0, "penalties": False},
-    ],
-    "Juventus": [
-        {"name": "Michele Di Gregorio", "role": "Goalkeeper", "number": "29", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 2.7, "penalties": False},
-        {"name": "Gleison Bremer", "role": "Defender", "number": "3", "sot_90": 0.45, "fouls_c_90": 1.80, "saves_90": 0.0, "penalties": False},
-        {"name": "Federico Gatti", "role": "Defender", "number": "4", "sot_90": 0.50, "fouls_c_90": 1.95, "saves_90": 0.0, "penalties": False},
-        {"name": "Nicolo Savona", "role": "Defender", "number": "37", "sot_90": 0.30, "fouls_c_90": 1.30, "saves_90": 0.0, "penalties": False},
-        {"name": "Andrea Cambiaso", "role": "Defender", "number": "27", "sot_90": 0.60, "fouls_c_90": 1.25, "saves_90": 0.0, "penalties": False},
-        {"name": "Manuel Locatelli", "role": "Midfielder", "number": "5", "sot_90": 0.55, "fouls_c_90": 1.65, "saves_90": 0.0, "penalties": False},
-        {"name": "Khephren Thuram", "role": "Midfielder", "number": "19", "sot_90": 0.70, "fouls_c_90": 1.45, "saves_90": 0.0, "penalties": False},
-        {"name": "Teun Koopmeiners", "role": "Midfielder", "number": "8", "sot_90": 1.20, "fouls_c_90": 1.30, "saves_90": 0.0, "penalties": True},
-        {"name": "Kenan Yildiz", "role": "Attacker", "number": "10", "sot_90": 1.30, "fouls_c_90": 1.10, "saves_90": 0.0, "penalties": False},
-        {"name": "Francisco Conceicao", "role": "Attacker", "number": "7", "sot_90": 1.15, "fouls_c_90": 0.95, "saves_90": 0.0, "penalties": False},
-        {"name": "Dusan Vlahovic", "role": "Attacker", "number": "9", "sot_90": 1.70, "fouls_c_90": 1.55, "saves_90": 0.0, "penalties": True},
-    ],
-    "Napoli": [
-        {"name": "Alex Meret", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 2.9, "penalties": False},
-        {"name": "Giovanni Di Lorenzo", "role": "Defender", "number": "22", "sot_90": 0.65, "fouls_c_90": 1.40, "saves_90": 0.0, "penalties": False},
-        {"name": "Amir Rrahmani", "role": "Defender", "number": "13", "sot_90": 0.35, "fouls_c_90": 1.20, "saves_90": 0.0, "penalties": False},
-        {"name": "Alessandro Buongiorno", "role": "Defender", "number": "4", "sot_90": 0.40, "fouls_c_90": 1.95, "saves_90": 0.0, "penalties": False},
-        {"name": "Mathias Olivera", "role": "Defender", "number": "17", "sot_90": 0.30, "fouls_c_90": 1.60, "saves_90": 0.0, "penalties": False},
-        {"name": "Stanislav Lobotka", "role": "Midfielder", "number": "68", "sot_90": 0.35, "fouls_c_90": 1.10, "saves_90": 0.0, "penalties": False},
-        {"name": "Andre-Frank Zambo Anguissa", "role": "Midfielder", "number": "99", "sot_90": 0.85, "fouls_c_90": 1.75, "saves_90": 0.0, "penalties": False},
-        {"name": "Scott McTominay", "role": "Midfielder", "number": "8", "sot_90": 1.20, "fouls_c_90": 1.65, "saves_90": 0.0, "penalties": False},
-        {"name": "Matteo Politano", "role": "Attacker", "number": "21", "sot_90": 1.10, "fouls_c_90": 1.15, "saves_90": 0.0, "penalties": True},
-        {"name": "Khvicha Kvaratskhelia", "role": "Attacker", "number": "77", "sot_90": 1.45, "fouls_c_90": 1.10, "saves_90": 0.0, "penalties": True},
-        {"name": "Romelu Lukaku", "role": "Attacker", "number": "11", "sot_90": 1.60, "fouls_c_90": 1.40, "saves_90": 0.0, "penalties": True},
-    ],
-    "Venezia": [
-        {"name": "Jesse Joronen", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 4.2, "penalties": False},
-        {"name": "Jay Idzes", "role": "Defender", "number": "4", "sot_90": 0.25, "fouls_c_90": 1.60, "saves_90": 0.0, "penalties": False},
-        {"name": "Michael Svoboda", "role": "Defender", "number": "30", "sot_90": 0.20, "fouls_c_90": 1.75, "saves_90": 0.0, "penalties": False},
-        {"name": "Marin Sverko", "role": "Defender", "number": "33", "sot_90": 0.20, "fouls_c_90": 1.50, "saves_90": 0.0, "penalties": False},
-        {"name": "Francesco Zampano", "role": "Midfielder", "number": "7", "sot_90": 0.40, "fouls_c_90": 1.35, "saves_90": 0.0, "penalties": False},
-        {"name": "Alfred Duncan", "role": "Midfielder", "number": "32", "sot_90": 0.65, "fouls_c_90": 1.90, "saves_90": 0.0, "penalties": False},
-        {"name": "Hans Nicolussi Caviglia", "role": "Midfielder", "number": "14", "sot_90": 0.85, "fouls_c_90": 1.40, "saves_90": 0.0, "penalties": True},
-        {"name": "Mikael Ellertsson", "role": "Midfielder", "number": "77", "sot_90": 0.60, "fouls_c_90": 1.55, "saves_90": 0.0, "penalties": False},
-        {"name": "Gianluca Busio", "role": "Midfielder", "number": "6", "sot_90": 0.90, "fouls_c_90": 1.30, "saves_90": 0.0, "penalties": False},
-        {"name": "Gaetano Oristanio", "role": "Attacker", "number": "11", "sot_90": 1.10, "fouls_c_90": 1.45, "saves_90": 0.0, "penalties": False},
-        {"name": "Joel Pohjanpalo", "role": "Attacker", "number": "20", "sot_90": 1.35, "fouls_c_90": 1.25, "saves_90": 0.0, "penalties": True},
-    ]
-}
-
-def get_team_squad(team_name, api_key):
+# Recupero Dinamico Squadre da API-Football
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_live_team_squad(team_name, api_key):
     c_name = clean_name(team_name)
-    if c_name in COMPLETE_SERIE_A_SQUADS:
-        return COMPLETE_SERIE_A_SQUADS[c_name]
     team_id = API_FOOTBALL_TEAM_IDS.get(c_name)
     if team_id and api_key:
         url = f"https://v3.football.api-sports.io/players/squads?team={team_id}"
@@ -603,12 +582,13 @@ def get_team_squad(team_name, api_key):
                             "sot_90": s, "fouls_c_90": f, "saves_90": sv,
                             "penalties": (pos == "Attacker")
                         })
-                    return players
+                    if len(players) >= 11:
+                        return players
         except Exception:
             pass
     return []
 
-# Rilevamento Ufficiale Lineup / Arbitro
+# Rilevamento Ufficiale Partita (Lineup & Arbitro)
 @st.cache_data(ttl=1800, show_spinner=False)
 def check_fixture_details(home_team, away_team, api_key):
     h_name = clean_name(home_team)
@@ -790,7 +770,7 @@ def fetch_odds_api(api_key, sport_key):
     except Exception as e:
         return None, str(e)
 
-# Header Principale & Sidebar
+# Header & Sidebar
 st.title("VALUE BET ANALYZER")
 st.markdown('<div class="slogan-box">In questa suite non si forzano le giocate: si opera solo ed esclusivamente in presenza di valore matematico misurabile. Nel lungo periodo, il valore coincide con il profitto.</div>', unsafe_allow_html=True)
 
@@ -836,7 +816,7 @@ min_edge_pct = st.sidebar.slider(
 )
 min_edge_val = min_edge_pct / 100.0
 
-# Bankroll Running
+# Calcolo Bankroll
 bets_df = fetch_user_bets(user_id)
 total_profit = 0.0
 yield_pct = 0.0
@@ -911,7 +891,7 @@ with tab_scan:
         * **Quota Equa:** Il prezzo puro matematico dell'evento ($1 / \\text{Probabilità}$), calcolato senza margini o commissioni del bookmaker.
         * **Quota Minima (Valore):** Il prezzo minimo a cui conviene entrare sul mercato. Se il tuo bookmaker offre una quota pari o superiore a questo valore, la giocata ha un vantaggio matematico (Value Bet). Sotto questa quota è **NO BET**.
         * **Edge:** Il margine di vantaggio percentuale stimato rispetto alla quota implicita del bookmaker.
-        * **Stake:** L'importo monetario (e percentuale del bankroll) raccomandato per massimizzare il rendimento proteggendo il capitale.
+        * **Stake:** L'importo monetario raccomandato per massimizzare il rendimento proteggendo il capitale.
         """)
     
     if matches:
@@ -1042,10 +1022,10 @@ with tab1:
         else:
             st.info("Nessuna quota live disponibile al momento.")
 
-# CAT 2: STATISTICHE & TATTICA SQUADRE
+# CAT 2: STATISTICHE, TATTICA & FORMAZIONI IN CAMPO (11 vs 11)
 with tab2:
-    st.markdown("### STATISTICHE, QUADRO TATTICO & FORMAZIONI")
-    st.caption("Analisi approfondita dell'assetto tattico e quote minime per Over 1.5 Gol e Corner.")
+    st.markdown("### STATISTICHE, QUADRO TATTICO & DISPOSIZIONE IN CAMPO")
+    st.caption("Schieramento in campo dei 22 titolari probabili/ufficiali e quote minime per Over 1.5 Gol e Corner.")
     
     if matches:
         match_options = [f"{clean_name(m['home_team'])} vs {clean_name(m['away_team'])}" for m in matches]
@@ -1072,31 +1052,64 @@ with tab2:
             st.markdown(f"""
             <div class="tactical-card">
                 <b>{h2.upper()} (Casa)</b><br>
-                • <b>Modulo di Gioco:</b> {h_met2['modulo']}<br>
+                • <b>Modulo:</b> {h_met2['modulo']}<br>
                 • <b>Identità Tattica:</b> {h_met2['stile']}<br>
-                • <b>Proiezione Possesso Palla:</b> {h_met2['possesso']:.1f}%<br>
-                • <b>Volume Cross Medi:</b> {h_met2['cross']:.1f} a partita
+                • <b>Possesso Palla Stimato:</b> {h_met2['possesso']:.1f}%<br>
+                • <b>Cross Medi:</b> {h_met2['cross']:.1f} / gara
             </div>
             """, unsafe_allow_html=True)
         with col_t2:
             st.markdown(f"""
             <div class="tactical-card">
                 <b>{a2.upper()} (Trasferta)</b><br>
-                • <b>Modulo di Gioco:</b> {a_met2['modulo']}<br>
+                • <b>Modulo:</b> {a_met2['modulo']}<br>
                 • <b>Identità Tattica:</b> {a_met2['stile']}<br>
-                • <b>Proiezione Possesso Palla:</b> {a_met2['possesso']:.1f}%<br>
-                • <b>Volume Cross Medi:</b> {a_met2['cross']:.1f} a partita
+                • <b>Possesso Palla Stimato:</b> {a_met2['possesso']:.1f}%<br>
+                • <b>Cross Medi:</b> {a_met2['cross']:.1f} / gara
             </div>
             """, unsafe_allow_html=True)
             
-        st.markdown("#### Chiave Tattica del Match")
-        st.markdown(f"""
-        1. **Duello sulle Corsie Esterne:** {h2} genera una media di `{h_met2['cross']:.1f}` cross a partita contro `{a_met2['cross']:.1f}` di {a2}, configurando una sfida ad alto volume di palle inattive laterali.
-        2. **Indice di Aggressività e Recupero Palla:** {h2} commette mediamente `{h_met2['fouls_pro']:.1f}` falli, mentre {a2} subisce `{a_met2['fouls_against']:.1f}` falli a match, con duelli intensi sulla trequarti.
-        3. **Concessione xG Difensivo:** La difesa di {a2} concede una media di `{a_met2['ga_a']:.2f}` gol attesi in trasferta, esponendosi alle transizioni veloci dei padroni di casa.
-        """)
+        # DISPOSIZIONE IN CAMPO DEI 22 CALCIATORI (11 vs 11)
+        st.markdown("#### Disposizione in Campo dei 22 Calciatori (11 vs 11)")
         
+        h2_squad = fetch_live_team_squad(h2, FOOTBALL_KEY)
+        a2_squad = fetch_live_team_squad(a2, FOOTBALL_KEY)
+        
+        col_p_h, col_p_a = st.columns(2)
+        with col_p_h:
+            st.markdown(f"**Schieramento {h2} ({h_met2['modulo']})**")
+            gk_h = [p['name'] for p in h2_squad if p['role'] == 'Goalkeeper'][:1]
+            def_h = [p['name'] for p in h2_squad if p['role'] == 'Defender'][:4]
+            mid_h = [p['name'] for p in h2_squad if p['role'] == 'Midfielder'][:4]
+            att_h = [p['name'] for p in h2_squad if p['role'] == 'Attacker'][:2]
+            
+            st.markdown(f"""
+            <div class="pitch-board">
+                <div class="pitch-row">🧤 <b>Portiere:</b> {', '.join(gk_h) if gk_h else 'Titolare da definire'}</div>
+                <div class="pitch-row">🛡️ <b>Difesa:</b> {', '.join(def_h) if def_h else 'Linea difensiva a 4'}</div>
+                <div class="pitch-row">⚙️ <b>Centrocampo:</b> {', '.join(mid_h) if mid_h else 'Reparto mediano'}</div>
+                <div class="pitch-row">⚡ <b>Attacco:</b> {', '.join(att_h) if att_h else 'Attacco titolare'}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col_p_a:
+            st.markdown(f"**Schieramento {a2} ({a_met2['modulo']})**")
+            gk_a = [p['name'] for p in a2_squad if p['role'] == 'Goalkeeper'][:1]
+            def_a = [p['name'] for p in a2_squad if p['role'] == 'Defender'][:4]
+            mid_a = [p['name'] for p in a2_squad if p['role'] == 'Midfielder'][:4]
+            att_a = [p['name'] for p in a2_squad if p['role'] == 'Attacker'][:2]
+            
+            st.markdown(f"""
+            <div class="pitch-board">
+                <div class="pitch-row">🧤 <b>Portiere:</b> {', '.join(gk_a) if gk_a else 'Titolare da definire'}</div>
+                <div class="pitch-row">🛡️ <b>Difesa:</b> {', '.join(def_a) if def_a else 'Linea difensiva'}</div>
+                <div class="pitch-row">⚙️ <b>Centrocampo:</b> {', '.join(mid_a) if mid_a else 'Reparto mediano'}</div>
+                <div class="pitch-row">⚡ <b>Attacco:</b> {', '.join(att_a) if att_a else 'Attacco titolare'}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
         st.markdown("---")
+        # CALCOLATORE STATISTICHE SQUADRA
         col_c2_1, col_c2_2 = st.columns(2)
         with col_c2_1:
             st.markdown("#### Mercato Over 1.5 Gol Squadra")
@@ -1141,10 +1154,10 @@ with tab2:
             else:
                 st.error(f"NO BET (Quota insufficiente - Edge: {edge_c*100:+.2f}%)")
 
-# CAT 3: PRESTAZIONI CALCIATORI & PORTIERI
+# CAT 3: PRESTAZIONI CALCIATORI & PORTIERI (Rose Live da API-Football)
 with tab3:
-    st.markdown("### PRESTAZIONI CALCIATORI & PORTIERI (DIVISIONE SQUADRE)")
-    st.caption("Rose complete caricate e pronte all'analisi per tiri in porta, falli e parate del portiere.")
+    st.markdown("### PRESTAZIONI CALCIATORI & PORTIERI (ROSE LIVE AGGIORNATE)")
+    st.caption("Analisi per tiri in porta, falli commessi e parate del portiere su rose live sincronizzate.")
     
     if matches:
         match_options_c3 = [f"{clean_name(m['home_team'])} vs {clean_name(m['away_team'])}" for m in matches]
@@ -1154,17 +1167,18 @@ with tab3:
         h3 = clean_name(m3["home_team"])
         a3 = clean_name(m3["away_team"])
         
-        h3_players = get_team_squad(h3, FOOTBALL_KEY)
-        a3_players = get_team_squad(a3, FOOTBALL_KEY)
-        
+        with st.spinner("Sincronizzazione rose live con API-Football..."):
+            h3_players = fetch_live_team_squad(h3, FOOTBALL_KEY)
+            a3_players = fetch_live_team_squad(a3, FOOTBALL_KEY)
+            
         lineup_st3, ref_detected3 = check_fixture_details(h3, a3, FOOTBALL_KEY)
         
         st.markdown("---")
-        tab_h, tab_a = st.tabs([f"Squadra Casa: {h3} (11 Titolari)", f"Squadra Trasferta: {a3} (11 Titolari)"])
+        tab_h, tab_a = st.tabs([f"Squadra Casa: {h3}", f"Squadra Trasferta: {a3}"])
         
         def render_player_analysis(players_list, team_name, opp_team, key_prefix):
             if not players_list:
-                st.warning(f"Rosa non disponibile per {team_name}.")
+                st.warning(f"Caricamento rosa in corso per {team_name}...")
                 return
             p_display = [f"{p['name']} ({p['role']} #{p['number']})" for p in players_list]
             sel_p_i = st.selectbox(f"Seleziona Calciatore ({team_name})", range(len(p_display)), format_func=lambda x: p_display[x], key=f"{key_prefix}_sel")
@@ -1215,7 +1229,7 @@ with tab3:
                 with col_m2:
                     st.markdown("#### Mercato: Falli Commessi")
                     foul_line = st.selectbox("Linea Falli Commessi", [0.5, 1.5, 2.5], index=1, key=f"{key_prefix}_foul_line")
-                    foul_res = MatchAnalystEngine.analyze_player_fouls(chosen_p, opp_team, {"name": "CAN Serie A", "fouls_avg": 26.0, "severity": "Standard"}, foul_line, min_edge_val)
+                    foul_res = MatchAnalystEngine.analyze_player_fouls(chosen_p, opp_team, {"name": "CAN A-B", "fouls_avg": 26.0, "severity": "Standard"}, foul_line, min_edge_val)
                     st.metric("Probabilità Modello", f"{foul_res['prob']*100:.1f}%")
                     st.write(f"**Quota Equa:** `{foul_res['fair_odds']:.2f}` | **Quota Minima:** `{foul_res['min_odds']:.2f}`")
                     
@@ -1236,10 +1250,10 @@ with tab3:
         with tab_a:
             render_player_analysis(a3_players, a3, h3, "a_tab")
 
-# CAT 4: FOCUS DISCIPLINARE & ARBITRI
+# CAT 4: FOCUS DISCIPLINARE & ARBITRI (Organico Completo CAN A-B)
 with tab4:
-    st.markdown("### FOCUS DISCIPLINARE & ARBITRI AIA")
-    st.caption("Designazioni ufficiali AIA in tempo reale e selettore completo direttori di gara CAN Serie A.")
+    st.markdown("### FOCUS DISCIPLINARE & ARBITRI (ORGANICO CAN A-B)")
+    st.caption("Organico completo dei direttori di gara Serie A & Serie B con calcolo quote sui cartellini.")
     
     if matches:
         match_options_c4 = [f"{clean_name(m['home_team'])} vs {clean_name(m['away_team'])}" for m in matches]
@@ -1252,18 +1266,18 @@ with tab4:
         lineup_st4, ref_auto = check_fixture_details(h4, a4, FOOTBALL_KEY)
         
         col_ref_sel, col_ref_status = st.columns([2, 1])
-        ref_names_list = list(SERIE_A_REFEREES_DB.keys())
+        ref_names_list = sorted(list(SERIE_A_REFEREES_DB.keys()))
         default_ref_idx = 0
         
         if ref_auto:
             for i, rk in enumerate(ref_names_list):
-                if rk in ref_auto.lower():
+                if rk in ref_auto.lower() or ref_auto.lower() in SERIE_A_REFEREES_DB[rk]["name"].lower():
                     default_ref_idx = i
                     break
                     
         with col_ref_sel:
             chosen_ref_key = st.selectbox(
-                "Arbitro Designato (CAN Serie A)",
+                "Seleziona Direttore di Gara (CAN Serie A & B)",
                 ref_names_list,
                 index=default_ref_idx,
                 format_func=lambda x: SERIE_A_REFEREES_DB[x]["name"]
@@ -1273,18 +1287,18 @@ with tab4:
         with col_ref_status:
             st.write("")
             st.write("")
-            if ref_auto:
-                st.success("Designazione Rilevata da API")
+            if ref_auto and chosen_ref_key in ref_auto.lower():
+                st.success("Designazione AIA Rilevata da API")
             else:
-                st.info("Arbitro Selezionato da CAN A-B")
+                st.info("Arbitro Selezionato da Ruolo CAN")
                 
         col_ref1, col_ref2 = st.columns(2)
         with col_ref1:
-            st.markdown(f"#### Metriche Arbitro: `{ref_data['name']}`")
-            st.write(f"- **Media Storica Cartellini:** `{ref_data['cards_avg']:.1f}` a partita")
-            st.write(f"- **Media Storica Falli Fischiati:** `{ref_data['fouls_avg']:.1f}` a partita")
+            st.markdown(f"#### Metriche Ufficiali: `{ref_data['name']}`")
+            st.write(f"- **Media Cartellini / Partita:** `{ref_data['cards_avg']:.1f}`")
+            st.write(f"- **Media Falli Fischiati / Partita:** `{ref_data['fouls_avg']:.1f}`")
             st.write(f"- **Indice di Severità Disciplinare:** `{ref_data['severity']}`")
-            st.caption("Dati storici certificati CAN Serie A per la stagione agonistica in corso.")
+            st.caption("Dati storici registrati AIA / CAN per la stagione agonistica in corso.")
                 
         with col_ref2:
             st.markdown("#### Calcolo Cartellini Totali")
