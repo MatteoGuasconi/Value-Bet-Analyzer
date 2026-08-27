@@ -38,21 +38,22 @@ st.markdown(
         display: none !important;
     }
     
+    /* Protezione icone di sistema e icona password */
     [data-testid="stIconMaterial"], [class*="material-symbols"], i {
         font-family: 'Material Symbols Rounded', 'Material Icons' !important;
     }
     
-    /* FIX ICONA MOSTRA PASSWORD */
-    div[data-baseweb="input"] button {
-        color: #0B132B !important;
-        background-color: #2DD4BF !important;
+    /* FIX ICONA MOSTRA PASSWORD VISIBILE */
+    [data-testid="stTextInput"] button {
+        color: #2DD4BF !important;
+        background-color: #2D3A5D !important;
         border-radius: 4px !important;
-        padding: 4px !important;
+        border: 1px solid #3B4D78 !important;
         margin-right: 4px !important;
     }
-    div[data-baseweb="input"] button svg {
-        fill: #0B132B !important;
-        stroke: #0B132B !important;
+    [data-testid="stTextInput"] button svg {
+        fill: #2DD4BF !important;
+        stroke: #2DD4BF !important;
     }
     
     header[data-testid="stHeader"] {
@@ -463,7 +464,7 @@ def clean_name(raw_name):
             return ita
     return raw_name
 
-# ORGANICO UFFICIALE COMPLETO CAN A-B
+# ORGANICO COMPLETO CAN A-B
 SERIE_A_REFEREES_DB = {
     "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
     "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
@@ -537,7 +538,7 @@ def get_metrics(team_name):
             return metrics
     return DEFAULT_METRICS
 
-# Rose Titolari Serie A
+# Rose Ufficiali Complete Serie A
 COMPLETE_SERIE_A_SQUADS = {
     "Inter": [
         {"name": "Yann Sommer", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 2.8, "penalties": False},
@@ -637,7 +638,7 @@ def get_team_squad(team_name, api_key):
             pass
     return []
 
-# RENDER GRAFICO DEL CAMPO (11 TITOLARI CON MAGLIE E NOMI)
+# FUNZIONE RENDERING CAMPO TATTICO INLINE (RISOLTO PROBLEMA PARSING HTML)
 def render_visual_pitch_html(team_name, formation_str, players_list):
     gk = [p for p in players_list if p.get('role') == 'Goalkeeper']
     defs = [p for p in players_list if p.get('role') == 'Defender']
@@ -647,17 +648,19 @@ def render_visual_pitch_html(team_name, formation_str, players_list):
     gk_player = gk[0] if gk else {"name": "Portiere", "number": "1"}
     
     def badge(p, is_gk=False):
-        bg = "#F59E0B" if is_gk else "#2DD4BF"
+        c = "#EAB308" if is_gk else "#FFFFFF"
+        tc = "#0B132B"
         num = p.get('number', '-')
-        name = p.get('name', 'Giocatore')
-        return f'<div style="text-align:center;width:72px;display:inline-block;margin:3px;"><div style="width:26px;height:26px;border-radius:50%;background:{bg};color:#0B132B;font-weight:800;font-size:11px;line-height:26px;margin:0 auto 2px auto;border:2px solid #FFFFFF;">{num}</div><div style="color:#FFFFFF;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{name}</div></div>'
+        nom = p.get('name', 'Giocatore')
+        return f'<div style="text-align:center;width:70px;display:inline-block;margin:3px;"><div style="width:28px;height:28px;border-radius:50%;background:{c};color:{tc};font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;margin:0 auto 2px auto;border:2px solid #000;box-shadow:0 2px 4px rgba(0,0,0,0.5);">{num}</div><div style="color:#FFFFFF;font-size:10px;font-weight:700;text-shadow:0 1px 2px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{nom}</div></div>'
         
-    att_html = "".join([badge(p) for p in atts[:3]])
-    mid_html = "".join([badge(p) for p in mids[:5]])
-    def_html = "".join([badge(p) for p in defs[:5]])
-    gk_html = badge(gk_player, is_gk=True)
+    atts_h = "".join([badge(p) for p in atts[:3]])
+    mids_h = "".join([badge(p) for p in mids[:5]])
+    defs_h = "".join([badge(p) for p in defs[:5]])
+    gk_h = badge(gk_player, is_gk=True)
     
-    return f'<div style="background:linear-gradient(180deg,#1B4D3E 0%,#143A2F 100%);border:2px solid #2DD4BF;border-radius:8px;padding:12px 6px;text-align:center;margin-bottom:12px;"><div style="color:#2DD4BF;font-weight:800;font-size:13px;margin-bottom:10px;text-transform:uppercase;">{team_name} ({formation_str})</div><div style="margin-bottom:8px;">{att_html}</div><div style="margin-bottom:8px;">{mid_html}</div><div style="margin-bottom:8px;">{def_html}</div><div>{gk_html}</div></div>'
+    html = f'<div style="background:linear-gradient(180deg,#1e5138 0%,#143a28 100%);border:2px solid #2DD4BF;border-radius:8px;padding:14px 6px;text-align:center;margin-bottom:15px;box-shadow:inset 0 0 20px rgba(0,0,0,0.6);"><div style="color:#2DD4BF;font-weight:800;font-size:13px;margin-bottom:10px;letter-spacing:0.05em;">{team_name.upper()} • {formation_str}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{atts_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{mids_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{defs_h}</div><div style="display:flex;justify-content:center;">{gk_h}</div></div>'
+    return html
 
 # Rilevamento Ufficiale Lineup / Arbitro
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -1140,6 +1143,7 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
             
+        # DISPOSIZIONE IN CAMPO GRAFICA (RISOLTO PROBLEMA PARSING HTML)
         st.markdown("#### Disposizione in Campo dei 22 Titolari (11 vs 11)")
         
         h2_squad = get_team_squad(h2, FOOTBALL_KEY)
