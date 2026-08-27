@@ -1066,14 +1066,14 @@ if round_start:
 else:
     st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
 
-# GESTIONE SCHEDE DINAMICHE
+# GESTIONE SCHEDE SENZA PREFISSI "CAT."
 if is_serie_a:
     tab_scan, tab1, tab2, tab3, tab4, tab_inj, tab5, tab6 = st.tabs([
         "Scanner Top 5 del Turno",
-        "Cat. 1 - Mercati Principali",
-        "Cat. 2 - Statistiche & Tattica Squadre",
-        "Cat. 3 - Prestazioni Calciatori & Portieri",
-        "Cat. 4 - Focus Disciplinare & Arbitri",
+        "Mercati Principali",
+        "Statistiche & Tattica Squadre",
+        "Prestazioni Calciatori & Portieri",
+        "Focus Disciplinare & Arbitri",
         "Infermeria Serie A",
         "Registro Scommesse",
         "Gestione Account"
@@ -1081,8 +1081,8 @@ if is_serie_a:
 else:
     tab_scan, tab1, tab2, tab5, tab6 = st.tabs([
         "Scanner Top 5 del Turno",
-        "Cat. 1 - Mercati Principali",
-        "Cat. 2 - Statistiche & Tattica Squadre",
+        "Mercati Principali",
+        "Statistiche & Tattica Squadre",
         "Registro Scommesse",
         "Gestione Account"
     ])
@@ -1164,7 +1164,7 @@ with tab_scan:
     else:
         st.info("Nessuna partita disponibile per il turno di questa competizione.")
 
-# CAT 1: MERCATI PRINCIPALI
+# MERCATI PRINCIPALI
 with tab1:
     st.markdown(f"### TOP 5 MERCATI PRINCIPALI ({selected_league_label.upper()})")
     st.caption("Classifica delle migliori 5 opportunità matematiche sui mercati live scaricati via API.")
@@ -1231,7 +1231,7 @@ with tab1:
         else:
             st.info("Nessuna quota live disponibile al momento.")
 
-# CAT 2: STATISTICHE, TATTICA & DISPOSIZIONE IN CAMPO
+# STATISTICHE & TATTICA SQUADRE
 with tab2:
     st.markdown(f"### STATISTICHE, QUADRO TATTICO & DISPOSIZIONE ({selected_league_label.upper()})")
     st.caption("Schieramento tattico e quote minime per Over 1.5 Gol Squadra e Corner con impatto infortuni.")
@@ -1518,7 +1518,7 @@ if is_serie_a:
                 else:
                     st.error(f"NO BET (Quota insufficiente - Edge: {edge_card*100:+.2f}%)")
 
-    # SCHEDA INFERMERIA SERIE A (GESTIONE INFORTUNI)
+    # SCHEDA INFERMERIA SERIE A
     with tab_inj:
         st.markdown("### GESTIONE INFERMERIA & INDISPONIBILI SERIE A")
         st.caption("Inserisci qui settimanalmente i calciatori infortunati. L'algoritmo ricalcolerà istantaneamente il peso su xG e linee statistiche.")
