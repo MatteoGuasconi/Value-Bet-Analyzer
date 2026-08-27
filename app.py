@@ -241,7 +241,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Funzione di Sicurezza per evitare StreamlitValueAboveMaxError
+# Funzione di Sicurezza Numerica
 def safe_odds_val(val, min_v=1.01, max_v=20.0):
     try:
         v = float(val)
@@ -253,13 +253,13 @@ def safe_odds_val(val, min_v=1.01, max_v=20.0):
     except Exception:
         return min_v
 
-# Parametri dai Secrets
+# Parametri Secrets
 SB_URL = st.secrets.get("SUPABASE_URL", "").rstrip("/")
 SB_KEY = st.secrets.get("SUPABASE_KEY", "")
 ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
 FOOTBALL_KEY = st.secrets.get("FOOTBALL_API_KEY", "f59b5ad05a6b45fa5f19582d3e493f7f")
 
-# Gestione Sessione Utente
+# Inizializzazione Sessione
 if "user" not in st.session_state:
     st.session_state.user = None
 if "user_tier" not in st.session_state:
@@ -339,6 +339,96 @@ def redeem_vip_code(user_id, code_input):
         return True, "Codice valido. Piano Premium attivato."
     return False, "Codice promozionale non valido."
 
+# CONTROLLO ACCESSO (BLOCCO COMPLETO SE NON AUTENTICATO)
+if not st.session_state.user:
+    st.title("VALUE BET ANALYZER")
+    st.markdown('<div class="slogan-box">In questa suite non si forzano le giocate: si opera solo ed esclusivamente in presenza di valore matematico misurabile. Nel lungo periodo, il valore coincide con il profitto.</div>', unsafe_allow_html=True)
+    
+    auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
+    with auth_col2:
+        tab_log, tab_reg = st.tabs(["Accedi al Tuo Account", "Crea Nuovo Account"])
+        with tab_log:
+            log_email = st.text_input("Email", key="log_email")
+            log_pwd = st.text_input("Password", type="password", key="log_pwd")
+            if st.button("ACCEDI", use_container_width=True):
+                if log_email and log_pwd:
+                    ok, err = login_user(log_email, log_pwd)
+                    if ok:
+                        st.success("Accesso effettuato.")
+                        st.rerun()
+                    else:
+                        st.error(f"Errore accesso: {err}")
+                else:
+                    st.warning("Compila tutti i campi.")
+        with tab_reg:
+            reg_email = st.text_input("Email", key="reg_email")
+            reg_pwd = st.text_input("Password (min. 6 caratteri)", type="password", key="reg_pwd")
+            if st.button("REGISTRATI", use_container_width=True):
+                if reg_email and len(reg_pwd) >= 6:
+                    ok, msg = register_user(reg_email, reg_pwd)
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(f"Errore registrazione: {msg}")
+                else:
+                    st.warning("Inserisci un'email valida e una password di almeno 6 caratteri.")
+    st.stop()
+
+# Estrazione Dati Utente Sicura
+user_data = st.session_state.user if isinstance(st.session_state.user, dict) else {}
+user_email = user_data.get("email", "")
+user_id = user_data.get("id", "")
+
+# Cloud Scommesse
+def fetch_user_bets(u_id):
+    if SB_URL and SB_KEY and u_id:
+        token = st.session_state.get("access_token")
+        url = f"{SB_URL}/rest/v1/user_bets?user_id=eq.{u_id}&select=*&order=created_at.desc"
+        try:
+            res = requests.get(url, headers=get_headers(token), timeout=10)
+            if res.status_code == 200 and res.json():
+                return pd.DataFrame(res.json())
+        except Exception:
+            pass
+    return pd.DataFrame(columns=["id", "created_at", "match", "market", "odds", "stake", "ev", "status", "profit"])
+
+def save_user_bet(u_id, match, market, odds, stake, ev):
+    if SB_URL and SB_KEY and u_id:
+        token = st.session_state.get("access_token")
+        url = f"{SB_URL}/rest/v1/user_bets"
+        hdrs = get_headers(token)
+        hdrs["Prefer"] = "return=representation"
+        payload = {
+            "user_id": u_id,
+            "match": match,
+            "market": market,
+            "odds": float(odds),
+            "stake": float(stake),
+            "ev": float(ev),
+            "status": "IN CORSO",
+            "profit": 0.0,
+        }
+        try:
+            res = requests.post(url, json=payload, headers=hdrs, timeout=10)
+            return res.status_code in [200, 201]
+        except Exception:
+            pass
+    return False
+
+def update_bet_status(bet_id, new_status, odds, stake):
+    profit_val = 0.0
+    if new_status == "VINTA": profit_val = round((odds - 1.0) * stake, 2)
+    elif new_status == "PERSA": profit_val = round(-stake, 2)
+    if SB_URL and SB_KEY:
+        token = st.session_state.get("access_token")
+        url = f"{SB_URL}/rest/v1/user_bets?id=eq.{bet_id}"
+        hdrs = get_headers(token)
+        hdrs["Prefer"] = "return=representation"
+        try:
+            requests.patch(url, json={"status": new_status, "profit": profit_val}, headers=hdrs, timeout=10)
+        except Exception:
+            pass
+
 # Mappatura Squadre Serie A
 API_FOOTBALL_TEAM_IDS = {
     "Inter": 505, "Juventus": 496, "Milan": 489, "Napoli": 492,
@@ -364,7 +454,7 @@ def clean_name(raw_name):
             return ita
     return raw_name
 
-# Database Arbitri Serie A Completo CAN A-B (Medie Reali Ufficiali)
+# Database Arbitri Serie A Completo CAN A-B
 SERIE_A_REFEREES_DB = {
     "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
     "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
@@ -418,7 +508,7 @@ def get_metrics(team_name):
             return metrics
     return DEFAULT_METRICS
 
-# Rose Complete Serie A con Calciatori e Portieri Titolari (Database Attivo)
+# Rose Complete Serie A con Calciatori e Portieri Titolari
 COMPLETE_SERIE_A_SQUADS = {
     "Inter": [
         {"name": "Yann Sommer", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 2.8, "penalties": False},
@@ -489,10 +579,8 @@ COMPLETE_SERIE_A_SQUADS = {
 
 def get_team_squad(team_name, api_key):
     c_name = clean_name(team_name)
-    # Se presente nel database locale attivo, ritorna i dati arricchiti
     if c_name in COMPLETE_SERIE_A_SQUADS:
         return COMPLETE_SERIE_A_SQUADS[c_name]
-    # Fallback su API-Football per altre squadre
     team_id = API_FOOTBALL_TEAM_IDS.get(c_name)
     if team_id and api_key:
         url = f"https://v3.football.api-sports.io/players/squads?team={team_id}"
@@ -542,7 +630,6 @@ def check_fixture_details(home_team, away_team, api_key):
                     if h_name.lower() in t_h.lower() or a_name.lower() in t_a.lower():
                         ref = fix.get("fixture", {}).get("referee")
                         if ref: detected_ref = ref.split(",")[0].replace("Italy", "").strip()
-                        # Controllo se le formazioni ufficiali sono uscite
                         f_id = fix.get("fixture", {}).get("id")
                         if f_id:
                             l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={f_id}", headers=headers, timeout=5)
@@ -593,7 +680,7 @@ class MatchAnalystEngine:
             "market_type": "Over 1.5 Gol Squadra",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "xG Team Finale", "metric_val": f"{xg_final:.2f}",
-            "note": f"Efficienza: {gf:.2f} GF | Concessione Difensiva: {ga_opp:.2f} GA"
+            "note": f"Efficienza: {gf:.2f} GF | Difesa Avversario concede {ga_opp:.2f} GA"
         }
 
     @staticmethod
@@ -655,7 +742,7 @@ class MatchAnalystEngine:
             "market": f"Over {line} Parate ({player['name']})",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "Parate Proiettate", "metric_val": f"{xsaves:.2f}",
-            "note": f"Tiri nello specchio avversario pro: {opp_met['sot_pro']:.1f} | Save Rate stimato: 72%"
+            "note": f"Tiri nello specchio avversario: {opp_met['sot_pro']:.1f} | Save Rate stimato: 72%"
         }
 
     @staticmethod
@@ -703,12 +790,10 @@ def fetch_odds_api(api_key, sport_key):
     except Exception as e:
         return None, str(e)
 
-# Header Principale
+# Header Principale & Sidebar
 st.title("VALUE BET ANALYZER")
 st.markdown('<div class="slogan-box">In questa suite non si forzano le giocate: si opera solo ed esclusivamente in presenza di valore matematico misurabile. Nel lungo periodo, il valore coincide con il profitto.</div>', unsafe_allow_html=True)
 
-# Sidebar
-user_email = st.session_state.user.get("email", "")
 is_premium = st.session_state.user_tier == "premium"
 tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE (DEMO)"
 
@@ -721,7 +806,7 @@ if not is_premium:
     promo_code = st.sidebar.text_input("Codice VIP / Tester", placeholder="Inserisci codice...", type="password")
     if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True):
         if promo_code:
-            ok, msg = redeem_vip_code(st.session_state.user.get("id"), promo_code)
+            ok, msg = redeem_vip_code(user_id, promo_code)
             if ok:
                 st.sidebar.success(msg)
                 st.rerun()
@@ -752,7 +837,7 @@ min_edge_pct = st.sidebar.slider(
 min_edge_val = min_edge_pct / 100.0
 
 # Bankroll Running
-bets_df = fetch_user_bets(st.session_state.user.get("id"))
+bets_df = fetch_user_bets(user_id)
 total_profit = 0.0
 yield_pct = 0.0
 win_rate_pct = 0.0
@@ -883,9 +968,9 @@ with tab_scan:
                         calc_edge = (item['prob'] * odd_check) - 1.0
                         k_p, k_e = MatchAnalystEngine.calculate_kelly(item['prob'], odd_check, current_bankroll, kelly_fraction)
                         if odd_check >= item['min_odds'] and calc_edge >= min_edge_val:
-                            st.success(f"VALORE PRESENTE: Edge {calc_edge*100:+.2f}%\nStake Consigliato: {k_p}% ({k_e:.2f} €)")
+                            st.success(f"VALORE PRESENTE: Edge {calc_edge*100:+.2f}%\nStake: {k_p}% ({k_e:.2f} €)")
                             if st.button(f"REGISTRA GIOCATA #{pos}", key=f"btn_save_top_{idx}"):
-                                save_user_bet(st.session_state.user.get("id"), item["match"], item["market"], odd_check, k_e, calc_edge)
+                                save_user_bet(user_id, item["match"], item["market"], odd_check, k_e, calc_edge)
                                 st.rerun()
                         else:
                             st.error(f"NO BET (Quota sotto soglia minima - Edge: {calc_edge*100:+.2f}%)")
@@ -951,7 +1036,7 @@ with tab1:
             sel_c1_i = st.selectbox("Seleziona Scommessa Live da Registrare", range(len(c1_opts)), format_func=lambda x: c1_opts[x])
             if st.button("SALVA SCOMMESSA LIVE NEL BANKROLL"):
                 chosen_c1 = top5_cat1[sel_c1_i]
-                save_user_bet(st.session_state.user.get("id"), chosen_c1["PARTITA"], chosen_c1["MERCATO"], chosen_c1["odds_num"], chosen_c1["stake_eur"], chosen_c1["edge_num"])
+                save_user_bet(user_id, chosen_c1["PARTITA"], chosen_c1["MERCATO"], chosen_c1["odds_num"], chosen_c1["stake_eur"], chosen_c1["edge_num"])
                 st.success("Scommessa live registrata.")
                 st.rerun()
         else:
@@ -975,7 +1060,6 @@ with tab2:
         
         lineup_status, ref_detected = check_fixture_details(h2, a2, FOOTBALL_KEY)
         
-        # BADGE STATO FORMAZIONE
         if lineup_status == "UFFICIALE":
             st.markdown(f'<div class="lineup-badge-off">FORMAZIONE UFFICIALE (AIA / FIGC)</div>', unsafe_allow_html=True)
         else:
@@ -1005,7 +1089,6 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
             
-        # CHIAVE TATTICA DEL MATCH
         st.markdown("#### Chiave Tattica del Match")
         st.markdown(f"""
         1. **Duello sulle Corsie Esterne:** {h2} genera una media di `{h_met2['cross']:.1f}` cross a partita contro `{a_met2['cross']:.1f}` di {a2}, configurando una sfida ad alto volume di palle inattive laterali.
@@ -1014,7 +1097,6 @@ with tab2:
         """)
         
         st.markdown("---")
-        # CALCOLATORE QUOTE STATISTICHE SQUADRA
         col_c2_1, col_c2_2 = st.columns(2)
         with col_c2_1:
             st.markdown("#### Mercato Over 1.5 Gol Squadra")
@@ -1034,7 +1116,7 @@ with tab2:
             if odd_g_in >= res_g['min_odds'] and edge_g >= min_edge_val:
                 st.success(f"VALORE PRESENTE: Edge {edge_g*100:+.2f}% | Stake: {kp_g}% ({ke_g:.2f} €)")
                 if st.button("SALVA BET GOL", key="btn_save_g"):
-                    save_user_bet(st.session_state.user.get("id"), f"{h2} vs {a2}", res_g["market"], odd_g_in, ke_g, edge_g)
+                    save_user_bet(user_id, f"{h2} vs {a2}", res_g["market"], odd_g_in, ke_g, edge_g)
                     st.rerun()
             else:
                 st.error(f"NO BET (Quota insufficiente - Edge: {edge_g*100:+.2f}%)")
@@ -1054,7 +1136,7 @@ with tab2:
             if odd_c_in >= res_c['min_odds'] and edge_c >= min_edge_val:
                 st.success(f"VALORE PRESENTE: Edge {edge_c*100:+.2f}% | Stake: {kp_c}% ({ke_c:.2f} €)")
                 if st.button("SALVA BET CORNER", key="btn_save_c"):
-                    save_user_bet(st.session_state.user.get("id"), f"{h2} vs {a2}", res_c["market"], odd_c_in, ke_c, edge_c)
+                    save_user_bet(user_id, f"{h2} vs {a2}", res_c["market"], odd_c_in, ke_c, edge_c)
                     st.rerun()
             else:
                 st.error(f"NO BET (Quota insufficiente - Edge: {edge_c*100:+.2f}%)")
@@ -1090,7 +1172,6 @@ with tab3:
             
             st.markdown(f"**Ruolo:** `{chosen_p['role']}` | **Avversario Diretto:** `{opp_team}`")
             
-            # Se Portiere -> Modulo Parate
             if chosen_p["role"] == "Goalkeeper":
                 st.markdown("#### Mercato: Parate Portiere")
                 saves_line = st.selectbox("Linea Parate", [1.5, 2.5, 3.5, 4.5], index=1, key=f"{key_prefix}_saves_line")
@@ -1106,7 +1187,7 @@ with tab3:
                 if odd_sv_in >= saves_res['min_odds'] and edge_sv >= min_edge_val:
                     st.success(f"VALORE PRESENTE: Edge {edge_sv*100:+.2f}% | Stake: {kpsv}% ({kesv:.2f} €)")
                     if st.button("SALVA BET PARATE", key=f"{key_prefix}_btn_sv"):
-                        save_user_bet(st.session_state.user.get("id"), f"{h3} vs {a3}", saves_res["market"], odd_sv_in, kesv, edge_sv)
+                        save_user_bet(user_id, f"{h3} vs {a3}", saves_res["market"], odd_sv_in, kesv, edge_sv)
                         st.rerun()
                 else:
                     st.error(f"NO BET (Quota insufficiente - Edge: {edge_sv*100:+.2f}%)")
@@ -1126,7 +1207,7 @@ with tab3:
                     if odd_sot_in >= sot_res['min_odds'] and edge_s >= min_edge_val:
                         st.success(f"VALORE PRESENTE: Edge {edge_s*100:+.2f}% | Stake: {kps}% ({kes:.2f} €)")
                         if st.button("SALVA BET TIRI", key=f"{key_prefix}_btn_sot"):
-                            save_user_bet(st.session_state.user.get("id"), f"{h3} vs {a3}", sot_res["market"], odd_sot_in, kes, edge_s)
+                            save_user_bet(user_id, f"{h3} vs {a3}", sot_res["market"], odd_sot_in, kes, edge_s)
                             st.rerun()
                     else:
                         st.error(f"NO BET (Quota insufficiente - Edge: {edge_s*100:+.2f}%)")
@@ -1145,7 +1226,7 @@ with tab3:
                     if odd_fl_in >= foul_res['min_odds'] and edge_f >= min_edge_val:
                         st.success(f"VALORE PRESENTE: Edge {edge_f*100:+.2f}% | Stake: {kpf}% ({kef:.2f} €)")
                         if st.button("SALVA BET FALLI", key=f"{key_prefix}_btn_fl"):
-                            save_user_bet(st.session_state.user.get("id"), f"{h3} vs {a3}", foul_res["market"], odd_fl_in, kef, edge_f)
+                            save_user_bet(user_id, f"{h3} vs {a3}", foul_res["market"], odd_fl_in, kef, edge_f)
                             st.rerun()
                     else:
                         st.error(f"NO BET (Quota insufficiente - Edge: {edge_f*100:+.2f}%)")
@@ -1170,7 +1251,6 @@ with tab4:
         
         lineup_st4, ref_auto = check_fixture_details(h4, a4, FOOTBALL_KEY)
         
-        # Selettore Arbitro Ufficiale
         col_ref_sel, col_ref_status = st.columns([2, 1])
         ref_names_list = list(SERIE_A_REFEREES_DB.keys())
         default_ref_idx = 0
@@ -1221,7 +1301,7 @@ with tab4:
             if odd_card_in >= disc_res['min_odds'] and edge_card >= min_edge_val:
                 st.success(f"VALORE PRESENTE: Edge {edge_card*100:+.2f}% | Stake: {kpc}% ({kec:.2f} €)")
                 if st.button("SALVA BET CARTELLINI", key="btn_save_card"):
-                    save_user_bet(st.session_state.user.get("id"), f"{h4} vs {a4}", f"Over {cards_line} Cartellini", odd_card_in, kec, edge_card)
+                    save_user_bet(user_id, f"{h4} vs {a4}", f"Over {cards_line} Cartellini", odd_card_in, kec, edge_card)
                     st.rerun()
             else:
                 st.error(f"NO BET (Quota insufficiente - Edge: {edge_card*100:+.2f}%)")
@@ -1229,7 +1309,7 @@ with tab4:
 # REGISTRO SCOMMESSE
 with tab5:
     st.markdown("### STORICO PERSONALE SCOMMESSE")
-    user_bets = fetch_user_bets(st.session_state.user.get("id"))
+    user_bets = fetch_user_bets(user_id)
     
     if not user_bets.empty:
         display_df = user_bets[["created_at", "match", "market", "odds", "stake", "status", "profit"]].copy()
@@ -1278,7 +1358,7 @@ with tab6:
             st.markdown(f"**Email:** `{user_email}`")
             st.markdown(f"**Stato Abbonamento:** `{tier_label}`")
         with col_p2:
-            st.markdown(f"**ID Utente:** `{st.session_state.user.get('id')}`")
+            st.markdown(f"**ID Utente:** `{user_id}`")
             
     with st.expander("Modifica Password"):
         new_pwd = st.text_input("Nuova Password (min. 6 caratteri)", type="password", key="chg_pwd")
