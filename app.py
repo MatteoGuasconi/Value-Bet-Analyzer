@@ -42,13 +42,15 @@ st.markdown(
         font-family: 'Material Symbols Rounded', 'Material Icons' !important;
     }
     
-    /* FIX ICONA MOSTRA PASSWORD VISIBILE */
-    [data-testid="stTextInput"] button {
+    /* FIX ICONA MOSTRA PASSWORD */
+    div[data-baseweb="input"] button {
         color: #0B132B !important;
-        background-color: #E2E8F0 !important;
+        background-color: #2DD4BF !important;
         border-radius: 4px !important;
+        padding: 4px !important;
+        margin-right: 4px !important;
     }
-    [data-testid="stTextInput"] button svg {
+    div[data-baseweb="input"] button svg {
         fill: #0B132B !important;
         stroke: #0B132B !important;
     }
@@ -461,7 +463,7 @@ def clean_name(raw_name):
             return ita
     return raw_name
 
-# ORGANICO UFFICIALE COMPLETO CAN A-B (Serie A & Serie B)
+# ORGANICO UFFICIALE COMPLETO CAN A-B
 SERIE_A_REFEREES_DB = {
     "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
     "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
@@ -535,7 +537,7 @@ def get_metrics(team_name):
             return metrics
     return DEFAULT_METRICS
 
-# Rose Complete Serie A con Calciatori e Portieri Titolari
+# Rose Titolari Serie A
 COMPLETE_SERIE_A_SQUADS = {
     "Inter": [
         {"name": "Yann Sommer", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 2.8, "penalties": False},
@@ -635,53 +637,27 @@ def get_team_squad(team_name, api_key):
             pass
     return []
 
-# FUNZIONE PER DISEGNARE IL CAMPO VISIVO (COME FOTO 1)
+# RENDER GRAFICO DEL CAMPO (11 TITOLARI CON MAGLIE E NOMI)
 def render_visual_pitch_html(team_name, formation_str, players_list):
-    gk = [p for p in players_list if p['role'] == 'Goalkeeper']
-    defs = [p for p in players_list if p['role'] == 'Defender']
-    mids = [p for p in players_list if p['role'] == 'Midfielder']
-    atts = [p for p in players_list if p['role'] == 'Attacker']
+    gk = [p for p in players_list if p.get('role') == 'Goalkeeper']
+    defs = [p for p in players_list if p.get('role') == 'Defender']
+    mids = [p for p in players_list if p.get('role') == 'Midfielder']
+    atts = [p for p in players_list if p.get('role') == 'Attacker']
     
     gk_player = gk[0] if gk else {"name": "Portiere", "number": "1"}
     
-    def player_badge_html(player, is_gk=False):
-        bg_color = "#EAB308" if is_gk else "#2DD4BF"
-        text_color = "#0B132B"
-        return f"""
-        <div style="text-align: center; width: 75px; display: inline-block; margin: 4px;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: {bg_color}; color: {text_color}; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; margin: 0 auto 3px auto; border: 2px solid #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">
-                {player.get('number', '-')}
-            </div>
-            <div style="color: #FFFFFF; font-size: 10px; font-weight: 700; text-shadow: 0 1px 2px #000; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                {player.get('name', 'Player')}
-            </div>
-        </div>
-        """
+    def badge(p, is_gk=False):
+        bg = "#F59E0B" if is_gk else "#2DD4BF"
+        num = p.get('number', '-')
+        name = p.get('name', 'Giocatore')
+        return f'<div style="text-align:center;width:72px;display:inline-block;margin:3px;"><div style="width:26px;height:26px;border-radius:50%;background:{bg};color:#0B132B;font-weight:800;font-size:11px;line-height:26px;margin:0 auto 2px auto;border:2px solid #FFFFFF;">{num}</div><div style="color:#FFFFFF;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{name}</div></div>'
         
-    html = f"""
-    <div style="background: linear-gradient(180deg, #1B4D3E 0%, #143A2F 100%); border: 2px solid #2DD4BF; border-radius: 10px; padding: 16px 8px; position: relative; box-shadow: inset 0 0 30px rgba(0,0,0,0.5); margin-bottom: 15px;">
-        <div style="text-align: center; color: #CBD5E1; font-weight: 800; font-size: 14px; margin-bottom: 12px; letter-spacing: 0.05em;">
-            {team_name.upper()} • {formation_str}
-        </div>
-        <!-- Attaccanti -->
-        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px;">
-            {''.join([player_badge_html(p) for p in atts[:3]])}
-        </div>
-        <!-- Centrocampo -->
-        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px;">
-            {''.join([player_badge_html(p) for p in mids[:5]])}
-        </div>
-        <!-- Difesa -->
-        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px;">
-            {''.join([player_badge_html(p) for p in defs[:5]])}
-        </div>
-        <!-- Portiere -->
-        <div style="display: flex; justify-content: center; align-items: center;">
-            {player_badge_html(gk_player, is_gk=True)}
-        </div>
-    </div>
-    """
-    return html
+    att_html = "".join([badge(p) for p in atts[:3]])
+    mid_html = "".join([badge(p) for p in mids[:5]])
+    def_html = "".join([badge(p) for p in defs[:5]])
+    gk_html = badge(gk_player, is_gk=True)
+    
+    return f'<div style="background:linear-gradient(180deg,#1B4D3E 0%,#143A2F 100%);border:2px solid #2DD4BF;border-radius:8px;padding:12px 6px;text-align:center;margin-bottom:12px;"><div style="color:#2DD4BF;font-weight:800;font-size:13px;margin-bottom:10px;text-transform:uppercase;">{team_name} ({formation_str})</div><div style="margin-bottom:8px;">{att_html}</div><div style="margin-bottom:8px;">{mid_html}</div><div style="margin-bottom:8px;">{def_html}</div><div>{gk_html}</div></div>'
 
 # Rilevamento Ufficiale Lineup / Arbitro
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -755,7 +731,7 @@ class MatchAnalystEngine:
             "market_type": "Over 1.5 Gol Squadra",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "xG Team Finale", "metric_val": f"{xg_final:.2f}",
-            "note": f"Efficienza: {gf:.2f} GF | Difesa Avversario concede {ga_opp:.2f} GA"
+            "note": f"Efficienza: {gf:.2f} GF | Concessione Difensiva: {ga_opp:.2f} GA"
         }
 
     @staticmethod
@@ -1164,7 +1140,6 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
             
-        # DISPOSIZIONE IN CAMPO GRAFICA (COME FOTO 1)
         st.markdown("#### Disposizione in Campo dei 22 Titolari (11 vs 11)")
         
         h2_squad = get_team_squad(h2, FOOTBALL_KEY)
