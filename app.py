@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Alto
+# Styling CSS Dark Fintech - Ottimizzato per Mobile e Safari iOS
 st.markdown(
     """
     <style>
@@ -42,6 +42,27 @@ st.markdown(
         font-family: 'Material Symbols Rounded', 'Material Icons' !important;
     }
     
+    /* FIX MENU LATERALE SU SMARTPHONE & SAFARI */
+    [data-testid="stSidebarCollapsedControl"] {
+        display: flex !important;
+        visibility: visible !important;
+        color: #2DD4BF !important;
+        background-color: #1C2541 !important;
+        border-radius: 8px !important;
+        border: 1px solid #2D3A5D !important;
+        z-index: 999999 !important;
+        top: 0.6rem !important;
+        left: 0.6rem !important;
+        padding: 6px !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4) !important;
+    }
+    [data-testid="stSidebarCollapsedControl"] svg {
+        fill: #2DD4BF !important;
+        stroke: #2DD4BF !important;
+        width: 24px !important;
+        height: 24px !important;
+    }
+    
     /* FIX ICONA MOSTRA PASSWORD VISIBILE */
     [data-testid="stTextInput"] button {
         color: #2DD4BF !important;
@@ -57,6 +78,7 @@ st.markdown(
     
     header[data-testid="stHeader"] {
         background-color: #0B132B !important;
+        z-index: 9999 !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
@@ -136,6 +158,14 @@ st.markdown(
         font-size: 0.92rem;
         color: #FFFFFF;
         font-weight: 500;
+    }
+
+    .promo-banner {
+        background-color: #131D38;
+        border: 1px solid #2DD4BF;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
     }
     
     .round-badge {
@@ -398,7 +428,7 @@ user_data = st.session_state.user if isinstance(st.session_state.user, dict) els
 user_email = user_data.get("email", "")
 user_id = user_data.get("id", "")
 
-# Cloud Database Infortuni (Zero Chiamate API)
+# Cloud Database Infortuni
 def fetch_injuries():
     if SB_URL and SB_KEY:
         token = st.session_state.get("access_token")
@@ -530,7 +560,7 @@ def clean_name(raw_name):
             return ita
     return raw_name
 
-# ORGANICO COMPLETO CAN A-B
+# ORGANICO ARBITRI DI BASE
 SERIE_A_REFEREES_DB = {
     "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
     "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
@@ -574,7 +604,7 @@ SERIE_A_REFEREES_DB = {
     "cosso": {"name": "Francesco Cosso", "fouls_avg": 26.4, "cards_avg": 4.5, "severity": "Standard"}
 }
 
-# Database Squadre Base
+# Database Squadre Base (Fallback Locale)
 TEAM_METRICS = {
     "Inter": {"gf_h": 2.25, "gf_a": 1.90, "ga_h": 0.65, "ga_a": 0.80, "xg_5": 2.15, "xg_s": 2.05, "sot_pro": 6.2, "sot_against": 3.1, "corners_pro": 6.4, "corners_against": 3.6, "cross": 21.5, "blocked_shots": 5.4, "fouls_pro": 11.2, "fouls_against": 12.8, "cards_avg": 1.8, "modulo": "3-5-2", "stile": "Pressing Alto & Sovrapposizione Catene Esterne", "possesso": 61.2},
     "Juventus": {"gf_h": 1.70, "gf_a": 1.40, "ga_h": 0.50, "ga_a": 0.75, "xg_5": 1.65, "xg_s": 1.55, "sot_pro": 5.1, "sot_against": 2.8, "corners_pro": 5.6, "corners_against": 3.8, "cross": 18.2, "blocked_shots": 4.6, "fouls_pro": 12.1, "fouls_against": 13.5, "cards_avg": 2.1, "modulo": "4-2-3-1", "stile": "Dominio Territoriale & Costruzione Bassa", "possesso": 58.4},
@@ -597,14 +627,66 @@ DEFAULT_METRICS = {
     "cross": 16.5, "blocked_shots": 4.0, "fouls_pro": 12.5, "fouls_against": 12.5, "cards_avg": 2.2, "modulo": "4-3-3", "stile": "Equilibrato & Costruzione Rapida", "possesso": 50.0
 }
 
-# Ricalcolo Dinamico Metriche Squadra con Impatto Infortuni
+# CARICAMENTO DINAMICO DA CLOUD SUPABASE (STATISTICHE E ARBITRI)
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_cloud_team_metrics():
+    if SB_URL and SB_KEY:
+        token = st.session_state.get("access_token")
+        url = f"{SB_URL}/rest/v1/team_metrics?select=*"
+        try:
+            res = requests.get(url, headers=get_headers(token), timeout=5)
+            if res.status_code == 200 and res.json():
+                cloud_data = {}
+                for row in res.json():
+                    t_name = row.get("team_name") or row.get("team")
+                    if t_name:
+                        cloud_data[t_name] = row
+                return cloud_data
+        except Exception:
+            pass
+    return {}
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_cloud_referees():
+    if SB_URL and SB_KEY:
+        token = st.session_state.get("access_token")
+        url = f"{SB_URL}/rest/v1/referees?select=*"
+        try:
+            res = requests.get(url, headers=get_headers(token), timeout=5)
+            if res.status_code == 200 and res.json():
+                cloud_refs = {}
+                for row in res.json():
+                    rk = str(row.get("ref_key") or row.get("id") or row.get("name", "")).lower()
+                    cloud_refs[rk] = {
+                        "name": row.get("name", ""),
+                        "fouls_avg": float(row.get("fouls_avg", 26.0)),
+                        "cards_avg": float(row.get("cards_avg", 4.5)),
+                        "severity": row.get("severity", "Standard")
+                    }
+                return cloud_refs
+        except Exception:
+            pass
+    return {}
+
+# Recupero Metriche con priorità al database Cloud
 def get_adjusted_metrics(team_name, injuries_df):
     cleaned = clean_name(team_name)
     base = None
-    for name, metrics in TEAM_METRICS.items():
+    
+    # 1. Tentativo da Cloud Supabase
+    cloud_metrics = fetch_cloud_team_metrics()
+    for name, metrics in cloud_metrics.items():
         if name.lower() in cleaned.lower() or cleaned.lower() in name.lower():
             base = dict(metrics)
             break
+            
+    # 2. Fallback su database locale
+    if not base:
+        for name, metrics in TEAM_METRICS.items():
+            if name.lower() in cleaned.lower() or cleaned.lower() in name.lower():
+                base = dict(metrics)
+                break
+                
     if not base:
         base = dict(DEFAULT_METRICS)
         
@@ -613,28 +695,28 @@ def get_adjusted_metrics(team_name, injuries_df):
         for _, row in team_inj.iterrows():
             imp = row.get("importance", "")
             if imp == "Top Player Offensivo":
-                base["gf_h"] *= 0.88
-                base["gf_a"] *= 0.88
-                base["xg_5"] *= 0.88
-                base["sot_pro"] = max(1.0, base["sot_pro"] - 0.8)
+                base["gf_h"] = base.get("gf_h", 1.4) * 0.88
+                base["gf_a"] = base.get("gf_a", 1.15) * 0.88
+                base["xg_5"] = base.get("xg_5", 1.35) * 0.88
+                base["sot_pro"] = max(1.0, base.get("sot_pro", 4.4) - 0.8)
             elif imp == "Titolare Mediano / Regista":
-                base["possesso"] = max(30.0, base["possesso"] - 4.0)
-                base["corners_pro"] = max(2.0, base["corners_pro"] * 0.92)
-                base["gf_h"] *= 0.95
-                base["gf_a"] *= 0.95
+                base["possesso"] = max(30.0, base.get("possesso", 50.0) - 4.0)
+                base["corners_pro"] = max(2.0, base.get("corners_pro", 4.8) * 0.92)
+                base["gf_h"] = base.get("gf_h", 1.4) * 0.95
+                base["gf_a"] = base.get("gf_a", 1.15) * 0.95
             elif imp == "Difensore Chiave":
-                base["ga_h"] *= 1.15
-                base["ga_a"] *= 1.15
-                base["sot_against"] += 0.8
+                base["ga_h"] = base.get("ga_h", 1.10) * 1.15
+                base["ga_a"] = base.get("ga_a", 1.40) * 1.15
+                base["sot_against"] = base.get("sot_against", 4.6) + 0.8
             elif imp == "Portiere Titolare":
-                base["ga_h"] *= 1.10
-                base["ga_a"] *= 1.10
+                base["ga_h"] = base.get("ga_h", 1.10) * 1.10
+                base["ga_a"] = base.get("ga_a", 1.40) * 1.10
             elif imp == "Riserva Offensiva / Rotazione":
-                base["gf_h"] *= 0.97
-                base["gf_a"] *= 0.97
+                base["gf_h"] = base.get("gf_h", 1.4) * 0.97
+                base["gf_a"] = base.get("gf_a", 1.15) * 0.97
             elif imp == "Riserva Difensiva / Rotazione":
-                base["ga_h"] *= 1.04
-                base["ga_a"] *= 1.04
+                base["ga_h"] = base.get("ga_h", 1.10) * 1.04
+                base["ga_a"] = base.get("ga_a", 1.40) * 1.04
     return base
 
 # Rose Complete Serie A
@@ -828,9 +910,9 @@ class MatchAnalystEngine:
         ga_opp = o_met["ga_a"] if is_home else o_met["ga_h"]
         xg_base = gf * (ga_opp / 1.25) * (t_met["xg_5"] / max(0.1, t_met["xg_s"]))
         mod = 1.0
-        if "3-4-2-1" in t_met["modulo"] or "4-3-3" in t_met["modulo"]: mod += 0.08
-        if "Pressing" in t_met["stile"]: mod += 0.10
-        if "Blocco Basso" in o_met["stile"]: mod -= 0.10
+        if "3-4-2-1" in t_met.get("modulo", "") or "4-3-3" in t_met.get("modulo", ""): mod += 0.08
+        if "Pressing" in t_met.get("stile", ""): mod += 0.10
+        if "Blocco Basso" in o_met.get("stile", ""): mod -= 0.10
         xg_final = xg_base * mod
         prob = float(1.0 - (poisson.pmf(0, xg_final) + poisson.pmf(1, xg_final)))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
@@ -975,8 +1057,8 @@ is_serie_a = selected_league_cfg["has_players"]
 if not is_premium:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### SBLOCCO PIANO PRO")
-    promo_code = st.sidebar.text_input("Codice VIP / Tester", placeholder="Inserisci codice...", type="password")
-    if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True):
+    promo_code = st.sidebar.text_input("Codice VIP / Tester", placeholder="Inserisci codice...", type="password", key="side_promo")
+    if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True, key="side_btn_promo"):
         if promo_code:
             ok, msg = redeem_vip_code(user_id, promo_code)
             if ok:
@@ -984,6 +1066,23 @@ if not is_premium:
                 st.rerun()
             else:
                 st.sidebar.error(msg)
+
+    # BANNER DI SBLOCCO DIRETTO ANCHE NELLA PAGINA PRINCIPALE (PER SMARTPHONE & SAFARI)
+    with st.expander("SBLOCCA PIANO PREMIUM (Inserisci Codice VIP)", expanded=False):
+        c_p1, c_p2 = st.columns([3, 1])
+        with c_p1:
+            main_code = st.text_input("Codice Promozionale VIP", placeholder="es. Valuebet2026", type="password", key="main_promo")
+        with c_p2:
+            st.write("")
+            st.write("")
+            if st.button("ATTIVA ORA", use_container_width=True, key="main_btn_promo"):
+                if main_code:
+                    ok, msg = redeem_vip_code(user_id, main_code)
+                    if ok:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
 
 if st.sidebar.button("LOGOUT", use_container_width=True):
     logout_user()
@@ -1096,7 +1195,7 @@ with tab_scan:
         st.markdown("""
         * **Probabilità Modello:** La percentuale reale stimata dal nostro algoritmo matematico che l'evento si verifichi.
         * **Quota Equa:** Il prezzo puro matematico dell'evento ($1 / \\text{Probabilità}$), calcolato senza margini o commissioni del bookmaker.
-        * **Quota Minima (Valore):** Il prezzo minimo a cui conviene entrare sul mercato. Se il tuo bookmaker offre una quota pari o superiore a questo valore, la giocata ha un vantaggio matematico (Value Bet). Sotto questa quota è **NO BET**.
+        * **Quota Minima (Valore):** Il prezzo minimo a cui conviene entrare sul mercato. Se il tuo bookmaker (Betsson, Snai, Sisal, ecc.) offre una quota pari o superiore a questo valore, la giocata ha un vantaggio matematico (Value Bet). Sotto questa quota è **NO BET**.
         * **Edge:** Il margine di vantaggio percentuale stimato rispetto alla quota implicita del bookmaker.
         * **Stake:** L'importo monetario raccomandato per massimizzare il rendimento proteggendo il capitale.
         """)
@@ -1139,7 +1238,7 @@ with tab_scan:
         st.table(pd.DataFrame(table_data))
         
         st.markdown("---")
-        st.markdown("### SCHEDE MOTIVATE & VERIFICA QUOTA REALE")
+        st.markdown("### SCHEDE MOTIVATE & VERIFICA QUOTA REALE (BOOKMAKER AAMS)")
         for idx, item in enumerate(top5):
             pos = idx + 1
             if is_premium or pos in [4, 5]:
@@ -1254,27 +1353,27 @@ with tab2:
         else:
             st.markdown(f'<div class="lineup-badge-prob">FORMAZIONE PROBABILE (Pre-Partita)</div>', unsafe_allow_html=True)
             
-        st.markdown(f"#### Quadro Tattico: {h2} ({h_met2['modulo']}) vs {a2} ({a_met2['modulo']})")
+        st.markdown(f"#### Quadro Tattico: {h2} ({h_met2.get('modulo', '4-3-3')}) vs {a2} ({a_met2.get('modulo', '4-3-3')})")
         
         col_t1, col_t2 = st.columns(2)
         with col_t1:
             st.markdown(f"""
             <div class="tactical-card">
                 <b>{h2.upper()} (Casa)</b><br>
-                • <b>Modulo:</b> {h_met2['modulo']}<br>
-                • <b>Identità Tattica:</b> {h_met2['stile']}<br>
-                • <b>Possesso Palla Stimato:</b> {h_met2['possesso']:.1f}%<br>
-                • <b>Cross Medi:</b> {h_met2['cross']:.1f} / gara
+                • <b>Modulo:</b> {h_met2.get('modulo', '4-3-3')}<br>
+                • <b>Identità Tattica:</b> {h_met2.get('stile', 'Equilibrato')}<br>
+                • <b>Possesso Palla Stimato:</b> {h_met2.get('possesso', 50.0):.1f}%<br>
+                • <b>Cross Medi:</b> {h_met2.get('cross', 16.5):.1f} / gara
             </div>
             """, unsafe_allow_html=True)
         with col_t2:
             st.markdown(f"""
             <div class="tactical-card">
                 <b>{a2.upper()} (Trasferta)</b><br>
-                • <b>Modulo:</b> {a_met2['modulo']}<br>
-                • <b>Identità Tattica:</b> {a_met2['stile']}<br>
-                • <b>Possesso Palla Stimato:</b> {a_met2['possesso']:.1f}%<br>
-                • <b>Cross Medi:</b> {a_met2['cross']:.1f} / gara
+                • <b>Modulo:</b> {a_met2.get('modulo', '4-3-3')}<br>
+                • <b>Identità Tattica:</b> {a_met2.get('stile', 'Equilibrato')}<br>
+                • <b>Possesso Palla Stimato:</b> {a_met2.get('possesso', 50.0):.1f}%<br>
+                • <b>Cross Medi:</b> {a_met2.get('cross', 16.5):.1f} / gara
             </div>
             """, unsafe_allow_html=True)
             
@@ -1288,9 +1387,9 @@ with tab2:
         
         col_pitch_h, col_pitch_a = st.columns(2)
         with col_pitch_h:
-            st.markdown(render_visual_pitch_html(h2, h_met2['modulo'], h2_squad, inj_h_list), unsafe_allow_html=True)
+            st.markdown(render_visual_pitch_html(h2, h_met2.get('modulo', '4-3-3'), h2_squad, inj_h_list), unsafe_allow_html=True)
         with col_pitch_a:
-            st.markdown(render_visual_pitch_html(a2, a_met2['modulo'], a2_squad, inj_a_list), unsafe_allow_html=True)
+            st.markdown(render_visual_pitch_html(a2, a_met2.get('modulo', '4-3-3'), a2_squad, inj_a_list), unsafe_allow_html=True)
 
         # BOX INFERMERIA SOTTO IL CAMPO
         if inj_h_list or inj_a_list:
@@ -1317,7 +1416,7 @@ with tab2:
             
             res_g = MatchAnalystEngine.analyze_team_goals_over15(team_choice, opp_choice, is_home_sel, min_edge_val, injuries_df)
             st.metric("Probabilità Modello", f"{res_g['prob']*100:.1f}%")
-            st.write(f"**Quota Equa:** `{res_g['fair_odds']:.2f}` | **Quota Minima:** `{res_g['min_odds']:.2f}`")
+            st.write(f"**Quota Equa:** `{res_g['fair_odds']:.2f}` | **Quota Minima (Valore):** `{res_g['min_odds']:.2f}`")
             st.caption(res_g["note"])
             
             init_g = safe_odds_val(res_g['min_odds'])
@@ -1337,7 +1436,7 @@ with tab2:
             line_corn = st.selectbox("Linea Corner Totali", [7.5, 8.5, 9.5, 10.5, 11.5], index=2, key=f"c2_line_corn_{sport_api_key}")
             res_c = MatchAnalystEngine.analyze_corners_multiline(h2, a2, line_corn, min_edge_val, injuries_df)
             st.metric("Probabilità Modello", f"{res_c['prob']*100:.1f}%")
-            st.write(f"**Quota Equa:** `{res_c['fair_odds']:.2f}` | **Quota Minima:** `{res_c['min_odds']:.2f}`")
+            st.write(f"**Quota Equa:** `{res_c['fair_odds']:.2f}` | **Quota Minima (Valore):** `{res_c['min_odds']:.2f}`")
             st.caption(res_c["note"])
             
             init_c = safe_odds_val(res_c['min_odds'])
@@ -1400,7 +1499,7 @@ if is_serie_a:
                     saves_line = st.selectbox("Linea Parate", [1.5, 2.5, 3.5, 4.5], index=1, key=f"{key_prefix}_saves_line")
                     saves_res = MatchAnalystEngine.analyze_goalkeeper_saves(chosen_p, opp_team, saves_line, min_edge_val, injuries_df)
                     st.metric("Probabilità Modello", f"{saves_res['prob']*100:.1f}%")
-                    st.write(f"**Quota Equa:** `{saves_res['fair_odds']:.2f}` | **Quota Minima:** `{saves_res['min_odds']:.2f}`")
+                    st.write(f"**Quota Equa:** `{saves_res['fair_odds']:.2f}` | **Quota Minima (Valore):** `{saves_res['min_odds']:.2f}`")
                     st.caption(saves_res["note"])
                     
                     init_sv = safe_odds_val(saves_res['min_odds'])
@@ -1421,7 +1520,7 @@ if is_serie_a:
                         sot_line = st.selectbox("Linea Tiri in Porta", [0.5, 1.5, 2.5], index=0, key=f"{key_prefix}_sot_line")
                         sot_res = MatchAnalystEngine.analyze_player_sot(chosen_p, opp_team, sot_line, min_edge_val, injuries_df)
                         st.metric("Probabilità Modello", f"{sot_res['prob']*100:.1f}%")
-                        st.write(f"**Quota Equa:** `{sot_res['fair_odds']:.2f}` | **Quota Minima:** `{sot_res['min_odds']:.2f}`")
+                        st.write(f"**Quota Equa:** `{sot_res['fair_odds']:.2f}` | **Quota Minima (Valore):** `{sot_res['min_odds']:.2f}`")
                         
                         init_sot = safe_odds_val(sot_res['min_odds'])
                         odd_sot_in = st.number_input("Quota Tiri Bookmaker", min_value=1.01, max_value=20.0, value=init_sot, step=0.02, key=f"{key_prefix}_odd_sot")
@@ -1440,7 +1539,7 @@ if is_serie_a:
                         foul_line = st.selectbox("Linea Falli Commessi", [0.5, 1.5, 2.5], index=1, key=f"{key_prefix}_foul_line")
                         foul_res = MatchAnalystEngine.analyze_player_fouls(chosen_p, opp_team, {"name": "CAN A-B", "fouls_avg": 26.0, "severity": "Standard"}, foul_line, min_edge_val, injuries_df)
                         st.metric("Probabilità Modello", f"{foul_res['prob']*100:.1f}%")
-                        st.write(f"**Quota Equa:** `{foul_res['fair_odds']:.2f}` | **Quota Minima:** `{foul_res['min_odds']:.2f}`")
+                        st.write(f"**Quota Equa:** `{foul_res['fair_odds']:.2f}` | **Quota Minima (Valore):** `{foul_res['min_odds']:.2f}`")
                         
                         init_fl = safe_odds_val(foul_res['min_odds'])
                         odd_fl_in = st.number_input("Quota Falli Bookmaker", min_value=1.01, max_value=20.0, value=init_fl, step=0.02, key=f"{key_prefix}_odd_fl")
@@ -1473,12 +1572,18 @@ if is_serie_a:
             
             lineup_st4, ref_auto = check_fixture_details(h4, a4, FOOTBALL_KEY)
             
-            ref_names_list = sorted(list(SERIE_A_REFEREES_DB.keys()))
+            # Unione arbitri Cloud e Fallback Locale
+            cloud_refs_db = fetch_cloud_referees()
+            merged_ref_db = dict(SERIE_A_REFEREES_DB)
+            if cloud_refs_db:
+                merged_ref_db.update(cloud_refs_db)
+                
+            ref_names_list = sorted(list(merged_ref_db.keys()))
             default_ref_idx = 0
             
             if ref_auto:
                 for i, rk in enumerate(ref_names_list):
-                    if rk in ref_auto.lower() or ref_auto.lower() in SERIE_A_REFEREES_DB[rk]["name"].lower():
+                    if rk in ref_auto.lower() or ref_auto.lower() in merged_ref_db[rk]["name"].lower():
                         default_ref_idx = i
                         break
                         
@@ -1486,9 +1591,9 @@ if is_serie_a:
                 "Seleziona l'arbitro",
                 ref_names_list,
                 index=default_ref_idx,
-                format_func=lambda x: SERIE_A_REFEREES_DB[x]["name"]
+                format_func=lambda x: merged_ref_db[x]["name"]
             )
-            ref_data = SERIE_A_REFEREES_DB[chosen_ref_key]
+            ref_data = merged_ref_db[chosen_ref_key]
                     
             col_ref1, col_ref2 = st.columns(2)
             with col_ref1:
@@ -1504,7 +1609,7 @@ if is_serie_a:
                 disc_res = MatchAnalystEngine.analyze_disciplinary_match(h4, a4, ref_data, cards_line, min_edge_val, injuries_df)
                 
                 st.metric("Probabilità Modello", f"{disc_res['prob']*100:.1f}%")
-                st.write(f"**Quota Equa:** `{disc_res['fair_odds']:.2f}` | **Quota Minima:** `{disc_res['min_odds']:.2f}`")
+                st.write(f"**Quota Equa:** `{disc_res['fair_odds']:.2f}` | **Quota Minima (Valore):** `{disc_res['min_odds']:.2f}`")
                 
                 init_cd = safe_odds_val(disc_res['min_odds'])
                 odd_card_in = st.number_input("Quota Cartellini Bookmaker", min_value=1.01, max_value=20.0, value=init_cd, step=0.02, key="odd_card_in_sa")
@@ -1639,6 +1744,18 @@ with tab6:
         with col_p2:
             st.markdown(f"**ID Utente:** `{user_id}`")
             
+    if not is_premium:
+        with st.expander("Sblocca Piano Premium con Codice VIP", expanded=True):
+            acc_code = st.text_input("Inserisci Codice VIP", type="password", key="acc_vip_code")
+            if st.button("ATTIVA PIANO PREMIUM", key="acc_btn_vip"):
+                if acc_code:
+                    ok, msg = redeem_vip_code(user_id, acc_code)
+                    if ok:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+
     with st.expander("Modifica Password"):
         new_pwd = st.text_input("Nuova Password (min. 6 caratteri)", type="password", key="chg_pwd")
         conf_pwd = st.text_input("Conferma Nuova Password", type="password", key="conf_pwd")
