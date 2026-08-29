@@ -7,52 +7,26 @@ import streamlit as st
 
 # Configurazione della pagina
 st.set_page_config(
-    page_title="VALUE BET ANALYZER | Match-Center",
+    page_title="VALUE BET ANALYZER",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Match-Center Opta / Wyscout Style + Fix Safari Mobile
+# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Alto
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
     html, body, .stApp {
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-        background-color: #0D1117 !important;
-        color: #F0F6FC !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        background-color: #0B132B !important;
+        color: #F8FAFC !important;
     }
     
     h1, h2, h3, h4, h5, h6, p, span, div, label, button, select {
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    
-    /* FIX TOUCH SAFARI MOBILE - PULSANTE APERTURA SIDEBAR */
-    [data-testid="stSidebarCollapsedControl"] {
-        display: flex !important;
-        visibility: visible !important;
-        position: fixed !important;
-        top: 12px !important;
-        left: 12px !important;
-        z-index: 999999 !important;
-        background-color: #161B22 !important;
-        color: #10B981 !important;
-        border: 1px solid #30363D !important;
-        border-radius: 8px !important;
-        width: 44px !important;
-        height: 44px !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
-    }
-    
-    [data-testid="stSidebarCollapsedControl"] svg {
-        fill: #10B981 !important;
-        stroke: #10B981 !important;
-        width: 24px !important;
-        height: 24px !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
     [data-testid="stToolbar"] {
@@ -64,155 +38,177 @@ st.markdown(
         display: none !important;
     }
     
-    /* Icona Password Visibile */
+    [data-testid="stIconMaterial"], [class*="material-symbols"], i {
+        font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+    }
+    
+    /* FIX ICONA MOSTRA PASSWORD VISIBILE */
     [data-testid="stTextInput"] button {
-        color: #10B981 !important;
-        background-color: #21262D !important;
-        border-radius: 6px !important;
-        border: 1px solid #30363D !important;
+        color: #2DD4BF !important;
+        background-color: #2D3A5D !important;
+        border-radius: 4px !important;
+        border: 1px solid #3B4D78 !important;
         margin-right: 4px !important;
     }
     [data-testid="stTextInput"] button svg {
-        fill: #10B981 !important;
-        stroke: #10B981 !important;
+        fill: #2DD4BF !important;
+        stroke: #2DD4BF !important;
     }
     
     header[data-testid="stHeader"] {
-        background-color: #0D1117 !important;
+        background-color: #0B132B !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        font-weight: 800 !important;
+        font-weight: 700 !important;
         color: #FFFFFF !important;
-        letter-spacing: -0.025em !important;
+        letter-spacing: -0.02em !important;
     }
     
     section[data-testid="stSidebar"] {
-        background-color: #161B22 !important;
-        border-right: 1px solid #30363D !important;
+        background-color: #1C2541 !important;
+        border-right: 1px solid #2D3A5D !important;
     }
     
-    /* Cards Finanziarie / Statistiche Opta Style */
+    [data-testid="stMetricValue"] div {
+        color: #FFFFFF !important;
+        font-size: 1.85rem !important;
+        font-weight: 800 !important;
+    }
+    
+    [data-testid="stMetricLabel"] p {
+        color: #CBD5E1 !important;
+        font-size: 0.90rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.02em !important;
+    }
+    
+    [data-testid="stCaptionContainer"] p, .stCaption {
+        color: #CBD5E1 !important;
+        font-size: 0.85rem !important;
+    }
+    
+    p, span, label {
+        color: #F8FAFC !important;
+    }
+    
     .metric-card {
-        background: linear-gradient(145deg, #161B22 0%, #0D1117 100%);
-        border: 1px solid #30363D;
-        border-radius: 10px;
+        background-color: #1C2541;
+        border: 1px solid #2D3A5D;
+        border-radius: 8px;
         padding: 14px;
         margin-bottom: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
     
     .metric-title {
-        font-size: 0.72rem;
-        color: #8B949E;
+        font-size: 0.75rem;
+        color: #CBD5E1;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.05em;
         margin-bottom: 4px;
-        font-weight: 700;
+        font-weight: 600;
     }
     
     .metric-value-pos {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.30rem;
-        font-weight: 800;
-        color: #10B981;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2DD4BF;
     }
     
     .metric-value-neg {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.30rem;
-        font-weight: 800;
-        color: #8B949E;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #94A3B8;
     }
     
     .metric-value-neutral {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.30rem;
-        font-weight: 800;
+        font-size: 1.25rem;
+        font-weight: 700;
         color: #FFFFFF;
     }
     
     .slogan-box {
-        background: rgba(16, 185, 129, 0.08);
-        border-left: 4px solid #10B981;
+        background-color: rgba(45, 212, 191, 0.08);
+        border-left: 4px solid #2DD4BF;
         padding: 12px 18px;
-        border-radius: 6px;
+        border-radius: 4px;
         margin-bottom: 18px;
         font-size: 0.92rem;
-        color: #F0F6FC;
+        color: #FFFFFF;
         font-weight: 500;
     }
     
     .round-badge {
-        background-color: #161B22;
-        border: 1px solid #30363D;
-        color: #10B981;
+        background-color: #1C2541;
+        border: 1px solid #2D3A5D;
+        color: #2DD4BF;
         font-size: 0.85rem;
-        font-weight: 700;
-        padding: 8px 16px;
-        border-radius: 8px;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: 6px;
         display: inline-block;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        margin-bottom: 14px;
     }
     
-    /* Box Infortuni Opta */
-    .injury-box {
-        background-color: rgba(239, 68, 68, 0.08);
-        border: 1px solid #EF4444;
+    .tactical-card {
+        background-color: #131D38;
+        border: 1px solid #2D3A5D;
         border-radius: 8px;
-        padding: 14px 18px;
-        margin-top: 12px;
-        margin-bottom: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
     }
     
-    /* Badge Formazioni */
+    .injury-box {
+        background-color: rgba(239, 68, 68, 0.10);
+        border: 1px solid #EF4444;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-top: 10px;
+        margin-bottom: 14px;
+    }
+    
     .lineup-badge-prob {
         background-color: rgba(245, 158, 11, 0.15);
         border: 1px solid #F59E0B;
         color: #FCD34D;
         font-size: 0.80rem;
-        font-weight: 700;
-        padding: 5px 12px;
-        border-radius: 6px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 4px;
         display: inline-block;
     }
     
     .lineup-badge-off {
-        background-color: rgba(16, 185, 129, 0.15);
-        border: 1px solid #10B981;
-        color: #10B981;
+        background-color: rgba(45, 212, 191, 0.15);
+        border: 1px solid #2DD4BF;
+        color: #2DD4BF;
         font-size: 0.80rem;
-        font-weight: 700;
-        padding: 5px 12px;
-        border-radius: 6px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 4px;
         display: inline-block;
     }
     
-    /* Pulsanti Sofascore Green */
     .stButton>button {
-        background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
-        color: #0D1117 !important;
-        font-weight: 800 !important;
-        border-radius: 8px !important;
+        background-color: #2DD4BF !important;
+        color: #0B132B !important;
+        font-weight: 700 !important;
+        border-radius: 6px !important;
         border: none !important;
-        padding: 10px 22px !important;
-        letter-spacing: 0.02em !important;
+        padding: 10px 20px !important;
         transition: all 0.2s ease-in-out !important;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
     }
     
     .stButton>button:hover {
-        background: linear-gradient(135deg, #34D399 0%, #10B981 100%) !important;
-        transform: translateY(-1px) !important;
+        background-color: #14B8A6 !important;
+        color: #0B132B !important;
     }
     
-    /* Tabelle Opta */
     div[data-testid="stTable"] {
-        border-radius: 10px;
+        border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #30363D;
-        background-color: #161B22;
+        border: 1px solid #2D3A5D;
+        background-color: #1C2541;
     }
     
     table {
@@ -221,41 +217,44 @@ st.markdown(
     }
     
     thead tr th {
-        background-color: #0D1117 !important;
-        color: #8B949E !important;
-        font-weight: 800 !important;
+        background-color: #0B132B !important;
+        color: #CBD5E1 !important;
+        font-weight: 700 !important;
         text-transform: uppercase;
-        font-size: 0.76rem !important;
-        letter-spacing: 0.06em;
-        border-bottom: 2px solid #30363D !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 0.05em;
     }
     
-    /* Schede Espandibili Wyscout */
     div[data-testid="stExpander"] {
-        background-color: #161B22 !important;
-        border: 1px solid #30363D !important;
-        border-radius: 10px !important;
-        margin-bottom: 14px !important;
+        background-color: #1C2541 !important;
+        border: 1px solid #2D3A5D !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px !important;
         overflow: hidden !important;
     }
     
     div[data-testid="stExpander"] summary {
-        background-color: #0D1117 !important;
+        background-color: #0B132B !important;
         color: #FFFFFF !important;
-        font-weight: 700 !important;
-        padding: 14px 18px !important;
-        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+    }
+    
+    div[data-testid="stExpander"] summary:hover {
+        background-color: #2D3A5D !important;
+        color: #FFFFFF !important;
     }
     
     div[data-testid="stExpander"] details[open] > summary {
         border-bottom-left-radius: 0px !important;
         border-bottom-right-radius: 0px !important;
-        border-bottom: 1px solid #30363D !important;
-        background-color: #0D1117 !important;
+        border-bottom: 1px solid #2D3A5D !important;
+        background-color: #0B132B !important;
     }
     
     div[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
-        background-color: #161B22 !important;
+        background-color: #1C2541 !important;
         padding: 18px 22px !important;
         color: #FFFFFF !important;
     }
@@ -356,7 +355,7 @@ def redeem_vip_code(user_id, code_input):
             try: requests.patch(url, json={"tier": "premium"}, headers=hdrs, timeout=10)
             except Exception: pass
         st.session_state.user_tier = "premium"
-        return True, "Codice valido. Piano Premium attivato con successo."
+        return True, "Codice valido. Piano Premium attivato."
     return False, "Codice promozionale non valido."
 
 # Schermata di Accesso
@@ -370,7 +369,7 @@ if not st.session_state.user:
         with tab_log:
             log_email = st.text_input("Email", key="log_email")
             log_pwd = st.text_input("Password", type="password", key="log_pwd")
-            if st.button("ACCEDI AL MATCH-CENTER", use_container_width=True):
+            if st.button("ACCEDI", use_container_width=True):
                 if log_email and log_pwd:
                     ok, err = login_user(log_email, log_pwd)
                     if ok:
@@ -399,7 +398,7 @@ user_data = st.session_state.user if isinstance(st.session_state.user, dict) els
 user_email = user_data.get("email", "")
 user_id = user_data.get("id", "")
 
-# Cloud Database Infortuni
+# Cloud Database Infortuni (Zero Chiamate API)
 def fetch_injuries():
     if SB_URL and SB_KEY:
         token = st.session_state.get("access_token")
@@ -491,7 +490,7 @@ def update_bet_status(bet_id, new_status, odds, stake):
         except Exception:
             pass
 
-# Dizionario Competizioni
+# DIZIONARIO COMPETIZIONI
 LEAGUES_CONFIG = {
     "Serie A (Italia)": {"key": "soccer_italy_serie_a", "has_players": True},
     "Premier League (Inghilterra)": {"key": "soccer_epl", "has_players": False},
@@ -520,7 +519,9 @@ CLEAN_TEAM_NAMES = {
     "Torino": "Torino", "Parma": "Parma", "Cagliari": "Cagliari",
     "Empoli": "Empoli", "Genoa": "Genoa", "Monza": "Monza",
     "Lecce": "Lecce", "Udinese": "Udinese", "Verona": "Verona",
-    "Venezia": "Venezia", "Como": "Como"
+    "Venezia": "Venezia", "Como": "Como", "Manchester City": "Manchester City",
+    "Arsenal": "Arsenal", "Liverpool": "Liverpool", "Real Madrid": "Real Madrid",
+    "Barcelona": "Barcellona", "Bayern Munich": "Bayern Monaco", "PSG": "PSG"
 }
 
 def clean_name(raw_name):
@@ -529,7 +530,7 @@ def clean_name(raw_name):
             return ita
     return raw_name
 
-# Organico Arbitri CAN A-B
+# ORGANICO COMPLETO CAN A-B
 SERIE_A_REFEREES_DB = {
     "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
     "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
@@ -551,11 +552,29 @@ SERIE_A_REFEREES_DB = {
     "rapuano": {"name": "Antonio Rapuano", "fouls_avg": 27.3, "cards_avg": 5.0, "severity": "Severo"},
     "marcenaro": {"name": "Matteo Marcenaro", "fouls_avg": 27.1, "cards_avg": 5.0, "severity": "Severo"},
     "marinelli": {"name": "Livio Marinelli", "fouls_avg": 25.2, "cards_avg": 4.2, "severity": "Standard"},
+    "aureliano": {"name": "Gianluca Aureliano", "fouls_avg": 27.5, "cards_avg": 4.9, "severity": "Severo"},
+    "marchetti": {"name": "Matteo Marchetti", "fouls_avg": 25.6, "cards_avg": 4.4, "severity": "Standard"},
     "maresca": {"name": "Fabio Maresca", "fouls_avg": 28.2, "cards_avg": 5.4, "severity": "Severo"},
-    "ferrieri_caputi": {"name": "Maria Sole Ferrieri Caputi", "fouls_avg": 24.9, "cards_avg": 4.0, "severity": "Standard"}
+    "ferrieri_caputi": {"name": "Maria Sole Ferrieri Caputi", "fouls_avg": 24.9, "cards_avg": 4.0, "severity": "Standard"},
+    "fourneau": {"name": "Francesco Fourneau", "fouls_avg": 26.4, "cards_avg": 4.6, "severity": "Standard"},
+    "manganelli": {"name": "Gianluca Manganiello", "fouls_avg": 25.1, "cards_avg": 4.2, "severity": "Standard"},
+    "massimi": {"name": "Luca Massimi", "fouls_avg": 26.7, "cards_avg": 4.7, "severity": "Standard"},
+    "prontera": {"name": "Alessandro Prontera", "fouls_avg": 27.0, "cards_avg": 4.8, "severity": "Standard"},
+    "santoro": {"name": "Alberto Santoro", "fouls_avg": 26.3, "cards_avg": 4.5, "severity": "Standard"},
+    "volpi": {"name": "Manuel Volpi", "fouls_avg": 28.0, "cards_avg": 5.1, "severity": "Severo"},
+    "rutella": {"name": "Daniele Rutella", "fouls_avg": 27.6, "cards_avg": 4.9, "severity": "Severo"},
+    "bonacina": {"name": "Kevin Bonacina", "fouls_avg": 25.8, "cards_avg": 4.3, "severity": "Standard"},
+    "crezzini": {"name": "Valerio Crezzini", "fouls_avg": 26.0, "cards_avg": 4.5, "severity": "Standard"},
+    "collu": {"name": "Giuseppe Collu", "fouls_avg": 27.2, "cards_avg": 4.8, "severity": "Severo"},
+    "di_marco": {"name": "Davide Di Marco", "fouls_avg": 25.5, "cards_avg": 4.1, "severity": "Standard"},
+    "perenzoni": {"name": "Daniele Perenzoni", "fouls_avg": 26.9, "cards_avg": 4.7, "severity": "Standard"},
+    "pezzuto": {"name": "Ivano Pezzuto", "fouls_avg": 26.2, "cards_avg": 4.4, "severity": "Standard"},
+    "scatena": {"name": "Gabriele Scatena", "fouls_avg": 25.9, "cards_avg": 4.3, "severity": "Standard"},
+    "tremolada": {"name": "Paride Tremolada", "fouls_avg": 27.0, "cards_avg": 4.8, "severity": "Standard"},
+    "cosso": {"name": "Francesco Cosso", "fouls_avg": 26.4, "cards_avg": 4.5, "severity": "Standard"}
 }
 
-# Database Squadre & Moduli
+# Database Squadre Base
 TEAM_METRICS = {
     "Inter": {"gf_h": 2.25, "gf_a": 1.90, "ga_h": 0.65, "ga_a": 0.80, "xg_5": 2.15, "xg_s": 2.05, "sot_pro": 6.2, "sot_against": 3.1, "corners_pro": 6.4, "corners_against": 3.6, "cross": 21.5, "blocked_shots": 5.4, "fouls_pro": 11.2, "fouls_against": 12.8, "cards_avg": 1.8, "modulo": "3-5-2", "stile": "Pressing Alto & Sovrapposizione Catene Esterne", "possesso": 61.2},
     "Juventus": {"gf_h": 1.70, "gf_a": 1.40, "ga_h": 0.50, "ga_a": 0.75, "xg_5": 1.65, "xg_s": 1.55, "sot_pro": 5.1, "sot_against": 2.8, "corners_pro": 5.6, "corners_against": 3.8, "cross": 18.2, "blocked_shots": 4.6, "fouls_pro": 12.1, "fouls_against": 13.5, "cards_avg": 2.1, "modulo": "4-2-3-1", "stile": "Dominio Territoriale & Costruzione Bassa", "possesso": 58.4},
@@ -578,6 +597,7 @@ DEFAULT_METRICS = {
     "cross": 16.5, "blocked_shots": 4.0, "fouls_pro": 12.5, "fouls_against": 12.5, "cards_avg": 2.2, "modulo": "4-3-3", "stile": "Equilibrato & Costruzione Rapida", "possesso": 50.0
 }
 
+# Ricalcolo Dinamico Metriche Squadra con Impatto Infortuni
 def get_adjusted_metrics(team_name, injuries_df):
     cleaned = clean_name(team_name)
     base = None
@@ -609,9 +629,15 @@ def get_adjusted_metrics(team_name, injuries_df):
             elif imp == "Portiere Titolare":
                 base["ga_h"] *= 1.10
                 base["ga_a"] *= 1.10
+            elif imp == "Riserva Offensiva / Rotazione":
+                base["gf_h"] *= 0.97
+                base["gf_a"] *= 0.97
+            elif imp == "Riserva Difensiva / Rotazione":
+                base["ga_h"] *= 1.04
+                base["ga_a"] *= 1.04
     return base
 
-# Rose Ufficiali Serie A
+# Rose Complete Serie A
 COMPLETE_SERIE_A_SQUADS = {
     "Inter": [
         {"name": "Yann Sommer", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.1, "saves_90": 2.8, "penalties": False},
@@ -711,7 +737,7 @@ def get_team_squad(team_name, api_key):
             pass
     return []
 
-# RENDERING CAMPO TATTICO SOFASCORE / WYSCOUT 2D (Clean Inline HTML)
+# RENDERING CAMPO TATTICO
 def render_visual_pitch_html(team_name, formation_str, players_list, injured_names=None):
     if injured_names is None: injured_names = []
     gk = [p for p in players_list if p.get('role') == 'Goalkeeper']
@@ -725,19 +751,19 @@ def render_visual_pitch_html(team_name, formation_str, players_list, injured_nam
         p_name = p.get('name', 'Giocatore')
         is_inj = any(inj_n.lower() in p_name.lower() for inj_n in injured_names)
         
-        c = "#EF4444" if is_inj else ("#F59E0B" if is_gk else "#10B981")
-        tc = "#FFFFFF" if is_inj else "#0D1117"
+        c = "#EF4444" if is_inj else ("#EAB308" if is_gk else "#FFFFFF")
+        tc = "#FFFFFF" if is_inj else "#0B132B"
         num = "OUT" if is_inj else p.get('number', '-')
         nom = f"<s>{p_name}</s>" if is_inj else p_name
         
-        return f'<div style="text-align:center;width:76px;display:inline-block;margin:4px 2px;"><div style="width:30px;height:30px;border-radius:50%;background:{c};color:{tc};font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;margin:0 auto 3px auto;border:2px solid #FFFFFF;box-shadow:0 3px 6px rgba(0,0,0,0.6);">{num}</div><div style="color:#FFFFFF;font-size:10px;font-weight:700;text-shadow:0 1px 3px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;">{nom}</div></div>'
+        return f'<div style="text-align:center;width:72px;display:inline-block;margin:3px;"><div style="width:28px;height:28px;border-radius:50%;background:{c};color:{tc};font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 2px auto;border:2px solid #000;box-shadow:0 2px 4px rgba(0,0,0,0.5);">{num}</div><div style="color:#FFFFFF;font-size:10px;font-weight:700;text-shadow:0 1px 2px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{nom}</div></div>'
         
     atts_h = "".join([badge(p) for p in atts[:3]])
     mids_h = "".join([badge(p) for p in mids[:5]])
     defs_h = "".join([badge(p) for p in defs[:5]])
     gk_h = badge(gk_player, is_gk=True)
     
-    html = f'<div style="background:repeating-linear-gradient(180deg,#143823 0px,#143823 35px,#0f2c1c 35px,#0f2c1c 70px);border:2px solid #10B981;border-radius:12px;padding:16px 8px;text-align:center;margin-bottom:16px;box-shadow:inset 0 0 35px rgba(0,0,0,0.7),0 4px 12px rgba(0,0,0,0.4);position:relative;"><div style="color:#10B981;font-weight:800;font-size:14px;margin-bottom:12px;letter-spacing:0.06em;text-transform:uppercase;">{team_name} • {formation_str}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{atts_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{mids_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{defs_h}</div><div style="display:flex;justify-content:center;">{gk_h}</div></div>'
+    html = f'<div style="background:linear-gradient(180deg,#1e5138 0%,#143a28 100%);border:2px solid #2DD4BF;border-radius:8px;padding:14px 6px;text-align:center;margin-bottom:15px;box-shadow:inset 0 0 20px rgba(0,0,0,0.6);"><div style="color:#2DD4BF;font-weight:800;font-size:13px;margin-bottom:10px;letter-spacing:0.05em;">{team_name.upper()} • {formation_str}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{atts_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{mids_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{defs_h}</div><div style="display:flex;justify-content:center;">{gk_h}</div></div>'
     return html
 
 # Rilevamento Ufficiale Lineup / Arbitro
@@ -771,7 +797,7 @@ def check_fixture_details(home_team, away_team, api_key):
             pass
     return lineup_status, detected_ref
 
-# Motore Quantitativo Match Analyst
+# Motore Quantitativo
 class MatchAnalystEngine:
     @staticmethod
     def calculate_kelly(prob, odds, bankroll, kelly_fraction=0.50):
@@ -938,7 +964,7 @@ tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE (DEMO)"
 st.sidebar.markdown(f"**Utente:** `{user_email}`")
 st.sidebar.markdown(f"**Stato:** `{tier_label}`")
 
-# Selettore Competizione
+# SELETTORE COMPETIZIONE / LEGA
 st.sidebar.markdown("---")
 st.sidebar.markdown("### SELEZIONA COMPETIZIONE")
 selected_league_label = st.sidebar.selectbox("Campionato / Torneo", list(LEAGUES_CONFIG.keys()), index=0)
@@ -949,7 +975,7 @@ is_serie_a = selected_league_cfg["has_players"]
 if not is_premium:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### SBLOCCO PIANO PRO")
-    promo_code = st.sidebar.text_input("Codice VIP / Tester", placeholder="Inserisci codice...", type="password", key="side_promo_key")
+    promo_code = st.sidebar.text_input("Codice VIP / Tester", placeholder="Inserisci codice...", type="password")
     if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True):
         if promo_code:
             ok, msg = redeem_vip_code(user_id, promo_code)
@@ -1040,7 +1066,7 @@ if round_start:
 else:
     st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
 
-# Gestione Schede Pulite
+# GESTIONE SCHEDE SENZA PREFISSI "CAT."
 if is_serie_a:
     tab_scan, tab1, tab2, tab3, tab4, tab_inj, tab5, tab6 = st.tabs([
         "Scanner Top 5 del Turno",
@@ -1183,7 +1209,7 @@ with tab1:
                     "PARTITA": m_title, "DATA": m_date, "MERCATO": "Under 2.5 Totali",
                     "QUOTA LIVE": f"{avg_un:.2f}", "PROB REALE": f"{p_un25*100:.1f}%",
                     "EDGE": f"{edge_un*100:+.2f}%", "STAKE": f"{st_p_u}% ({st_e_u:.2f} €)",
-                    "edge_num": edge_un, "prob_num": p_un25, "odds_num": avg_un, "stake_eur": st_e_o
+                    "edge_num": edge_un, "prob_num": p_un25, "odds_num": avg_un, "stake_eur": st_e_u
                 })
                 
         cat1_all.sort(key=lambda x: x["edge_num"], reverse=True)
@@ -1208,7 +1234,7 @@ with tab1:
 # STATISTICHE & TATTICA SQUADRE
 with tab2:
     st.markdown(f"### STATISTICHE, QUADRO TATTICO & DISPOSIZIONE ({selected_league_label.upper()})")
-    st.caption("Schieramento tattico 2D Sofascore e quote minime per Over 1.5 Gol Squadra e Corner con impatto infortuni.")
+    st.caption("Schieramento tattico e quote minime per Over 1.5 Gol Squadra e Corner con impatto infortuni.")
     
     if matches:
         match_options = [f"{clean_name(m['home_team'])} vs {clean_name(m['away_team'])}" for m in matches]
@@ -1222,24 +1248,6 @@ with tab2:
         a_met2 = get_adjusted_metrics(a2, injuries_df)
         
         lineup_status, ref_detected = check_fixture_details(h2, a2, FOOTBALL_KEY)
-        
-        # BARRA BROADCAST 1X2 STATS
-        p_tot_h = h_met2["gf_h"] / (h_met2["gf_h"] + a_met2["gf_a"] + 0.01) * 100
-        p_tot_a = a_met2["gf_a"] / (h_met2["gf_h"] + a_met2["gf_a"] + 0.01) * 100
-        
-        st.markdown(f"""
-        <div style="background:#161B22;border:1px solid #30363D;border-radius:10px;padding:14px 18px;margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:6px;">
-                <span style="color:#10B981;">{h2.upper()} ({p_tot_h:.1f}% Potenziale)</span>
-                <span style="color:#8B949E;">EQUILIBRIO MATCH</span>
-                <span style="color:#38BDF8;">{a2.upper()} ({p_tot_a:.1f}% Potenziale)</span>
-            </div>
-            <div style="width:100%;height:8px;background:#21262D;border-radius:4px;overflow:hidden;display:flex;">
-                <div style="width:{p_tot_h}%;background:#10B981;height:100%;"></div>
-                <div style="width:{p_tot_a}%;background:#38BDF8;height:100%;"></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
         
         if lineup_status == "UFFICIALE":
             st.markdown(f'<div class="lineup-badge-off">FORMAZIONE UFFICIALE</div>', unsafe_allow_html=True)
@@ -1270,7 +1278,7 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
             
-        # Lista Nomi Infortunati
+        # Lista Nomi Infortunati per le due squadre
         inj_h_list = injuries_df[injuries_df["team"].str.lower() == h2.lower()]["player_name"].tolist() if not injuries_df.empty else []
         inj_a_list = injuries_df[injuries_df["team"].str.lower() == a2.lower()]["player_name"].tolist() if not injuries_df.empty else []
 
@@ -1631,19 +1639,6 @@ with tab6:
         with col_p2:
             st.markdown(f"**ID Utente:** `{user_id}`")
             
-    if not is_premium:
-        with st.expander("Attivazione Codice VIP / Pro (Mobile & Desktop)", expanded=True):
-            st.caption("Se utilizzi uno smartphone o Safari, puoi attivare il tuo piano Pro direttamente da qui.")
-            acc_promo = st.text_input("Inserisci Codice VIP", placeholder="es. Valuebet2026", type="password", key="acc_promo_key")
-            if st.button("RISCATTA CODICE VIP", use_container_width=True):
-                if acc_promo:
-                    ok, msg = redeem_vip_code(user_id, acc_promo)
-                    if ok:
-                        st.success(msg)
-                        st.rerun()
-                    else:
-                        st.error(msg)
-                        
     with st.expander("Modifica Password"):
         new_pwd = st.text_input("Nuova Password (min. 6 caratteri)", type="password", key="chg_pwd")
         conf_pwd = st.text_input("Conferma Nuova Password", type="password", key="conf_pwd")
