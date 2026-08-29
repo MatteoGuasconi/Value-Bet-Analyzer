@@ -42,7 +42,7 @@ st.markdown(
         font-family: 'Material Symbols Rounded', 'Material Icons' !important;
     }
     
-    /* FIX DEFINITIVO MENU LATERALE SU SMARTPHONE & SAFARI */
+    /* FIX MENU LATERALE SU SMARTPHONE & SAFARI */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
@@ -162,6 +162,14 @@ st.markdown(
         font-size: 0.92rem;
         color: #FFFFFF;
         font-weight: 500;
+    }
+
+    .free-scan-banner {
+        background-color: #131D38;
+        border: 2px solid #2DD4BF;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
     }
     
     .round-badge {
@@ -311,6 +319,8 @@ if "user_tier" not in st.session_state:
     st.session_state.user_tier = "free"
 if "access_token" not in st.session_state:
     st.session_state.access_token = None
+if "last_free_scan_week" not in st.session_state:
+    st.session_state.last_free_scan_week = None
 
 def get_headers(token=None):
     auth_bearer = token or SB_KEY
@@ -320,9 +330,57 @@ def get_headers(token=None):
         "Content-Type": "application/json",
     }
 
+# Calcolo settimana ISO corrente (es. '2026-W35')
+def get_current_week_str():
+    now = datetime.datetime.now()
+    year, week_num, _ = now.isocalendar()
+    return f"{year}-W{week_num:02d}"
+
+# Verifica disponibilità ricerca settimanale per utenti Free
+def check_free_scan_status(user_id):
+    if st.session_state.user_tier == "premium":
+        return True, "Illimitate (Piano Premium)", 999
+    
+    current_week = get_current_week_str()
+    used_week = st.session_state.get("last_free_scan_week")
+    
+    if not used_week and SB_URL and SB_KEY and user_id and user_id != "local_user":
+        token = st.session_state.get("access_token")
+        url = f"{SB_URL}/rest/v1/profiles?id=eq.{user_id}&select=last_free_scan_week"
+        try:
+            res = requests.get(url, headers=get_headers(token), timeout=5)
+            if res.status_code == 200 and res.json():
+                used_week = res.json()[0].get("last_free_scan_week")
+                st.session_state.last_free_scan_week = used_week
+        except Exception:
+            pass
+            
+    if used_week == current_week:
+        return False, "0/1 Rimaste (Reset Lunedì)", 0
+    else:
+        return True, "1/1 Disponibile per questa settimana", 1
+
+# Consuma la ricerca settimanale gratuita
+def consume_free_scan(user_id):
+    current_week = get_current_week_str()
+    st.session_state.last_free_scan_week = current_week
+    
+    if SB_URL and SB_KEY and user_id and user_id != "local_user":
+        token = st.session_state.get("access_token")
+        url = f"{SB_URL}/rest/v1/profiles?id=eq.{user_id}"
+        hdrs = get_headers(token)
+        hdrs["Prefer"] = "return=representation"
+        try:
+            requests.patch(url, json={"last_free_scan_week": current_week}, headers=hdrs, timeout=5)
+        except Exception:
+            pass
+
 # Autenticazione Supabase
 def login_user(email, password):
-    if not SB_URL or not SB_KEY: return False, "Chiavi Supabase mancanti nei Secrets."
+    if not SB_URL or not SB_KEY:
+        st.session_state.user = {"email": email, "id": "local_user"}
+        st.session_state.user_tier = "free"
+        return True, None
     url = f"{SB_URL}/auth/v1/token?grant_type=password"
     try:
         res = requests.post(url, json={"email": email, "password": password}, headers=get_headers(), timeout=10)
@@ -331,10 +389,11 @@ def login_user(email, password):
             st.session_state.user = data.get("user")
             st.session_state.access_token = data.get("access_token")
             u_id = data["user"]["id"]
-            prof_url = f"{SB_URL}/rest/v1/profiles?id=eq.{u_id}&select=tier"
+            prof_url = f"{SB_URL}/rest/v1/profiles?id=eq.{u_id}&select=tier,last_free_scan_week"
             prof_res = requests.get(prof_url, headers=get_headers(data.get("access_token")), timeout=10)
             if prof_res.status_code == 200 and prof_res.json():
                 st.session_state.user_tier = prof_res.json()[0].get("tier", "free")
+                st.session_state.last_free_scan_week = prof_res.json()[0].get("last_free_scan_week")
             return True, None
         err = res.json().get("error_description") or res.json().get("msg") or "Credenziali non corrette."
         return False, err
@@ -369,11 +428,12 @@ def logout_user():
     st.session_state.user = None
     st.session_state.user_tier = "free"
     st.session_state.access_token = None
+    st.session_state.last_free_scan_week = None
 
 def redeem_vip_code(user_id, code_input):
     valid_promo_codes = ["Valuebet2026", "VIP2026", "PRO2026"]
     if code_input.strip() in valid_promo_codes:
-        if SB_URL and SB_KEY:
+        if SB_URL and SB_KEY and user_id and user_id != "local_user":
             token = st.session_state.get("access_token")
             url = f"{SB_URL}/rest/v1/profiles?id=eq.{user_id}"
             hdrs = get_headers(token)
@@ -776,10 +836,12 @@ def render_visual_pitch_html(team_name, formation_str, players_list, injured_nam
     def badge(p, is_gk=False):
         p_name = p.get('name', 'Giocatore')
         is_inj = any(inj_n.lower() in p_name.lower() for inj_n in injured_names)
+        
         c = "#EF4444" if is_inj else ("#EAB308" if is_gk else "#FFFFFF")
         tc = "#FFFFFF" if is_inj else "#0B132B"
         num = "OUT" if is_inj else p.get('number', '-')
         nom = f"<s>{p_name}</s>" if is_inj else p_name
+        
         return f'<div style="text-align:center;width:72px;display:inline-block;margin:3px;"><div style="width:28px;height:28px;border-radius:50%;background:{c};color:{tc};font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 2px auto;border:2px solid #000;box-shadow:0 2px 4px rgba(0,0,0,0.5);">{num}</div><div style="color:#FFFFFF;font-size:10px;font-weight:700;text-shadow:0 1px 2px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{nom}</div></div>'
         
     atts_h = "".join([badge(p) for p in atts[:3]])
@@ -947,7 +1009,7 @@ class MatchAnalystEngine:
             "note": f"Arbitro: {ref_data['name']} (Media: {ref_data['cards_avg']:.1f} cartellini - Severita: {ref_data['severity']})"
         }
 
-# Filtro Turno Singolo Reale
+# Filtro Turno Singolo
 def filter_current_matchday(matches):
     if not matches: return [], "", ""
     parsed = []
@@ -967,7 +1029,7 @@ def filter_current_matchday(matches):
     end_label = max(dt for dt, m in parsed if dt <= round_cutoff).strftime("%d/%m/%Y")
     return current_round, start_label, end_label
 
-# Cache Odds API Reale
+# Cache Odds API
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_odds_api(api_key, sport_key):
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?apiKey={api_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
@@ -983,10 +1045,15 @@ st.title("VALUE BET ANALYZER")
 st.markdown('<div class="slogan-box">In questa suite non si forzano le giocate: si opera solo ed esclusivamente in presenza di valore matematico misurabile. Nel lungo periodo, il valore coincide con il profitto.</div>', unsafe_allow_html=True)
 
 is_premium = st.session_state.user_tier == "premium"
-tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE (DEMO)"
+tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE"
+
+# Stato Ricerca Settimanale per Piano Free
+can_scan_free, scan_status_label, scans_remaining = check_free_scan_status(user_id)
 
 st.sidebar.markdown(f"**Utente:** `{user_email}`")
 st.sidebar.markdown(f"**Stato:** `{tier_label}`")
+if not is_premium:
+    st.sidebar.markdown(f"**Ricerche Settimanali:** `{scan_status_label}`")
 
 # SELETTORE COMPETIZIONE / LEGA
 st.sidebar.markdown("---")
@@ -999,8 +1066,8 @@ is_serie_a = selected_league_cfg["has_players"]
 if not is_premium:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### SBLOCCO PIANO PRO")
-    promo_code = st.sidebar.text_input("Codice VIP / Tester", placeholder="Inserisci codice...", type="password")
-    if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True):
+    promo_code = st.sidebar.text_input("Codice VIP / Tester", placeholder="Inserisci codice...", type="password", key="side_promo_in")
+    if st.sidebar.button("ATTIVA PREMIUM", use_container_width=True, key="side_promo_btn"):
         if promo_code:
             ok, msg = redeem_vip_code(user_id, promo_code)
             if ok:
@@ -1015,16 +1082,21 @@ if st.sidebar.button("LOGOUT", use_container_width=True):
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### PARAMETRI OPERATIVI")
-initial_bankroll = st.sidebar.number_input("Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0)
+initial_bankroll = st.sidebar.number_input("Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0, help="Capitale totale dedicato alle scommesse di valore.")
 
 kelly_fraction = st.sidebar.select_slider(
     "Frazione di Kelly",
     options=[0.25, 0.50],
     value=0.50,
-    format_func=lambda x: "0.25 (Prudente / Kelly/4)" if x == 0.25 else "0.50 (Standard / Kelly Mezzato)"
+    format_func=lambda x: "0.25 (Prudente / Kelly/4)" if x == 0.25 else "0.50 (Standard / Kelly Mezzato)",
+    help="Regola la formula di money management. 0.50 e lo standard quantitativo che protegge il bankroll."
 )
 
-min_edge_pct = st.sidebar.slider("Soglia Minima Edge (%)", min_value=1.0, max_value=3.0, value=1.5, step=0.5)
+min_edge_pct = st.sidebar.slider(
+    "Soglia Minima Edge (%)",
+    min_value=1.0, max_value=3.0, value=1.5, step=0.5,
+    help="Vantaggio matematico minimo richiesto rispetto al banco."
+)
 min_edge_val = min_edge_pct / 100.0
 
 # Calcolo Bankroll
@@ -1072,7 +1144,7 @@ st.sidebar.markdown(f"""
 # Recupero Infortuni da Supabase
 injuries_df = fetch_injuries()
 
-# Fetch Partite Live Reali
+# Fetch Partite Live
 matches_raw = []
 if ODDS_KEY:
     data, err = fetch_odds_api(ODDS_KEY, sport_api_key)
@@ -1083,9 +1155,9 @@ matches, round_start, round_end = filter_current_matchday(matches_raw)
 if round_start:
     st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • TURNO IN CORSO: {round_start} - {round_end} ({len(matches)} incontri)</div>', unsafe_allow_html=True)
 else:
-    st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA IN PROGRAMMA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
 
-# GESTIONE SCHEDE
+# GESTIONE SCHEDE ORIGINALI
 if is_serie_a:
     tab_scan, tab1, tab2, tab3, tab4, tab_inj, tab5, tab6 = st.tabs([
         "Scanner Top 5 del Turno",
@@ -1106,10 +1178,37 @@ else:
         "Gestione Account"
     ])
 
-# SCANNER TOP 5 DEL TURNO
+# SCANNER TOP 5 DEL TURNO (CON GESTIONE 1 RICERCA SETTIMANALE PER UTENTI FREE)
 with tab_scan:
     st.markdown(f"### TOP 5 VALUE BETS ({selected_league_label.upper()})")
     st.caption("Classifica ordinata per valore atteso reale (Over 1.5 Gol Squadra e Corner Totali).")
+    
+    # BOX SBLOCCO RICERCA SETTIMANALE PER UTENTI FREE
+    user_has_access = is_premium
+    if not is_premium:
+        if can_scan_free:
+            st.markdown(f"""
+            <div class="free-scan-banner">
+                <b style="color: #2DD4BF; font-size: 1.05rem;">🎯 PIANO FREE: 1 RICERCA SETTIMANALE DISPONIBILE (1/1)</b><br>
+                Puoi sbloccare l'analisi completa e senza censure di tutte le 5 posizioni e quote del turno per questa settimana.
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("ESEGUI LA TUA RICERCA GRATUITA SETTIMANALE", use_container_width=True, key="btn_use_free_scan"):
+                consume_free_scan(user_id)
+                st.success("Ricerca settimanale attivata per questa sessione.")
+                st.rerun()
+        else:
+            st.markdown(f"""
+            <div class="free-scan-banner" style="border-color: #F59E0B;">
+                <b style="color: #FCD34D; font-size: 1.05rem;">🔒 LIMITE SETTIMANALE RAGGIUNTO (0/1)</b><br>
+                Hai gia utilizzato la tua ricerca gratuita completa per questa settimana. Il contatore si resettera automaticamente <b>lunedi prossimo</b>.<br>
+                Per accedere a ricerche illimitate senza attendere, inserisci il tuo codice VIP.
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Se ha sbloccato nella sessione corrente
+            if st.session_state.get("last_free_scan_week") == get_current_week_str():
+                user_has_access = True
     
     with st.expander("Guida ai Termini & Legenda Quantitativa", expanded=False):
         st.markdown("""
@@ -1141,7 +1240,7 @@ with tab_scan:
         table_data = []
         for idx, item in enumerate(top5):
             pos = idx + 1
-            if is_premium or pos in [4, 5]:
+            if user_has_access:
                 table_data.append({
                     "POS": f"#{pos}", "PARTITA": item["match"], "DATA": item["date"],
                     "MERCATO": item["market"], "PROB. MODELLO": f"{item['prob']*100:.1f}%",
@@ -1151,7 +1250,7 @@ with tab_scan:
             else:
                 table_data.append({
                     "POS": f"#{pos}", "PARTITA": item["match"], "DATA": item["date"],
-                    "MERCATO": "[BLOCCATO - PIANO PREMIUM]", "PROB. MODELLO": "---",
+                    "MERCATO": "[BLOCCATO - RICERCA SETTIMANALE ESAURITA]", "PROB. MODELLO": "---",
                     "QUOTA EQUA": "---", "QUOTA MINIMA (VALORE)": "---"
                 })
         
@@ -1159,10 +1258,10 @@ with tab_scan:
         
         st.markdown("---")
         st.markdown("### SCHEDE MOTIVATE & VERIFICA QUOTA REALE")
-        for idx, item in enumerate(top5):
-            pos = idx + 1
-            if is_premium or pos in [4, 5]:
-                with st.expander(f"Report #{pos} | {item['match']} - {item['market']} (Quota Minima: {item['min_odds']:.2f})", expanded=(pos==1 or pos==4)):
+        if user_has_access:
+            for idx, item in enumerate(top5):
+                pos = idx + 1
+                with st.expander(f"Report #{pos} | {item['match']} - {item['market']} (Quota Minima: {item['min_odds']:.2f})", expanded=(pos==1)):
                     col_t1, col_t2 = st.columns(2)
                     with col_t1:
                         st.metric("Probabilita Reale", f"{item['prob']*100:.1f}%")
@@ -1180,6 +1279,8 @@ with tab_scan:
                                 st.rerun()
                         else:
                             st.error(f"NO BET (Quota sotto soglia minima - Edge: {calc_edge*100:+.2f}%)")
+        else:
+            st.info("Le schede motivate dettagliate sono bloccate perche hai terminato la tua ricerca gratuita settimanale. Attiva il piano Premium per sbloccarle.")
     else:
         st.info("Nessuna partita disponibile per il turno di questa competizione.")
 
@@ -1655,6 +1756,8 @@ with tab6:
         with col_p1:
             st.markdown(f"**Email:** `{user_email}`")
             st.markdown(f"**Stato Abbonamento:** `{tier_label}`")
+            if not is_premium:
+                st.markdown(f"**Ricerche Rimanenti:** `{scan_status_label}`")
         with col_p2:
             st.markdown(f"**ID Utente:** `{user_id}`")
             
