@@ -1,35 +1,49 @@
 """
-Database Rose, Allenatori e Moduli Tattici Stagione 2026/2027.
-Gestione accurata dei ruoli (Portieri, Difensori, Centrocampisti, Attaccanti)
-e dei moduli tattici per tutti i 5 campionati europei.
+Database Tattico, Gerarchie Titolari e Rose Stagione 2026/2027.
+Garantisce la perfetta disposizione 11 vs 11 in base al modulo e al ruolo.
 """
 
 import os
 import glob
 import streamlit as st
 
-# ALLENATORI E MODULI UFFICIALI SERIE A 2026/2027
+# ALLENATORI, MODULI E IDENTITÀ TATTICA SERIE A 2026/2027
 SERIE_A_TACTICS = {
-    "Atalanta": {"coach": "Maurizio Sarri", "formation": "4-3-3", "style": "Pressing Alto & Sovrapposizioni"},
-    "Bologna": {"coach": "Domenico Tedesco", "formation": "4-2-3-1", "style": "Attacco Rapido & Controllo Ritmi"},
-    "Cagliari": {"coach": "Fabio Pisacane", "formation": "3-5-2", "style": "Compattezza Difensiva & Ripartenza"},
-    "Como": {"coach": "Cesc Fabregas", "formation": "4-2-3-1", "style": "Possesso Posizionale & Rifinitura"},
-    "Fiorentina": {"coach": "Fabio Grosso", "formation": "4-2-3-1", "style": "Spinta sulle Fasce & Densità"},
-    "Frosinone": {"coach": "Massimiliano Alvini", "formation": "3-4-2-1", "style": "Duelli Fisici & Transizioni"},
-    "Genoa": {"coach": "Daniele De Rossi", "formation": "3-4-2-1", "style": "Aggressività Media & Ampiezza"},
-    "Inter": {"coach": "Cristian Chivu", "formation": "3-5-2", "style": "Dominio Territoriale & Sovrapposizioni"},
-    "Juventus": {"coach": "Luciano Spalletti", "formation": "4-3-3", "style": "Palleggio Continuo & Dominio Tecnico"},
-    "Lazio": {"coach": "Gennaro Gattuso", "formation": "4-3-3", "style": "Verticalità Immediata & Intensità"},
-    "Lecce": {"coach": "Eusebio Di Francesco", "formation": "4-3-3", "style": "Tridente Largo & Attacco Diretto"},
-    "Milan": {"coach": "Ruben Amorim", "formation": "3-4-2-1", "style": "Pressing Ultra-Offensivo & Braccetti"},
-    "Monza": {"coach": "Ivan Juric", "formation": "3-4-2-1", "style": "Marcatura a Uomo & Duelli a Tutto Campo"},
-    "Napoli": {"coach": "Massimiliano Allegri", "formation": "3-5-2", "style": "Blocco Compatto & Contropiede Clinico"},
-    "Parma": {"coach": "Carlos Cuesta", "formation": "4-2-3-1", "style": "Transizioni ad Alta Velocità"},
-    "Roma": {"coach": "Gian Piero Gasperini", "formation": "3-4-2-1", "style": "Pressing Alto & Sovrannumero Offensivo"},
-    "Sassuolo": {"coach": "Alberto Aquilani", "formation": "4-3-3", "style": "Costruzione Bassa & Tecnica"},
-    "Torino": {"coach": "Ignazio Abate", "formation": "4-2-3-1", "style": "Intensità sulle Corsie & Sovrapposizioni"},
-    "Udinese": {"coach": "Kosta Runjaic", "formation": "3-4-2-1", "style": "Fisicità & Ripartenza Veloce"},
-    "Venezia": {"coach": "Giovanni Stroppa", "formation": "3-5-2", "style": "Difesa di Posizione & Palle Inattive"}
+    "Atalanta": {"coach": "Maurizio Sarri", "formation": "4-3-3", "style": "Pressing Alto & Sovrapposizioni", "possesso": 59.5, "cross": 21.0},
+    "Bologna": {"coach": "Domenico Tedesco", "formation": "4-2-3-1", "style": "Attacco Rapido & Controllo Ritmi", "possesso": 54.0, "cross": 18.0},
+    "Cagliari": {"coach": "Fabio Pisacane", "formation": "3-5-2", "style": "Compattezza Difensiva & Ripartenza", "possesso": 44.5, "cross": 16.0},
+    "Como": {"coach": "Cesc Fabregas", "formation": "4-2-3-1", "style": "Possesso Posizionale & Rifinitura", "possesso": 57.0, "cross": 17.5},
+    "Fiorentina": {"coach": "Fabio Grosso", "formation": "4-2-3-1", "style": "Spinta sulle Fasce & Densità", "possesso": 55.0, "cross": 19.5},
+    "Frosinone": {"coach": "Massimiliano Alvini", "formation": "3-4-2-1", "style": "Duelli Fisici & Transizioni", "possesso": 46.0, "cross": 16.5},
+    "Genoa": {"coach": "Daniele De Rossi", "formation": "3-4-2-1", "style": "Aggressività Media & Ampiezza", "possesso": 51.0, "cross": 18.5},
+    "Inter": {"coach": "Cristian Chivu", "formation": "3-5-2", "style": "Dominio Territoriale & Sovrapposizioni", "possesso": 62.0, "cross": 22.0},
+    "Juventus": {"coach": "Luciano Spalletti", "formation": "4-3-3", "style": "Palleggio Continuo & Dominio Tecnico", "possesso": 60.5, "cross": 19.0},
+    "Lazio": {"coach": "Gennaro Gattuso", "formation": "4-3-3", "style": "Verticalità Immediata & Intensità", "possesso": 52.5, "cross": 18.0},
+    "Lecce": {"coach": "Eusebio Di Francesco", "formation": "4-3-3", "style": "Tridente Largo & Attacco Diretto", "possesso": 47.0, "cross": 17.0},
+    "Milan": {"coach": "Ruben Amorim", "formation": "3-4-2-1", "style": "Pressing Ultra-Offensivo & Braccetti", "possesso": 58.0, "cross": 20.0},
+    "Monza": {"coach": "Ivan Juric", "formation": "3-4-2-1", "style": "Marcatura a Uomo & Duelli a Tutto Campo", "possesso": 49.0, "cross": 17.0},
+    "Napoli": {"coach": "Massimiliano Allegri", "formation": "3-5-2", "style": "Blocco Compatto & Contropiede Clinico", "possesso": 56.5, "cross": 20.5},
+    "Parma": {"coach": "Carlos Cuesta", "formation": "4-2-3-1", "style": "Transizioni ad Alta Velocità", "possesso": 48.0, "cross": 16.0},
+    "Roma": {"coach": "Gian Piero Gasperini", "formation": "3-4-2-1", "style": "Pressing Alto & Sovrannumero Offensivo", "possesso": 57.5, "cross": 19.0},
+    "Sassuolo": {"coach": "Alberto Aquilani", "formation": "4-3-3", "style": "Costruzione Bassa & Tecnica", "possesso": 53.0, "cross": 17.5},
+    "Torino": {"coach": "Ignazio Abate", "formation": "4-2-3-1", "style": "Intensità sulle Corsie & Sovrapposizioni", "possesso": 50.0, "cross": 17.0},
+    "Udinese": {"coach": "Kosta Runjaic", "formation": "3-4-2-1", "style": "Fisicità & Ripartenza Veloce", "possesso": 47.5, "cross": 16.5},
+    "Venezia": {"coach": "Giovanni Stroppa", "formation": "3-5-2", "style": "Difesa di Posizione & Palle Inattive", "possesso": 45.0, "cross": 15.5}
+}
+
+# GERARCHIA TITOLARI NOTI SERIE A 2026/2027
+KNOWN_STARTERS = {
+    "Napoli": ["Alex Meret", "Giovanni Di Lorenzo", "Alessandro Buongiorno", "Amir Rrahmani", "Leonardo Spinazzola", "Mathias Olivera", "Matteo Politano", "André Frank Zambo Anguissa", "Stanislav Lobotka", "Scott McTominay", "Kevin De Bruyne", "Rasmus Hojlund", "Noa Lang", "Lorenzo Lucca"],
+    "Como": ["Jean Butez", "Yan Couto", "Trevoh Chalobah", "Alberto Dossena", "Alex Valle", "Maxence Caqueret", "Maximo Perrone", "Nico Paz", "Martin Baturina", "Lucas Da Cunha", "Alvaro Morata", "Assane Diao", "Tasos Douvikas"],
+    "Inter": ["Josep Martinez", "Alessandro Bastoni", "Benjamin Pavard", "Yann Aurel Bisseck", "Federico Dimarco", "Djed Spence", "Nicolo Barella", "Hakan Calhanoglu", "Piotr Zielinski", "Curtis Jones", "Lautaro Martinez", "Marcus Thuram", "Ange-Yoan Bonny"],
+    "Juventus": ["Guglielmo Vicario", "Mehmet Zeki Celik", "Gleison Bremer", "Federico Gatti", "Andrea Cambiaso", "Manuel Locatelli", "Teun Koopmeiners", "Khephren Thuram", "Francisco Conceicao", "Jonathan David", "Kenan Yildiz", "Nico Gonzales", "Randal Kolo Muani"],
+    "Milan": ["Mike Maignan", "Fikayo Tomori", "Matteo Gabbia", "Strahinja Pavlovic", "Pervis Estupinan", "Youssouf Fofana", "Samuele Ricci", "Christian Pulisic", "Ruben Loftus-Cheek", "Rafael Leao", "Santiago Gimenez", "Goncalo Ramos", "Alexis Saelemaekers"],
+    "Roma": ["Mile Svilar", "Gianluca Mancini", "Evan N'dicka", "Mario Hermoso", "Nahuel Molina", "Bryan Cristante", "Manu Kouadio Kone", "Wesley", "Lorenzo Pellegrini", "Paulo Dybala", "Santiago Castro", "Matias Soule", "Donyell Malen"],
+    "Atalanta": ["Marco Carnesecchi", "Raoul Bellanova", "Giorgio Scalvini", "Isak Hien", "Davide Zappacosta", "Sead Kolasinac", "Marten de Roon", "Ederson", "Mario Pasalic", "Charles De Ketelaere", "Gianluca Scamacca", "Giacomo Raspadori", "Nikola Krstovic"],
+    "Lazio": ["Christos Mandas", "Manuel Lazzari", "Alessio Romagnoli", "Samuel Gigot", "Nuno Tavares", "Nicolo Rovella", "Davide Frattesi", "Mattia Zaccagni", "Gustav Isaksen", "Boulaye Dia", "Andrea Pinamonti", "Tijjani Noslin"],
+    "Fiorentina": ["David De Gea", "Dodo", "Marin Pongracic", "Radu Dragusin", "Fabiano Parisi", "Rolando Mandragora", "Nicolo Fagioli", "Marco Brescianini", "Albert Gudmundsson", "Riccardo Sottil", "Moise Kean"],
+    "Bologna": ["Lukasz Skorupski", "Nadir Zortea", "Nicolo Casale", "Martin Vitik", "Juan Miranda", "Lewis Ferguson", "Tommaso Pobega", "Federico Bernardeschi", "Jonathan Rowe", "Riccardo Orsolini", "Artem Dovbyk"],
+    "Torino": ["Alberto Paleari", "Marcus Pedersen", "Saul Coco", "Ardian Ismajli", "Cristiano Biraghi", "Cesare Casadei", "Gvidas Gineitis", "Nikola Vlasic", "Gaetano Oristanio", "Zakaria Aboukhlal", "Duvan Zapata", "Che Adams"]
 }
 
 CLEAN_TEAM_NAMES = {
@@ -54,7 +68,6 @@ def clean_team_name(raw_name: str) -> str:
     return raw_name.strip()
 
 def normalize_role(role_text: str) -> str:
-    """Mappa con precisione assoluta il ruolo del calciatore."""
     r = role_text.strip().lower()
     if any(k in r for k in ["portiere", "goalkeeper", "port", "por", "gk"]):
         return "Goalkeeper"
