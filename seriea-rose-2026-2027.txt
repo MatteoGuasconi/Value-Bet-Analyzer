@@ -1,0 +1,601 @@
+Serie A
+Atalanta
+Maurizio Sarri | 4-3-3
+Marco Carnesecchi | Portiere | 29
+Marco Sportiello | Portiere | 57
+Paolo Vismara | Portiere | 22
+Honest Ahanor | Difensore | 69
+Mitchel Bakker | Difensore | 5
+Raoul Bellanova | Difensore | 16
+Lorenzo Bernasconi | Difensore | 47
+Isak Hien | Difensore | 4
+Sead Kolasinac | Difensore | 23
+Odilon Kossounou | Difensore | 3
+Thomas Kristensen | Difensore | 13
+Giorgio Scalvini | Difensore | 42
+Davide Zappacosta | Difensore | 77
+Marten de Roon | Centrocampista | 15
+Ederson Dos Santos Da Silva | Centrocampista | 13
+Eljif Elmas | Centrocampista | 20
+Gianluca Gaetano | Centrocampista | 7
+Mario Pasalic | Centrocampista | 8
+Lazar Samardzic | Centrocampista | 10
+Ibrahim Sulemana | Centrocampista | 14
+Nicola Zalewski | Centrocampista | 55
+Charles De Ketelaere | Attaccante | 17
+Nikola Krstovic | Attaccante | 9
+Giacomo Raspadori | Attaccante | 11
+Gianluca Scamacca | Attaccante | 90
+Kamaldeen Sulemana | Attaccante | 18
+
+Bologna
+Domenico Tedesco | 4-2-3-1
+Massimo Pessina | Portiere | 12
+Lukasz Skorupski | Portiere | 1
+Rahim Alhassane | Difensore | 3
+Nicolò Casale | Difensore | 15
+Lorenzo De Silvestri | Difensore | 29
+Eivind Helland | Difensore | 4
+Torbjorn Heggem | Difensore | 5
+Juan Miranda | Difensore | 33
+Martin Vitik | Difensore | 6
+Nadir Zortea | Difensore | 19
+Mikel Amondarain | Centrocampista | 8
+Federico Bernardeschi | Centrocampista | 10
+Lewis Ferguson | Centrocampista | 19
+Nikola Moro | Centrocampista | 6
+Tommaso Pobega | Centrocampista | 18
+Jonathan Rowe | Centrocampista | 17
+Nicolò Cambiaghi | Attaccante | 28
+Artem Dovbyk | Attaccante | 9
+Jens Odgaard | Attaccante | 21
+Riccardo Orsolini | Attaccante | 7
+Roberto Piccoli | Attaccante | 11
+
+Cagliari
+Fabio Pisacane | 3-5-2
+Elia Caprile | Portiere | 22
+Boris Radunovic | Portiere | 1
+Alen Sherri | Portiere | 12
+Giuseppe Aurelio | Difensore | 24
+Riyad Idrissi | Difensore | 3
+Raphael Kofler | Difensore | 4
+Yerry Mina | Difensore | 26
+Adam Obert | Difensore | 33
+Juan Rodriguez | Difensore | 15
+Gabriele Zappa | Difensore | 25
+Zè Pedro | Difensore | 5
+Michel Adopo | Centrocampista | 16
+Demi Akarakiri | Centrocampista | 14
+Nicolò Cavuoti | Centrocampista | 20
+Alessandro Deiola | Centrocampista | 14
+Alieu Fadera | Centrocampista | 11
+Jacopo Fazzini | Centrocampista | 8
+Mattia Felici | Centrocampista | 17
+Joseph Liteta | Centrocampista | 18
+Alessandro Romano | Centrocampista | 30
+Harry Winks | Centrocampista | 6
+Gennaro Borrelli | Attaccante | 9
+Kevin Carlos | Attaccante | 10
+Sebastiano Esposito | Attaccante | 99
+Daniel Maldini | Attaccante | 90
+Paul Mendy | Attaccante | 7
+Kingstone Mutandwa | Attaccante | 19
+Yael Trepy | Attaccante | 21
+
+Como
+Cesc Fabregas | 4-2-3-1
+Jean Butez | Portiere | 1
+Noel Tornqvist | Portiere | 12
+Mauro Vigorito | Portiere | 22
+Trevoh Chalobah | Difensore | 4
+Yan Couto | Difensore | 2
+Alberto Dossena | Difensore | 13
+Edoardo Goldaniga | Difensore | 5
+Kaiki Bruno | Difensore | 15
+Willy Kambwala | Difensore | 16
+Marc-Oliver Kempf | Difensore | 3
+Luca Mazzitelli | Difensore | 36
+Jacobo Ramon | Difensore | 24
+Ivan Smolcic | Difensore | 18
+Alex Valle | Difensore | 23
+Ignace Van Der Brempt | Difensore | 27
+Jayden Addai | Centrocampista | 20
+Martin Baturina | Centrocampista | 10
+Maxence Caqueret | Centrocampista | 6
+Lucas Da Cunha | Centrocampista | 7
+Adrian Lahdo | Centrocampista | 17
+Mattia Liberali | Centrocampista | 14
+Luis Milla | Centrocampista | 8
+Nico Paz | Centrocampista | 19
+Maximo Perrone | Centrocampista | 32
+Jesus Rodriguez | Centrocampista | 30
+Ivan Azon | Attaccante | 9
+Assane Diao | Attaccante | 11
+Tasos Douvikas | Attaccante | 29
+Nicolas Kuhn | Attaccante | 21
+Alvaro Morata | Attaccante | 90
+
+Fiorentina
+Fabio Grosso | 4-2-3-1
+David De Gea | Portiere | 43
+Luca Lezzerini | Portiere | 12
+Dodò | Difensore | 2
+Radu Dragusin | Difensore | 15
+Alex Jimenez | Difensore | 3
+Eman Kospo | Difensore | 4
+Fabiano Parisi | Difensore | 65
+Marin Pongracic | Difensore | 5
+Luca Ranieri | Difensore | 16
+Víctor Valdepenas | Difensore | 13
+Viery | Difensore | 22
+Lorenzo Amatucci | Centrocampista | 8
+Arthur Atta | Centrocampista | 14
+Marco Brescianini | Centrocampista | 18
+Giovanni Fabbian | Centrocampista | 21
+Nicolò Fagioli | Centrocampista | 10
+Joao Mario | Centrocampista | 6
+Franco Mastantuono | Centrocampista | 32
+Rolando Mandragora | Centrocampista | 38
+Cher Ndour | Centrocampista | 23
+Christ Inao Oulai | Centrocampista | 27
+Riccardo Braschi | Attaccante | 33
+Albert Gudmundsson | Attaccante | 7
+Moise Kean | Attaccante | 9
+Christian Kouamè | Attaccante | 99
+M'Bala Nzola | Attaccante | 11
+Mateo Pellegrino | Attaccante | 18
+Riccardo Sottil | Attaccante | 11
+
+Frosinone
+Massimiliano Alvini | 3-4-2-1
+Sebastiano Desplanches | Portiere | 1
+Eldin Lolic | Portiere | 12
+Lorenzo Palmisani | Portiere | 22
+Kevin Akpoguma | Difensore | 4
+Wisdom Amey | Difensore | 5
+Gabriele Bracaglia | Difensore | 13
+Giorgio Cittadini | Difensore | 6
+Gabriele Calvani | Difensore | 15
+Anouar El Azzouzi | Difensore | 3
+Omar Fayed | Difensore | 24
+Ilario Monterisi | Difensore | 30
+Anthony Oyono | Difensore | 2
+Enzo Tchato | Difensore | 18
+Aleksa Terzic | Difensore | 20
+Kevin Barcella | Centrocampista | 8
+Giacomo Calò | Centrocampista | 6
+Matteo Cichella | Centrocampista | 14
+Francesco Gelli | Centrocampista | 16
+Florian Grillitsch | Centrocampista | 10
+Filippo Grosso | Centrocampista | 21
+Luis Hasa | Centrocampista | 23
+Ben Konè | Centrocampista | 27
+Ilias Koutsoupias | Centrocampista | 31
+Patrizio Masini | Centrocampista | 28
+Romano Schmid | Centrocampista | 19
+Alessio Zerbin | Centrocampista | 7
+Daniel Birligea | Attaccante | 9
+Seydou Fini | Attaccante | 11
+Fares Ghedjemis | Attaccante | 17
+Giorgi Kvernadze | Attaccante | 77
+Antonio Raimondo | Attaccante | 29
+
+Genoa
+Daniele De Rossi | 3-4-2-1
+Justin Bijlow | Portiere | 1
+Daniele Sommariva | Portiere | 12
+Franz Stolz | Portiere | 22
+Alessandro Marcandalli | Difensore | 13
+Aaron Martin | Difensore | 3
+Mario Mitaj | Difensore | 4
+Brooke Norton-Cuffy | Difensore | 2
+Leo Skiri Ostigard | Difensore | 55
+Sebastian Otoa | Difensore | 15
+David Puczka | Difensore | 16
+Stefano Sabelli | Difensore | 20
+Johan Vasquez | Difensore | 22
+Marcelo Vaz | Difensore | 24
+Amorim | Centrocampista | 8
+Tommaso Baldanzi | Centrocampista | 10
+Mikael Egill Ellertsson | Centrocampista | 11
+Morten Frendrup | Centrocampista | 32
+Franz-Ethan Meichtry | Centrocampista | 14
+Junior Messias | Centrocampista | 7
+Djibril Sow | Centrocampista | 18
+Hamed Junior Traorè | Centrocampista | 23
+Lorenzo Venturino | Centrocampista | 30
+Lorenzo Colombo | Attaccante | 9
+Elias Havel | Attaccante | 17
+Milutin Osmajic | Attaccante | 11
+Vitinha (vitor manuel carvalho olivera) | Attaccante | 99
+
+Inter
+Cristian Chivu | 3-5-2
+Raffaele Di Gennaro | Portiere | 12
+Josep Martinez | Portiere | 1
+Ivan Provedel | Portiere | 94
+Manuel Akanji | Difensore | 28
+Carlos Augusto | Difensore | 30
+Alessandro Bastoni | Difensore | 95
+Yann Aurel Bisseck | Difensore | 31
+Federico Dimarco | Difensore | 32
+Benjamin Pavard | Difensore | 2
+Djed Spence | Difensore | 24
+John Stones | Difensore | 5
+Nicolò Barella | Centrocampista | 23
+Hakan Calhanoglu | Centrocampista | 20
+Andy Diouf | Centrocampista | 18
+Luis Henrique | Centrocampista | 11
+Curtis Jones | Centrocampista | 17
+Henrikh Mkhitaryan | Centrocampista | 22
+Alexandar Stankovic | Centrocampista | 33
+Petar Sucic | Centrocampista | 16
+Piotr Zielinski | Centrocampista | 7
+Ange-Yoan Bonny | Attaccante | 9
+Francesco Pio Esposito | Attaccante | 99
+Lautaro Martinez | Attaccante | 10
+Marcus Thuram | Attaccante | 9
+
+Juventus
+Luciano Spalletti | 4-3-3
+Kamil Grabara | Portiere | 1
+Carlo Pinsoglio | Portiere | 23
+Guglielmo Vicario | Portiere | 12
+Gleison Bremer | Difensore | 3
+Juan David Cabal | Difensore | 32
+Mehmet Zeki Celik | Difensore | 2
+Pedro Felipe | Difensore | 15
+Federico Gatti | Difensore | 4
+Pierre Kalulu | Difensore | 15
+Lloyd Kelly | Difensore | 14
+Jhon Lucumí | Difensore | 26
+Daniele Rugani | Difensore | 24
+Andrea Cambiaso | Centrocampista | 27
+Teun Koopmeiners | Centrocampista | 8
+Manuel Locatelli | Centrocampista | 5
+Weston McKennie | Centrocampista | 16
+Fabio Miretti | Centrocampista | 20
+Khephren Thuram | Centrocampista | 19
+Kerim Alajbegovic | Attaccante | 36
+Jeremie Boga | Attaccante | 7
+Francisco Conceicao | Attaccante | 11
+Jonathan David | Attaccante | 9
+Jeff Ekhator | Attaccante | 38
+Nico Gonzales | Attaccante | 22
+Randal Kolo Muani | Attaccante | 21
+Douglas Luis | Attaccante | 6
+Arkadiusz Milik | Attaccante | 18
+Kenan Yildiz | Attaccante | 10
+Edon Zhegrova | Attaccante | 17
+
+Lazio
+Gennaro Gattuso | 4-3-3
+Christos Mandas | Portiere | 35
+Edoardo Motta | Portiere | 12
+Davide Renzetti | Portiere | 55
+Danilho Doekhi | Difensore | 4
+Romano Floriani Mussolini | Difensore | 15
+Samuel Gigot | Difensore | 5
+Manuel Lazzari | Difensore | 29
+Adam Marusic | Difensore | 77
+Patric - Patricio Gabarron Gil | Difensore | 14
+Alfonso Pedraza | Difensore | 3
+Luca Pellegrini | Difensore | 22
+Oliver Provstgaard | Difensore | 18
+Alessio Romagnoli | Difensore | 13
+Josip Sutalo | Difensore | 6
+Nuno Tavares | Difensore | 30
+Reda Belahyane | Centrocampista | 8
+Fisayo Dele Bashiru | Centrocampista | 7
+Danilo Cataldi | Centrocampista | 32
+Davide Frattesi | Centrocampista | 10
+Gustav Isaksen | Centrocampista | 18
+Adrian Przyborek | Centrocampista | 16
+Nicolò Rovella | Centrocampista | 6
+Kenneth Taylor | Centrocampista | 24
+Mattia Zaccagni | Centrocampista | 20
+Matteo Cancellieri | Attaccante | 11
+Boulaye Dia | Attaccante | 19
+Tijjani Noslin | Attaccante | 14
+Andrea Pinamonti | Attaccante | 9
+Petar Ratkov | Attaccante | 90
+
+Lecce
+Eusebio Di Francesco | 4-3-3
+Marco Bleve | Portiere | 1
+Wladimiro Falcone | Portiere | 30
+Plamen Penev | Portiere | 12
+Tiago Gabriel | Difensore | 4
+Antonino Gallo | Difensore | 25
+Kialonda Gaspar | Difensore | 6
+Gaby Jean | Difensore | 13
+Corrie Ndaba | Difensore | 3
+Jamil Siebert | Difensore | 5
+Danilo Veiga | Difensore | 24
+Medon Berisha | Centrocampista | 18
+Lassana Coulibaly | Centrocampista | 8
+Sadik Fofana | Centrocampista | 16
+Omri Gandelman | Centrocampista | 10
+Olaf Gorter | Centrocampista | 14
+Ivan Ilic | Centrocampista | 6
+Mohamed Kaba | Centrocampista | 7
+Hjalte Laerke | Centrocampista | 17
+Youssef Maleh | Centrocampista | 20
+Oumar Ngom | Centrocampista | 27
+Santiago Pierotti | Centrocampista | 50
+Amar Fatah | Attaccante | 11
+Willem Geubbels | Attaccante | 9
+Konan N'Dri | Attaccante | 22
+Nikola Stulic | Attaccante | 19
+
+Milan
+Ruben Amorim | 3-4-2-1
+Mike Maignan | Portiere | 16
+Pietro Terracciano | Portiere | 57
+Lorenzo Torriani | Portiere | 96
+Davide Bartesaghi | Difensore | 2
+Koni De Winter | Difensore | 4
+Sankhoun Diawara | Difensore | 14
+Pervis Estupinan | Difensore | 3
+Matteo Gabbia | Difensore | 46
+Mario Gila Fuentes | Difensore | 6
+Strahinja Pavlovic | Difensore | 31
+Filippo Terracciano | Difensore | 24
+Fikayo Tomori | Difensore | 23
+Warren Bondo | Centrocampista | 8
+Samuel Chukwueze | Centrocampista | 21
+Alphadjo Cissè | Centrocampista | 32
+Christian Comotto | Centrocampista | 34
+Youssouf Fofana | Centrocampista | 29
+Ardon Jashari | Centrocampista | 6
+Ruben Loftus-Cheek | Centrocampista | 10
+Luka Modric | Centrocampista | 10
+Diego Moreira | Centrocampista | 17
+Yunus Musah | Centrocampista | 80
+Christian Pulisic | Centrocampista | 11
+Adrien Rabiot | Centrocampista | 25
+Samuele Ricci | Centrocampista | 28
+Alexis Saelemaekers | Centrocampista | 56
+Francesco Camarda | Attaccante | 73
+Santiago Gimenez | Attaccante | 9
+Rafael Leao | Attaccante | 10
+Goncalo Ramos | Attaccante | 9
+
+Monza
+Ivan Juric | 3-4-2-1
+Aljaz Strajnar | Portiere | 1
+Semuel Pizzignacco | Portiere | 30
+Demba Thiam | Portiere | 12
+Valentin Antov | Difensore | 4
+Samuele Birindelli | Difensore | 19
+Andrea Carboni | Difensore | 44
+Adam Baboune | Difensore | 13
+Arvid Brorsson | Difensore | 5
+Samuele Capolupo | Difensore | 33
+Filippo Delli Carri | Difensore | 24
+Eddy Kouadio | Difensore | 18
+Lorenzo Lucchesi | Difensore | 6
+Ricardo Mangas | Difensore | 3
+Yvan Maye | Difensore | 15
+Ebenezer Akinsanmiro | Centrocampista | 8
+Patrick Ciurria | Centrocampista | 84
+Leonardo Colombo | Centrocampista | 20
+Nicolas Galazzi | Centrocampista | 11
+Pedro Obiang | Centrocampista | 14
+Manga Foe Ondoa | Centrocampista | 27
+Matteo Pessina | Centrocampista | 32
+Jay Robinson | Centrocampista | 16
+Idrissa Touré | Centrocampista | 17
+Augustin Alvarez | Attaccante | 10
+Andrea Colpani | Attaccante | 28
+Patrick Cutrone | Attaccante | 9
+Omari Forson | Attaccante | 11
+Keita Balde | Attaccante | 7
+Dany Mota | Attaccante | 47
+Gustav Varela | Attaccante | 19
+
+Napoli
+Massimiliano Allegri | 3-5-2
+Nikita Contini | Portiere | 1
+Alex Meret | Portiere | 1
+Vanja Milinkovic-Savic | Portiere | 32
+Benoit Badiashile | Difensore | 5
+Sam Beukema | Difensore | 4
+Alessandro Buongiorno | Difensore | 13
+Giovanni Di Lorenzo | Difensore | 22
+Costantino Favasuli | Difensore | 2
+Luca Marianucci | Difensore | 15
+Rafa Marin | Difensore | 16
+Pasquale Mazzocchi | Difensore | 30
+Mathias Olivera | Difensore | 17
+Amir Rrahmani | Difensore | 13
+Leonardo Spinazzola | Difensore | 37
+Kevin De Bruyne | Centrocampista | 10
+Michael Folorunsho | Centrocampista | 90
+Billy Gilmour | Centrocampista | 8
+Stanislav Lobotka | Centrocampista | 68
+Scott McTominay | Centrocampista | 39
+Matteo Politano | Centrocampista | 21
+Antonio Vergara | Centrocampista | 29
+André Frank Zambo Anguissa | Centrocampista | 99
+Walid Cheddira | Attaccante | 70
+Giovane | Attaccante | 18
+Rasmus Hojlund | Attaccante | 9
+Noa Lang | Attaccante | 11
+Lorenzo Lucca | Attaccante | 23
+Alisson Santos | Attaccante | 27
+
+Parma
+Carlos Cuesta | 4-2-3-1
+Edoardo Corvi | Portiere | 1
+Giovanni Daffara | Portiere | 12
+Sascha Britschgi | Difensore | 3
+Franco Carboni | Difensore | 15
+Enrico Delprato | Difensore | 15
+Abdoulaye Ndiaye | Difensore | 4
+Nicolas Trabucchi | Difensore | 13
+Mariano Troilo | Difensore | 24
+Lautaro Valenti | Difensore | 14
+Emanuele Valeri | Difensore | 33
+Adrian Bernabé | Centrocampista | 10
+Benjamin Cremaschi | Centrocampista | 8
+Mandela Keita | Centrocampista | 16
+Hans Nicolussi Caviglia | Centrocampista | 6
+Christian Ordonez | Centrocampista | 18
+Elia Plicco | Centrocampista | 20
+Oliver Sorensen | Centrocampista | 23
+Pontus Almqvist | Attaccante | 7
+Adrian Benedyczak | Attaccante | 11
+Thomas de Martis | Attaccante | 28
+Ousmane Diallo | Attaccante | 17
+Thiao Nesta Elphege | Attaccante | 19
+Matija Frigan | Attaccante | 9
+David Romero | Attaccante | 21
+El Bilal Touré | Attaccante | 22
+
+Roma
+Gian Piero Gasperini | 3-4-2-1
+Giorgio De Marzi | Portiere | 12
+Pierluigi Gollini | Portiere | 1
+Mile Svilar | Portiere | 25
+Daniele Ghilardi | Difensore | 3
+Mario Hermoso | Difensore | 22
+Konstantinos Koulierakis | Difensore | 5
+Gianluca Mancini | Difensore | 23
+Nahuel Molina | Difensore | 16
+Evan N'dicka | Difensore | 5
+Wesley | Difensore | 13
+Jan Ziolkowski | Difensore | 15
+Bryan Cristante | Centrocampista | 4
+Neil El Aynaoui | Centrocampista | 8
+Manu Kouadio Konè | Centrocampista | 17
+Rodrigo Mora | Centrocampista | 20
+Lorenzo Pellegrini | Centrocampista | 10
+Niccolò Pisilli | Centrocampista | 14
+Santiago Castro | Attaccante | 9
+Paulo Dybala | Attaccante | 21
+Donyell Malen | Attaccante | 11
+Matias Soulé | Attaccante | 18
+Robinio Vaz | Attaccante | 29
+
+Sassuolo
+Alberto Aquilani | 4-3-3
+Arijanet Muric | Portiere | 1
+Alessandro Russo | Portiere | 12
+Giacomo Satalino | Portiere | 22
+Stefano Turati | Portiere | 47
+Fali Candè | Difensore | 3
+Simone Cinquegrano | Difensore | 13
+Josh Doig | Difensore | 5
+Jay Idzes | Difensore | 4
+Fedde Leysen | Difensore | 15
+Filippo Missori | Difensore | 2
+Rafael Obrador | Difensore | 23
+Cas Odenthal | Difensore | 6
+Edoardo Pieragnolo | Difensore | 24
+Sebastian Walukiewicz | Difensore | 19
+Vasilije Adzic | Centrocampista | 8
+Darryl Bakola | Centrocampista | 14
+Daniel Boloca | Centrocampista | 50
+Nicolas Dominguez | Centrocampista | 16
+Edoardo Iannoni | Centrocampista | 20
+Ismael Konè | Centrocampista | 27
+Luca Lipani | Centrocampista | 18
+Nemanja Matic | Centrocampista | 31
+Kristian Thorstvedt | Centrocampista | 42
+Cristian Volpato | Centrocampista | 10
+Domenico Berardi | Attaccante | 7
+Kieron Bowie | Attaccante | 9
+Armand Laurienté | Attaccante | 45
+
+Torino
+Ignazio Abate | 4-2-3-1
+Diego Mascardi | Portiere | 1
+Alberto Paleari | Portiere | 12
+Lapo Siviero | Portiere | 22
+Cristiano Biraghi | Difensore | 3
+Saul Coco | Difensore | 13
+Eray Comert | Difensore | 15
+Pietro Comuzzo | Difensore | 4
+Niccolò Fortini | Difensore | 24
+Ardian Ismajli | Difensore | 5
+Marcus Pedersen | Difensore | 2
+Zakaria Aboukhlal | Centrocampista | 7
+Tino Anjorin | Centrocampista | 10
+Alessio Cacciamani | Centrocampista | 14
+Cesare Casadei | Centrocampista | 16
+Kian Fitz-Jim | Centrocampista | 21
+Gvidas Gineitis | Centrocampista | 6
+Emirhan Ilkhan | Centrocampista | 8
+Alieu Njie | Centrocampista | 17
+Gaetano Oristanio | Centrocampista | 11
+Nikola Vlasic | Centrocampista | 18
+Ché Adams | Attaccante | 9
+Sandro Kulenovic | Attaccante | 19
+Giovanni Simeone | Attaccante | 23
+Duvan Zapata | Attaccante | 91
+
+Udinese
+Kosta Runjaic | 3-4-2-1
+Maduka Okoye | Portiere | 40
+Daniele Padelli | Portiere | 1
+Edoardo Piana | Portiere | 12
+James Abankwah | Difensore | 3
+Juan Arizala | Difensore | 15
+Nicolò Bertola | Difensore | 4
+Enzo Ebosse | Difensore | 5
+Christian Kabasele | Difensore | 27
+Hassane Kamara | Difensore | 11
+Branimir Mlacic | Difensore | 13
+Matteo Palma | Difensore | 14
+Oumar Solet | Difensore | 18
+Mergim Vojvoda | Difensore | 24
+Alessandro Zanoli | Difensore | 2
+Giorgi Chakvetadze | Centrocampista | 10
+Jurgen Ekkelenkamp | Centrocampista | 8
+Unai Gomez | Centrocampista | 16
+Jesper Karlstrom | Centrocampista | 6
+Lennon Miller | Centrocampista | 17
+Jakub Piotrowski | Centrocampista | 20
+Nicolò Zaniolo | Centrocampista | 22
+Oier Zarraga | Centrocampista | 19
+Vakoun Issouf Bayo | Attaccante | 9
+Keinan Davis | Attaccante | 11
+Idrissa Gueye | Attaccante | 99
+
+Venezia
+Giovanni Stroppa | 3-5-2
+Matteo Grandi | Portiere | 1
+Lorenzo Montipò | Portiere | 12
+Alessio Pozzi | Portiere | 22
+Filip Stankovic | Portiere | 35
+Armel Bella-Kotchap | Difensore | 4
+Thierry Correia | Difensore | 2
+Bartol Franjic | Difensore | 5
+Ale Gomes | Difensore | 3
+Antoine Hainaut | Difensore | 15
+Redouane Halhal | Difensore | 13
+Ridgeciano Haps | Difensore | 18
+Matias Moreno | Difensore | 16
+Richied Sagrado | Difensore | 24
+Joel Schingtienne | Difensore | 14
+Marin Sverko | Difensore | 6
+Toma Basic | Centrocampista | 8
+Emil Bohinen | Centrocampista | 10
+Gianluca Busio | Centrocampista | 6
+Matteo Dagasso | Centrocampista | 17
+Alfred Duncan | Centrocampista | 32
+Marko Hussein Farji | Centrocampista | 11
+Thorir Johann Helgason | Centrocampista | 20
+Enrique Perez Munoz | Centrocampista | 23
+Alessandro Pietrelli | Centrocampista | 30
+Simon Sohm | Centrocampista | 19
+Akor Adams | Attaccante | 9
+Andrea Adorante | Attaccante | 21
+Antonio Manuel Casas Marin | Attaccante | 27
+Lion Lauberbach | Attaccante | 28
+Kornel Lisman | Attaccante | 31
+Albion Rrahmani | Attaccante | 99
+John Yeboah | Attaccante | 7
+
