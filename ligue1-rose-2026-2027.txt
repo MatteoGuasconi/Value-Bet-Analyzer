@@ -1,0 +1,539 @@
+Ligue 1
+Angers
+Anthony Lopes | 1
+Carlens Arcus | 2
+Jacques Ekomié | 3
+Ousmane Camara | 4
+Louis Mouton | 6
+Usman Simbakoli | 7
+Branco van den Boomen | 8
+Prosper Peter | 9
+Amine Sbaï | 10
+Harouna Djibirin | 11
+Yassin Belkhdim | 14
+Melvin Zinga | 16
+Joseph Kalulu | 17
+Jim Allevinah | 18
+Amine El Ouazzani | 19
+Marius Louër | 20
+Jordan Lefort | 21
+Emmanuel Biumla | 24
+Anthony Bermont | 26
+Lilian Raolisoa | 27
+Maël Gernigon | 34
+Mamadou Diallo | 35
+Bané Diatta | 36
+Jules Bouffandeau | 37
+Oumar Pona | 40
+Haris Belkebla | 93
+
+Auxerre
+Paul Nardi | 1
+Rémy Labeau Lascary | 3
+Francisco Sierralta | 4
+Kévin Danois | 5
+Assane Dioussé | 6
+Josué Casimir | 7
+Naouirou Ahamada | 8
+Theo Bair | 9
+Danny Namaso | 10
+Eros Maddy | 11
+Telli Siwe | 13
+Christ Makosso | 15
+Lasso Coulibaly | 18
+Sinaly Diomandé | 20
+Romain Faivre | 21
+Fredrik Oppegård | 22
+Mamadou Diop | 23
+Bryan Okoh | 24
+Lamine Sy | 27
+Marvin Senaya | 29
+Ryan Rodin | 31
+Rayan Mandengue | 32
+Lamfia Dioubaté | 34
+Elikya Legros | 35
+Tidiane Devernois | 36
+Louis Mezerette | 37
+Alvin Petit Dol | 38
+Yvan Zaddy | 41
+Mohamed Coulibaly | 43
+Mamoudou Cissokho | 44
+Salimou Danfakha | 45
+Arthur Piedfort | 46
+Wei Xiangxin | 49
+Aristide Zossou | 77
+Clément Akpa | 92
+Sékou Fofana | 93
+
+Brest
+Egil Selvik | 1
+Bradley Locko | 2
+Gautier Lloris | 4
+Brendan Chardonnet | 5
+Mamady Diambou | 6
+Joseph Nonge | 7
+Hugo Magnetti | 8
+Pathé Mboup | 9
+Romain Del Castillo | 10
+Axel Camblan | 11
+Joris Chotard | 13
+Noé Poillion | 16
+Mama Baldé | 17
+Justin Bourgault | 18
+Ludovic Ajorque | 19
+Luck Zogbé | 20
+Ibrahim Kanté | 21
+Kamory Doumbia | 23
+Samba Diop | 24
+Lucas Tousart | 29
+Mathis Lainé | 32
+Hamidou Makalou | 33
+Evan Mailly | 34
+Cagnon Romain | 49
+Kenny Lala | 70
+Raphaël Le Guen | 71
+
+Le Havre
+Junior Mwanga | 6
+Amir Richardson | 7
+Josh Maja | 9
+Felix Mambimbi | 10
+Godson Kyeremeh | 11
+Elias Jelert | 12
+Fodé Doucouré | 13
+Rassoul Ndiaye | 14
+Ayumu Seko | 15
+Kaito Mizuta | 17
+Yanis Zouaoui | 18
+Joan Tincres | 19
+Vincent Sasso | 23
+Guy Noël Zohouri | 24
+Mbwana Samatta | 25
+Simon Ebonog | 26
+Enzo Koffi | 27
+Stephan Zagadou | 29
+Sota Nakamura | 30
+Timothée Pembele | 32
+Djibril Ouziad | 33
+Mokrane Bentoumi | 37
+Ismail Bouneb | 44
+Paul Argney | 50
+Lionel Mpasi | 77
+Daren Mosengo | 78
+Abdoulaye Touré | 94
+
+Le Mans
+Ewan Hatfout | 1
+Harold Voyer | 5
+Edwin Quarshie | 6
+Billal Brahimi | 7
+Alexandre Lauray | 8
+Antoine Rabillard | 9
+Jean Vercruysse | 10
+Adil Bourabaa | 11
+Louis Mafouta | 14
+Noa Boissé | 15
+Raúl Torrente | 16
+Samuel Yohou | 17
+Lucas Buades | 18
+Djibril Sidibé | 19
+William Harhouz | 20
+Théo Eyoum | 21
+Lucas Calodat | 22
+Daouda Traoré | 23
+Milan Robin | 24
+Dame Gueye | 25
+Rayan Bamba | 26
+Martin Rossignol | 27
+Erwan Colas | 28
+Lucas Bretelle | 29
+Augustin Delbecque | 55
+Yasser Larouci | 76
+Nicolas Kocik | 98
+Enzo Vagner | 99
+
+Lens
+Régis Gurtner | 1
+Ruben Aguilar | 2
+Maik Nawrocki | 3
+Nidal Čelik | 4
+Andrija Bulatović | 5
+Samson Baidoo | 6
+Florian Sotoca | 7
+Yacine Titraoui | 8
+Thorgan Hazard | 9
+Florian Thauvin | 10
+Odsonne Édouard | 11
+Matthieu Udol | 14
+Mathieu Gorgelin | 16
+Rayan Fofana | 18
+Abdallah Sima | 19
+Amadou Haidara | 21
+Michał Skóraś | 22
+Saud Abdulhamid | 23
+Jonathan Gradit | 24
+Ismaëlo Ganiou | 25
+Michaël Cuisance | 27
+Franjo Ivanović | 29
+Souleymane Sagnan | 31
+Kyllian Antonio | 32
+Moussa Diarra | 37
+Mezian Mesloub | 38
+Robin Risser | 40
+Ilan Jourdren | 60
+
+Lille
+Berke Özer | 1
+Loun Srdanovic | 2
+Nathan Ngoy | 3
+Alexsandro | 4
+Nabil Bentaleb | 6
+Matias Fernandez-Pardo | 7
+Ethan Mbappé | 8
+Olivier Giroud | 9
+Hákon Arnar Haraldsson | 10
+Osame Sahraoui | 11
+Romain Perraud | 15
+Arnaud Bodart | 16
+Ngal'ayel Mukau | 17
+Başar Önal | 19
+Noah Edjouma | 20
+Benjamin André | 21
+Tiago Santos | 22
+Tanguy Nianzou | 23
+Calvin Verdonk | 24
+Isaac Cossier | 26
+Félix Correia | 27
+Gaëtan Perrin | 28
+Hamza Igamane | 29
+Ayyoub Bouaddi | 32
+Soriba Diaoune | 35
+
+Lorient
+Benjamin Leroy | 1
+Alec Georgen | 2
+Montassar Talbi | 3
+Formose Mendy | 5
+Bandiougou Fadiga | 7
+Noah Cadiou | 8
+Mohamed Bamba | 9
+Isak Jensen | 10
+Théo Le Bris | 11
+Tosin Aiyegun | 15
+Jean-Victor Makengo | 17
+Souleymane Faye | 19
+Dembo Sylla | 20
+Bingourou Kamara | 21
+Daniel Semedo | 23
+Enzo Genton | 25
+Nathaniel Adjei | 32
+Gabin Bernardeau | 33
+Yvon Mvogo | 38
+Jérémy Hatchi | 39
+Mamadou Koné | 42
+Arsène Kouassi | 43
+Arthur Avom | 62
+Noah Mbamba | 72
+Panos Katseris | 77
+Isaak Touré | 95
+
+Lyon
+Dominik Greif | 1
+Mads Bidstrup | 2
+Nicolás Tagliafico | 3
+Tanner Tessmann | 6
+Ernest Nuamah | 7
+Corentin Tolisso | 8
+Pavel Šulc | 10
+Malick Fofana | 11
+Zachary Athekame | 13
+Abner | 16
+Loïs Openda | 17
+Khalis Merah | 18
+Moussa Niakhaté | 19
+Felix Bacher | 20
+Ruben Kluivert | 21
+Clinton Mata | 22
+Tyler Morton | 23
+Julien Duranville | 24
+Justin Bengui João | 25
+Kaïl Boudache | 26
+Mathys De Carvalho | 39
+Rémy Descamps | 40
+Rémi Himbert | 45
+Lassine Diarra | 50
+Mohamed Ouédraogo | 76
+Noham Kamara | 85
+Ainsley Maitland-Niles | 98
+Noah Nartey | 99
+
+Marseille
+CJ Egan-Riley | 4
+Leonardo Balerdi | 5
+Tochukwu Nnadi | 6
+Angel Gomes | 7
+Himad Abdelli | 8
+Amine Gouiri | 9
+Neal Maupay | 11
+Jeffrey de Lange | 12
+Derek Cornelius | 13
+Igor Paixão | 14
+Bamo Meïté | 18
+Geoffrey Kondogbia | 19
+Nayef Aguerd | 21
+Timothy Weah | 22
+Pierre-Emile Højbjerg | 23
+Ulisses Garcia | 25
+Quinten Timber | 27
+Faris Moumbagna | 29
+Emerson Palmieri | 33
+Jelle Van Neck | 40
+Tadjidine Mmadi | 43
+Keyliane Abdallah | 48
+Kelyann Bezahaf | 74
+Amine Harit | 77
+Théo Vermot | 92
+
+Monaco
+Lukáš Hrádecký | 1
+Vanderson | 2
+Jordan Teze | 4
+Thilo Kehrer | 5
+Denis Zakaria | 6
+Mathys Detourbet | 7
+Lamine Camara | 8
+Folarin Balogun | 9
+Aleksandr Golovin | 10
+Christian Mawissa | 13
+Mika Biereth | 14
+Eric Dier | 15
+Philipp Köhn | 16
+Stanis Idumbo Muzambo | 17
+Takumi Minamino | 18
+Pape Cabral | 19
+Flávio Nazinho | 20
+Mohammed Salisu | 22
+Mamadou Coulibaly | 28
+Paris Brunner | 29
+Ansu Fati | 31
+Edan Diop | 37
+Matthis Abline | 39
+Jules Stawiecki | 40
+Oumar Konaté | 42
+Samuel Nibombé | 44
+Anis Soubeir | 46
+Safouane Benzahra | 47
+Ilane Touré | 49
+Yann Liénard | 50
+Sadibou Sané | 72
+
+Nice
+Ali Abdi | 2
+Mohamed Abdelmonem | 5
+Hicham Boudaoui | 6
+Gauthier Hein | 7
+Morgan Sanson | 8
+Terem Moffi | 9
+Sofiane Diop | 10
+Laurent Abergel | 19
+Isak Jansson | 21
+Issiaga Camara | 22
+Yehvann Diouf | 23
+Mohamed-Ali Cho | 25
+Melvin Bard | 26
+Axel Witsel | 28
+Nathan Ngoumou | 29
+Antoine Mendy | 33
+Xavier Mandza | 35
+Brad Mantsounga | 36
+Kojo Peprah Oppong | 37
+Aboulaye Camara | 38
+Djibril Coulibaly | 39
+Zoumana Diallo | 44
+Victor Orakpo | 45
+Youssouf Ndayishimiye | 55
+Moïse Bombito | 64
+Teddy Boulhendi | 77
+Hamza Koutoune | 84
+Everton | 87
+Jonathan Clauss | 92
+Salis Abdul Samed | 99
+
+Paris FC
+Kevin Trapp | 1
+Tuomas Ollila | 2
+Emmanuel Mbemba | 3
+Vincent Marchetti | 4
+Moustapha Mbow | 5
+Otávio | 6
+Pablo Pagis | 7
+Patrick Zabi | 8
+Lassine Sinayoko | 9
+Ilan Kebbal | 10
+Jean-Philippe Krasso | 11
+Hamary Traoré | 14
+Luca Koleosho | 15
+Obed Nkambadio | 16
+Adama Camara | 17
+Omar Sissoko | 18
+Nhoa Sangui | 19
+Maxime López | 21
+Rudy Matondo | 23
+Yoan Koré | 25
+Moses Simon | 27
+Thibault De Smet | 28
+Pierre Lees-Melou | 33
+Diego Coppola | 42
+Jonathan Ikoné | 93
+
+Paris Saint-Germain
+Achraf Hakimi | 2
+Lucas Beraldo | 4
+Marquinhos | 5
+Illya Zabarnyi | 6
+Khvicha Kvaratskhelia | 7
+Fabián Ruiz | 8
+Ferrán Torres | 9
+Ousmane Dembélé | 10
+Maghnes Akliouche | 11
+Lucas Digne | 12
+Désiré Doué | 14
+Alessandro Longoni | 16
+Vitinha | 17
+Lucas Hernández | 21
+Mika Godts | 22
+Senny Mayulu | 24
+Nuno Mendes | 25
+Dro Fernández | 27
+Bradley Barcola | 29
+Lucas Chevalier | 30
+Warren Zaire-Emery | 33
+Matvey Safonov | 39
+Quentin Ndjantou | 47
+Ibrahim Mbaye | 49
+William Pacho | 51
+João Neves | 87
+
+Rennes
+Lilian Brassier | 3
+Charlie Cresswell | 4
+Gonçalo Oliveira | 5
+Djaoui Cissé | 6
+Seko Fofana | 8
+Esteban Lepaul | 9
+Ludovic Blas | 10
+Musa Al-Taamari | 11
+Eliezer Mayenda | 12
+Bryan Reynolds | 14
+Nicolas Lemaître | 16
+Sebastian Szymanski | 17
+Mahamadou Nagida | 18
+Valentin Rongier | 21
+Anthony Rouault | 24
+Quentin Merlin | 26
+Adrien Thomasson | 28
+Brice Samba | 30
+Elías Legendre Quiñónez | 35
+Alidu Seidu | 36
+Mahdi Camara | 45
+Abdelhamid Ait Boudlal | 48
+Kilian Belazzoug | 60
+Henrick Do Marcolino | 65
+Arnaud Nordin | 70
+Issa Soumaré | 90
+Przemysław Frankowski | 95
+
+Strasbourg
+Filip Jörgensen | 1
+Andrew Omobamidele | 2
+Ben Chilwell | 3
+Jeyland Mitchell | 4
+Ismaël Doukouré | 6
+Samuel Amo-Ameyaw | 7
+Maxi Oyedele | 8
+Joaquín Panichelli | 9
+Giovanni Reyna | 10
+Sebastian Nanasi | 11
+Miłosz Piekutowski | 12
+Sékou Mara | 14
+Mateo Del Blanco | 15
+Genesis Antwi | 16
+Mathis Amougou | 17
+Fabio Baldé | 19
+Martial Godo | 20
+Pape Demba Diop | 21
+Guéla Doué | 22
+Diogo Sousa | 23
+Lucas Høgsberg | 24
+Samir El Mourabet | 29
+Jacobo Ortega | 30
+Yaya Diémé | 34
+Hermann Malonga | 36
+Ghianny Kodia | 37
+Soumaïla Coulibaly | 44
+Benjamin Brantlind | 45
+Gessime Yassine | 80
+Miloš Luković | 99
+
+Toulouse
+Théo Collin | 1
+Rasmus Nicolaisen | 2
+Mark McKenzie | 3
+Seny Koumbassa | 5
+Alexis Vossah | 6
+Julián Vignolo | 7
+Thomas Jørgensen | 8
+Santiago Hidalgo | 9
+Yann Gboho | 10
+Sion Oppong | 11
+Christ Tapé | 12
+Jacen Russell-Rowe | 13
+Aron Dønnum | 15
+Guillaume Restes | 16
+Abu Francis | 17
+David Odogu | 19
+Enzo Faty | 21
+Rafik Messali | 22
+Cristian Cásseres Jr | 23
+Frédéric Efuele Ngoyala | 25
+Ylies Aradj | 26
+Mathis Saka | 28
+Naime Said Mchindra | 30
+Niklas Schmidt | 31
+Ilyas Azizi | 37
+Adam El Ouali | 38
+Thibaud Garondo | 42
+Gaëtan Bakhouche | 44
+Wassim Dardake | 47
+Aymen Amaaouch | 49
+Mathys Niflore | 60
+Darris Zema | 69
+Mário Sauer | 77
+Ismail Diallo | 94
+
+Troyes
+Zacharie Boucher | 1
+Lucas Maronnier | 2
+Anis Ouzenadji | 3
+Junior Diaz | 4
+Paolo Gozzi | 5
+Adrien Monfray | 6
+Kandet Diawara | 7
+Mouhamed Diop | 8
+Merwan Ifnaoui | 10
+Iron Gomis | 11
+Ismaël Boura | 14
+Antoine Mille | 17
+Ibrahim Traoré | 19
+Renaud Ripart | 20
+Hugo Picard | 22
+Alexandre Phliponeau | 26
+Dermane Karim | 29
+Noah Donkor | 31
+Patrick Beach | 33
+Roman Murcy | 35
+Idrissa Soukouna | 36
+Christ Batola | 37
+Yacouba Koné | 39
+Hillel Konaté | 40
+Yvann Titi | 44
