@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech
+# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Alto
 st.markdown(
     """
     <style>
@@ -206,17 +206,6 @@ st.markdown(
         display: inline-block;
     }
     
-    .lineup-badge-off {
-        background-color: rgba(45, 212, 191, 0.15);
-        border: 1px solid #2DD4BF;
-        color: #2DD4BF;
-        font-size: 0.80rem;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 4px;
-        display: inline-block;
-    }
-    
     .stButton>button {
         background-color: #2DD4BF !important;
         color: #0B132B !important;
@@ -300,7 +289,7 @@ def safe_odds_val(val, min_v=1.01, max_v=20.0):
     except Exception:
         return min_v
 
-# Parametri Secrets
+# Secrets Supabase & API
 SB_URL = st.secrets.get("SUPABASE_URL", "").rstrip("/")
 SB_KEY = st.secrets.get("SUPABASE_KEY", "")
 ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
@@ -584,23 +573,20 @@ def render_visual_pitch_html(team_name, formation_str, players_list, injured_nam
         
     if injured_names is None: injured_names = []
     
-    # 1. Suddivisione dei giocatori per ruolo effettivo
     gk_pool = [p for p in players_list if p.get('role') == 'Goalkeeper']
     def_pool = [p for p in players_list if p.get('role') == 'Defender']
     mid_pool = [p for p in players_list if p.get('role') == 'Midfielder']
     att_pool = [p for p in players_list if p.get('role') == 'Attacker']
     
-    # 2. Assegnazione prioritaria in base ai titolari noti della stagione
     known_list = KNOWN_STARTERS.get(clean_team_name(team_name), [])
     
     def sort_by_starter_priority(pool):
-        # I titolari noti vanno all'inizio, tranne se infortunati
         def rank(p):
             p_name = p.get("name", "")
             is_inj = any(inj_n.lower() in p_name.lower() for inj_n in injured_names)
             is_star = any(star.lower() in p_name.lower() for star in known_list)
-            if is_inj: return 99  # Infortunato va in fondo
-            if is_star: return 1  # Titolare noto va per primo
+            if is_inj: return 99
+            if is_star: return 1
             return 10
         return sorted(pool, key=rank)
         
@@ -609,10 +595,8 @@ def render_visual_pitch_html(team_name, formation_str, players_list, injured_nam
     sorted_mids = sort_by_starter_priority(mid_pool)
     sorted_atts = sort_by_starter_priority(att_pool)
     
-    # 1 Solo Portiere
     gk_player = sorted_gks[0] if sorted_gks else {"name": "Portiere", "number": "1", "role": "Goalkeeper"}
     
-    # Numero di titolari per reparto in base al modulo
     num_d, num_m, num_a = 4, 3, 3
     if "3-5-2" in formation_str: num_d, num_m, num_a = 3, 5, 2
     elif "4-2-3-1" in formation_str: num_d, num_m, num_a = 4, 5, 1
@@ -624,14 +608,10 @@ def render_visual_pitch_html(team_name, formation_str, players_list, injured_nam
     selected_mids = sorted_mids[:num_m]
     selected_atts = sorted_atts[:num_a]
     
-    # Riempimento riserve se mancano titolari (solo con giocatori di movimento, mai portieri)
     outfield_reserves = sorted_defs[num_d:] + sorted_mids[num_m:] + sorted_atts[num_a:]
-    while len(selected_defs) < num_d and outfield_reserves:
-        selected_defs.append(outfield_reserves.pop(0))
-    while len(selected_mids) < num_m and outfield_reserves:
-        selected_mids.append(outfield_reserves.pop(0))
-    while len(selected_atts) < num_a and outfield_reserves:
-        selected_atts.append(outfield_reserves.pop(0))
+    while len(selected_defs) < num_d and outfield_reserves: selected_defs.append(outfield_reserves.pop(0))
+    while len(selected_mids) < num_m and outfield_reserves: selected_mids.append(outfield_reserves.pop(0))
+    while len(selected_atts) < num_a and outfield_reserves: selected_atts.append(outfield_reserves.pop(0))
     
     def badge(p, is_gk=False):
         p_name = p.get('name', 'Giocatore')
@@ -672,28 +652,46 @@ class MatchAnalystEngine:
         return min(fair, 20.0), min(min_entry, 20.0)
 
     @staticmethod
-    def analyze_team_goals_over15(team, opp, is_home, min_edge=0.015, injuries_df=None):
+    def get_team_expected_goals(team, opp, is_home, injuries_df=None):
         t_tac = SERIE_A_TACTICS.get(clean_team_name(team), {"possesso": 50.0, "cross": 17.0})
         o_tac = SERIE_A_TACTICS.get(clean_team_name(opp), {"possesso": 50.0, "cross": 17.0})
-        
-        base_xg = 1.60 if is_home else 1.25
+        base_xg = 1.65 if is_home else 1.25
         pos_factor = (t_tac["possesso"] / max(1.0, o_tac["possesso"]))
         xg_final = base_xg * (0.85 + 0.15 * pos_factor)
-        
-        # Penalizzazione infortuni
         if injuries_df is not None and not injuries_df.empty:
             t_inj = injuries_df[injuries_df["team"].str.lower() == clean_team_name(team).lower()]
             for _, r in t_inj.iterrows():
                 if "Top Player" in r.get("importance", ""): xg_final *= 0.88
-                
-        prob = float(1.0 - (poisson.pmf(0, xg_final) + poisson.pmf(1, xg_final)))
+        return max(0.2, xg_final)
+
+    @staticmethod
+    def analyze_team_goals(team, opp, is_home, line=1.5, min_edge=0.015, injuries_df=None):
+        xg_final = MatchAnalystEngine.get_team_expected_goals(team, opp, is_home, injuries_df)
+        prob = float(1.0 - poisson.cdf(line - 0.5, xg_final))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
         return {
-            "market": f"Over 1.5 Gol ({clean_team_name(team)})",
-            "market_type": "Over 1.5 Gol Squadra",
+            "market": f"Over {line} Gol ({clean_team_name(team)})",
+            "market_type": f"Over {line} Gol Squadra",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "xG Finale", "metric_val": f"{xg_final:.2f}",
             "note": f"xG Proiettato Modello: {xg_final:.2f} ({'Casa' if is_home else 'Trasferta'})"
+        }
+
+    @staticmethod
+    def analyze_match_goals_total(h_team, a_team, line=2.5, is_over=True, min_edge=0.015, injuries_df=None):
+        xg_h = MatchAnalystEngine.get_team_expected_goals(h_team, a_team, True, injuries_df)
+        xg_a = MatchAnalystEngine.get_team_expected_goals(a_team, h_team, False, injuries_df)
+        lambda_tot = xg_h + xg_a
+        p_over = float(1.0 - poisson.cdf(line - 0.5, lambda_tot))
+        prob = p_over if is_over else (1.0 - p_over)
+        fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
+        label = "Over" if is_over else "Under"
+        return {
+            "market": f"{label} {line} Gol Totali",
+            "market_type": f"{label} {line} Match",
+            "prob": prob, "fair_odds": fair, "min_odds": min_odds,
+            "metric_name": "Gol Totali Attesi", "metric_val": f"{lambda_tot:.2f}",
+            "note": f"xG Stimati: {h_team} ({xg_h:.2f}) + {a_team} ({xg_a:.2f}) = {lambda_tot:.2f}"
         }
 
     @staticmethod
@@ -708,7 +706,30 @@ class MatchAnalystEngine:
             "market_type": "Corner Totali",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "Corner Proiettati", "metric_val": f"{corners_final:.2f}",
-            "note": f"Cross combinati: {h_tac['cross'] + a_tac['cross']:.1f} / gara"
+            "note": f"Cross combinati stimati: {h_tac['cross'] + a_tac['cross']:.1f} / gara"
+        }
+
+    @staticmethod
+    def analyze_team_shots(team, opp, is_home, is_sot=False, line=12.5, min_edge=0.015):
+        t_tac = SERIE_A_TACTICS.get(clean_team_name(team), {"possesso": 50.0})
+        o_tac = SERIE_A_TACTICS.get(clean_team_name(opp), {"possesso": 50.0})
+        pos_ratio = t_tac["possesso"] / max(1.0, o_tac["possesso"])
+        
+        if is_sot:
+            lambda_shots = (4.8 if is_home else 3.8) * (0.85 + 0.15 * pos_ratio)
+            label = "Tiri nello Specchio"
+        else:
+            lambda_shots = (13.5 if is_home else 10.5) * (0.85 + 0.15 * pos_ratio)
+            label = "Tiri Totali"
+            
+        prob = float(1.0 - poisson.cdf(line - 0.5, lambda_shots))
+        fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
+        return {
+            "market": f"Over {line} {label} ({clean_team_name(team)})",
+            "market_type": f"{label} Squadra",
+            "prob": prob, "fair_odds": fair, "min_odds": min_odds,
+            "metric_name": f"{label} Attesi", "metric_val": f"{lambda_shots:.1f}",
+            "note": f"Proiezione Modello su Possesso: {t_tac['possesso']:.1f}% vs {o_tac['possesso']:.1f}%"
         }
 
     @staticmethod
@@ -746,7 +767,7 @@ class MatchAnalystEngine:
             "market": f"Over {line} Falli Subiti ({player['name']})",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "Falli Subiti Attesi", "metric_val": f"{xf_drawn:.2f}",
-            "note": f"Indice falli subiti per 90 minuti (Ruolo: {pos})"
+            "note": f"Indice falli subiti stimato per 90 minuti (Ruolo: {pos})"
         }
 
     @staticmethod
@@ -819,7 +840,7 @@ kelly_fraction = st.sidebar.select_slider("Frazione di Kelly", options=[0.25, 0.
 min_edge_pct = st.sidebar.slider("Soglia Minima Edge (%)", min_value=1.0, max_value=3.0, value=1.5, step=0.5)
 min_edge_val = min_edge_pct / 100.0
 
-# Calcolo Bankroll Completo (Yield, Win Rate, Profitto)
+# Calcolo Bankroll Completo
 bets_df = fetch_user_bets(user_id)
 total_profit = 0.0
 yield_pct = 0.0
@@ -893,7 +914,7 @@ else:
         "Gestione Account"
     ])
 
-# 1. SCANNER TOP 5 (CON 1 RICERCA SETTIMANALE PER FREE)
+# 1. SCANNER TOP 5 (CON POSSIBILITÀ DI CAMBIARE LINEA E QUOTA)
 with tab_scan:
     st.markdown(f"### TOP 5 VALUE BETS ({selected_league_label.upper()})")
     user_has_access = is_premium
@@ -925,10 +946,12 @@ with tab_scan:
             a = clean_team_name(m.get("away_team", ""))
             m_title = f"{h} vs {a}"
             m_date = m.get("commence_time", "")[:10]
-            all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_team_goals_over15(h, a, True, min_edge_val, injuries_df)})
-            all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_team_goals_over15(a, h, False, min_edge_val, injuries_df)})
+            
+            # Mercati calcolati
+            all_opportunities.append({"match": m_title, "h": h, "a": a, "date": m_date, "type": "team_goals", **MatchAnalystEngine.analyze_team_goals(h, a, True, 1.5, min_edge_val, injuries_df)})
+            all_opportunities.append({"match": m_title, "h": h, "a": a, "date": m_date, "type": "team_goals", **MatchAnalystEngine.analyze_team_goals(a, h, False, 1.5, min_edge_val, injuries_df)})
             for l_c in [8.5, 9.5, 10.5]:
-                all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_corners_multiline(h, a, l_c, min_edge_val)})
+                all_opportunities.append({"match": m_title, "h": h, "a": a, "date": m_date, "type": "corners", **MatchAnalystEngine.analyze_corners_multiline(h, a, l_c, min_edge_val)})
         
         valid_opps = [op for op in all_opportunities if op["min_odds"] >= 1.40]
         valid_opps.sort(key=lambda x: x["prob"], reverse=True)
@@ -953,35 +976,45 @@ with tab_scan:
         st.table(pd.DataFrame(table_data))
         
         st.markdown("---")
-        st.markdown("### SCHEDE MOTIVATE & VERIFICA QUOTA REALE (TOP 5)")
+        st.markdown("### SCHEDE MOTIVATE, SCELTA LINEA & VERIFICA QUOTA REALE (TOP 5)")
         for idx, item in enumerate(top5):
             pos = idx + 1
             if user_has_access:
                 with st.expander(f"Report #{pos} | {item['match']} - {item['market']} (Quota Minima: {item['min_odds']:.2f})", expanded=(pos==1)):
-                    col_t1, col_t2 = st.columns(2)
-                    with col_t1:
-                        st.metric("Probabilità Reale", f"{item['prob']*100:.1f}%")
-                        st.write(f"**Quota Equa:** `{item['fair_odds']:.2f}` | **Quota Minima di Ingresso:** `{item['min_odds']:.2f}`")
-                        st.info(f"**Dettaglio Tecnico:** {item['note']}")
-                    with col_t2:
-                        init_val = safe_odds_val(item['min_odds'])
-                        odd_check = st.number_input(f"Inserisci Quota Bookmaker (#{pos})", min_value=1.01, max_value=20.0, value=init_val, step=0.02, key=f"top_odd_{idx}_{sport_api_key}")
-                        calc_edge = (item['prob'] * odd_check) - 1.0
-                        k_p, k_e = MatchAnalystEngine.calculate_kelly(item['prob'], odd_check, current_bankroll, kelly_fraction)
-                        if odd_check >= item['min_odds'] and calc_edge >= min_edge_val:
-                            st.success(f"VALORE PRESENTE: Edge {calc_edge*100:+.2f}%\nStake: {k_p}% ({k_e:.2f} €)")
+                    c_l1, c_l2 = st.columns([1, 1])
+                    
+                    # Possibilità di scegliere/modificare la linea
+                    if item.get("type") == "corners":
+                        chosen_line = c_l1.selectbox(f"Modifica Linea Corner (#{pos})", [7.5, 8.5, 9.5, 10.5, 11.5], index=1, key=f"scan_line_c_{idx}")
+                        calc_res = MatchAnalystEngine.analyze_corners_multiline(item["h"], item["a"], chosen_line, min_edge_val)
+                    else:
+                        chosen_line = c_l1.selectbox(f"Modifica Linea Gol Squadra (#{pos})", [0.5, 1.5, 2.5], index=1, key=f"scan_line_g_{idx}")
+                        calc_res = MatchAnalystEngine.analyze_team_goals(item["h"], item["a"], True, chosen_line, min_edge_val, injuries_df)
+                        
+                    with c_l1:
+                        st.metric("Probabilità Reale Modello", f"{calc_res['prob']*100:.1f}%")
+                        st.write(f"**Quota Equa:** `{calc_res['fair_odds']:.2f}` | **Quota Minima di Ingresso:** `{calc_res['min_odds']:.2f}`")
+                        st.info(f"**Dettaglio Tecnico:** {calc_res['note']}")
+                        
+                    with c_l2:
+                        init_val = safe_odds_val(calc_res['min_odds'])
+                        odd_check = st.number_input(f"Inserisci Quota del tuo Bookmaker (#{pos})", min_value=1.01, max_value=20.0, value=init_val, step=0.02, key=f"top_odd_{idx}_{sport_api_key}")
+                        calc_edge = (calc_res['prob'] * odd_check) - 1.0
+                        k_p, k_e = MatchAnalystEngine.calculate_kelly(calc_res['prob'], odd_check, current_bankroll, kelly_fraction)
+                        if odd_check >= calc_res['min_odds'] and calc_edge >= min_edge_val:
+                            st.success(f"VALORE PRESENTE: Edge {calc_edge*100:+.2f}%\nStake Raccomandato: {k_p}% ({k_e:.2f} €)")
                             if st.button(f"REGISTRA GIOCATA #{pos}", key=f"btn_save_top_{idx}_{sport_api_key}"):
-                                save_user_bet(user_id, item["match"], item["market"], odd_check, k_e, calc_edge)
+                                save_user_bet(user_id, item["match"], calc_res["market"], odd_check, k_e, calc_edge)
                                 st.rerun()
                         else:
                             st.error(f"NO BET (Quota sotto soglia minima - Edge: {calc_edge*100:+.2f}%)")
     else:
         st.info("Nessuna partita disponibile per il turno di questa competizione.")
 
-# 2. MERCATI PRINCIPALI (TOP 5 CON SCHEDE E CALCOLATORE)
+# 2. MERCATI PRINCIPALI (CALCOLO POISSON REALE E INTERATTIVO)
 with tab1:
     st.markdown(f"### TOP 5 MERCATI PRINCIPALI ({selected_league_label.upper()})")
-    st.caption("Classifica delle migliori opportunità sui mercati Goal/Under/Over con calcolo di valore atteso.")
+    st.caption("Classifica delle migliori opportunità sui mercati Goal/Under/Over calcolate con modello di Poisson e xG.")
     
     if matches:
         cat1_all = []
@@ -991,47 +1024,63 @@ with tab1:
             m_title = f"{h} vs {a}"
             m_date = m.get("commence_time", "")[:10]
             
-            p_ov25 = 0.53
-            p_un25 = 0.47
-            avg_ov = 1.96
-            edge_ov = (p_ov25 * avg_ov) - 1.0
-            st_p_o, st_e_o = MatchAnalystEngine.calculate_kelly(p_ov25, avg_ov, current_bankroll, kelly_fraction)
+            # Calcolo Poisson reale e differenziato per ciascuna partita
+            ov25 = MatchAnalystEngine.analyze_match_goals_total(h, a, 2.5, True, min_edge_val, injuries_df)
+            un25 = MatchAnalystEngine.analyze_match_goals_total(h, a, 2.5, False, min_edge_val, injuries_df)
+            
+            st_p_o, st_e_o = MatchAnalystEngine.calculate_kelly(ov25["prob"], ov25["min_odds"], current_bankroll, kelly_fraction)
             cat1_all.append({
-                "PARTITA": m_title, "DATA": m_date, "MERCATO": "Over 2.5 Totali",
-                "QUOTA LIVE": f"{avg_ov:.2f}", "PROB REALE": f"{p_ov25*100:.1f}%",
-                "EDGE": f"{edge_ov*100:+.2f}%", "STAKE": f"{st_p_o}% ({st_e_o:.2f} €)",
-                "edge_num": edge_ov, "prob_num": p_ov25, "odds_num": avg_ov, "stake_eur": st_e_o
+                "PARTITA": m_title, "DATA": m_date, "MERCATO": ov25["market"],
+                "QUOTA MINIMA": f"{ov25['min_odds']:.2f}", "PROB REALE": f"{ov25['prob']*100:.1f}%",
+                "EDGE": f"+{min_edge_pct:.2f}%", "STAKE": f"{st_p_o}% ({st_e_o:.2f} €)",
+                "edge_num": min_edge_val, "prob_num": ov25["prob"], "odds_num": ov25["min_odds"], "stake_eur": st_e_o,
+                "h": h, "a": a, "lambda": ov25["metric_val"], "note": ov25["note"]
             })
             
-            avg_un = 2.18
-            edge_un = (p_un25 * avg_un) - 1.0
-            st_p_u, st_e_u = MatchAnalystEngine.calculate_kelly(p_un25, avg_un, current_bankroll, kelly_fraction)
+            st_p_u, st_e_u = MatchAnalystEngine.calculate_kelly(un25["prob"], un25["min_odds"], current_bankroll, kelly_fraction)
             cat1_all.append({
-                "PARTITA": m_title, "DATA": m_date, "MERCATO": "Under 2.5 Totali",
-                "QUOTA LIVE": f"{avg_un:.2f}", "PROB REALE": f"{p_un25*100:.1f}%",
-                "EDGE": f"{edge_un*100:+.2f}%", "STAKE": f"{st_p_u}% ({st_e_u:.2f} €)",
-                "edge_num": edge_un, "prob_num": p_un25, "odds_num": avg_un, "stake_eur": st_e_u
+                "PARTITA": m_title, "DATA": m_date, "MERCATO": un25["market"],
+                "QUOTA MINIMA": f"{un25['min_odds']:.2f}", "PROB REALE": f"{un25['prob']*100:.1f}%",
+                "EDGE": f"+{min_edge_pct:.2f}%", "STAKE": f"{st_p_u}% ({st_e_u:.2f} €)",
+                "edge_num": min_edge_val, "prob_num": un25["prob"], "odds_num": un25["min_odds"], "stake_eur": st_e_u,
+                "h": h, "a": a, "lambda": un25["metric_val"], "note": un25["note"]
             })
             
-        cat1_all.sort(key=lambda x: x["edge_num"], reverse=True)
+        cat1_all.sort(key=lambda x: x["prob_num"], reverse=True)
         top5_cat1 = cat1_all[:5]
         
-        disp_c1 = [{k: v for k, v in item.items() if not k.endswith("_num") and k != "stake_eur"} for item in top5_cat1]
+        disp_c1 = [{k: v for k, v in item.items() if k in ["PARTITA", "DATA", "MERCATO", "QUOTA MINIMA", "PROB REALE", "EDGE", "STAKE"]} for item in top5_cat1]
         st.table(pd.DataFrame(disp_c1))
         
         st.markdown("---")
-        st.markdown("### VERIFICA QUOTA & REGISTRA GIOCATA MERCATI PRINCIPALI")
-        c1_opts = [f"#{i+1} | {b['PARTITA']} | {b['MERCATO']} @ {b['QUOTA LIVE']}" for i, b in enumerate(top5_cat1)]
-        sel_c1_i = st.selectbox("Seleziona Giocata da Registrare", range(len(c1_opts)), format_func=lambda x: c1_opts[x])
-        if st.button("SALVA SCOMMESSA LIVE NEL BANKROLL"):
-            chosen_c1 = top5_cat1[sel_c1_i]
-            save_user_bet(user_id, chosen_c1["PARTITA"], chosen_c1["MERCATO"], chosen_c1["odds_num"], chosen_c1["stake_eur"], chosen_c1["edge_num"])
-            st.success("Scommessa live registrata nel Bankroll.")
-            st.rerun()
+        st.markdown("### SCHEDE MOTIVATE & VERIFICA QUOTA REALE MERCATI PRINCIPALI")
+        for idx, item in enumerate(top5_cat1):
+            with st.expander(f"Report Mercati #{idx+1} | {item['PARTITA']} - {item['MERCATO']}", expanded=(idx==0)):
+                cm1, cm2 = st.columns(2)
+                with cm1:
+                    line_mkt = st.selectbox(f"Seleziona Linea Gol Totali (#{idx+1})", [1.5, 2.5, 3.5], index=1, key=f"mkt_line_sel_{idx}")
+                    is_over_mkt = st.radio(f"Segno (#{idx+1})", ["Over", "Under"], horizontal=True, key=f"mkt_sign_sel_{idx}") == "Over"
+                    dyn_mkt = MatchAnalystEngine.analyze_match_goals_total(item["h"], item["a"], line_mkt, is_over_mkt, min_edge_val, injuries_df)
+                    
+                    st.metric("Probabilità Reale Poisson", f"{dyn_mkt['prob']*100:.1f}%")
+                    st.write(f"**Quota Equa:** `{dyn_mkt['fair_odds']:.2f}` | **Quota Minima:** `{dyn_mkt['min_odds']:.2f}`")
+                    st.info(f"**Motivazione Modello:** {dyn_mkt['note']}")
+                with cm2:
+                    init_q = safe_odds_val(dyn_mkt['min_odds'])
+                    odd_mkt_in = st.number_input(f"Quota sul tuo Bookmaker (#{idx+1})", min_value=1.01, max_value=20.0, value=init_q, step=0.02, key=f"odd_mkt_in_{idx}")
+                    edge_mkt = (dyn_mkt['prob'] * odd_mkt_in) - 1.0
+                    kp_m, ke_m = MatchAnalystEngine.calculate_kelly(dyn_mkt['prob'], odd_mkt_in, current_bankroll, kelly_fraction)
+                    if odd_mkt_in >= dyn_mkt['min_odds'] and edge_mkt >= min_edge_val:
+                        st.success(f"VALORE PRESENTE: Edge {edge_mkt*100:+.2f}%\nStake: {kp_m}% ({ke_m:.2f} €)")
+                        if st.button(f"REGISTRA SCOMMESSA #{idx+1}", key=f"btn_save_mkt_{idx}"):
+                            save_user_bet(user_id, item["PARTITA"], dyn_mkt["market"], odd_mkt_in, ke_m, edge_mkt)
+                            st.rerun()
+                    else:
+                        st.error(f"NO BET (Quota sotto soglia minima - Edge: {edge_mkt*100:+.2f}%)")
     else:
         st.info("Nessuna quota live disponibile al momento.")
 
-# 3. STATISTICHE & TATTICA SQUADRE (CON INFLUENZA TATTICA E INFORTUNI)
+# 3. STATISTICHE & TATTICA SQUADRE (CON GOL, CORNER, TIRI TOTALI E TIRI IN PORTA SQUADRA)
 with tab2:
     st.markdown(f"### STATISTICHE & QUADRO TATTICO ({selected_league_label.upper()})")
     if matches:
@@ -1071,7 +1120,6 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
         
-        # Nomi infortunati attivi
         inj_h_list = injuries_df[injuries_df["team"].str.lower() == h2.lower()]["player_name"].tolist() if not injuries_df.empty else []
         inj_a_list = injuries_df[injuries_df["team"].str.lower() == a2.lower()]["player_name"].tolist() if not injuries_df.empty else []
 
@@ -1095,38 +1143,39 @@ with tab2:
             """, unsafe_allow_html=True)
 
         st.markdown("---")
-        # CALCOLATORE STATISTICHE SQUADRA CON IMPATTO TATTICO
-        col_c2_1, col_c2_2 = st.columns(2)
-        with col_c2_1:
-            st.markdown("#### Mercato Over 1.5 Gol Squadra")
-            team_choice = st.radio("Seleziona Squadra", [h2, a2], horizontal=True, key=f"c2_team_{sport_api_key}")
-            is_home_sel = (team_choice == h2)
-            opp_choice = a2 if is_home_sel else h2
+        st.markdown("#### CALCOLATORE STATISTICHE DI SQUADRA (GOL, CORNER, TIRI)")
+        
+        # RIGA 1: GOL SQUADRA & CORNER TOTALI
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            st.markdown("##### Mercato Gol Squadra (Multi-Linea)")
+            team_choice_g = st.radio("Squadra", [h2, a2], horizontal=True, key=f"c2_team_g_{sport_api_key}")
+            line_choice_g = st.selectbox("Linea Gol Squadra", [0.5, 1.5, 2.5], index=1, key=f"c2_line_g_{sport_api_key}")
+            is_home_g = (team_choice_g == h2)
+            opp_choice_g = a2 if is_home_g else h2
             
-            res_g = MatchAnalystEngine.analyze_team_goals_over15(team_choice, opp_choice, is_home_sel, min_edge_val, injuries_df)
+            res_g = MatchAnalystEngine.analyze_team_goals(team_choice_g, opp_choice_g, is_home_g, line_choice_g, min_edge_val, injuries_df)
             st.metric("Probabilità Modello", f"{res_g['prob']*100:.1f}%")
             st.write(f"**Quota Equa:** `{res_g['fair_odds']:.2f}` | **Quota Minima:** `{res_g['min_odds']:.2f}`")
-            st.caption(res_g["note"])
             
             init_g = safe_odds_val(res_g['min_odds'])
-            odd_g_in = st.number_input("Quota Bookmaker (Over 1.5 Gol)", min_value=1.01, max_value=20.0, value=init_g, step=0.02, key=f"odd_g_in_{sport_api_key}")
+            odd_g_in = st.number_input(f"Quota Bookmaker (Over {line_choice_g} Gol {team_choice_g})", min_value=1.01, max_value=20.0, value=init_g, step=0.02, key=f"odd_g_in_{sport_api_key}")
             edge_g = (res_g['prob'] * odd_g_in) - 1.0
             kp_g, ke_g = MatchAnalystEngine.calculate_kelly(res_g['prob'], odd_g_in, current_bankroll, kelly_fraction)
             if odd_g_in >= res_g['min_odds'] and edge_g >= min_edge_val:
                 st.success(f"VALORE PRESENTE: Edge {edge_g*100:+.2f}% | Stake: {kp_g}% ({ke_g:.2f} €)")
-                if st.button("SALVA BET GOL", key=f"btn_save_g_{sport_api_key}"):
+                if st.button("SALVA BET GOL SQUADRA", key=f"btn_save_g_{sport_api_key}"):
                     save_user_bet(user_id, f"{h2} vs {a2}", res_g["market"], odd_g_in, ke_g, edge_g)
                     st.rerun()
             else:
                 st.error(f"NO BET (Quota insufficiente - Edge: {edge_g*100:+.2f}%)")
                 
-        with col_c2_2:
-            st.markdown("#### Mercato Calci d'Angolo Multi-Linea")
-            line_corn = st.selectbox("Linea Corner Totali", [7.5, 8.5, 9.5, 10.5, 11.5], index=2, key=f"c2_line_corn_{sport_api_key}")
+        with col_s2:
+            st.markdown("##### Mercato Calci d'Angolo Multi-Linea")
+            line_corn = st.selectbox("Linea Corner Totali", [7.5, 8.5, 9.5, 10.5, 11.5, 12.5], index=2, key=f"c2_line_corn_{sport_api_key}")
             res_c = MatchAnalystEngine.analyze_corners_multiline(h2, a2, line_corn, min_edge_val)
             st.metric("Probabilità Modello", f"{res_c['prob']*100:.1f}%")
             st.write(f"**Quota Equa:** `{res_c['fair_odds']:.2f}` | **Quota Minima:** `{res_c['min_odds']:.2f}`")
-            st.caption(res_c["note"])
             
             init_c = safe_odds_val(res_c['min_odds'])
             odd_c_in = st.number_input("Quota Bookmaker (Corner)", min_value=1.01, max_value=20.0, value=init_c, step=0.02, key=f"odd_c_in_{sport_api_key}")
@@ -1139,6 +1188,55 @@ with tab2:
                     st.rerun()
             else:
                 st.error(f"NO BET (Quota insufficiente - Edge: {edge_c*100:+.2f}%)")
+
+        st.markdown("---")
+        # RIGA 2: TIRI TOTALI SQUADRA & TIRI IN PORTA SQUADRA
+        col_s3, col_s4 = st.columns(2)
+        with col_s3:
+            st.markdown("##### Mercato Tiri Totali Squadra")
+            team_choice_t = st.radio("Seleziona Squadra (Tiri Totali)", [h2, a2], horizontal=True, key=f"c2_team_t_{sport_api_key}")
+            line_shots_tot = st.selectbox("Linea Tiri Totali", [8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5], index=4, key=f"c2_line_stot_{sport_api_key}")
+            is_home_t = (team_choice_t == h2)
+            opp_choice_t = a2 if is_home_t else h2
+            
+            res_stot = MatchAnalystEngine.analyze_team_shots(team_choice_t, opp_choice_t, is_home_t, is_sot=False, line=line_shots_tot, min_edge=min_edge_val)
+            st.metric("Probabilità Modello", f"{res_stot['prob']*100:.1f}%")
+            st.write(f"**Quota Equa:** `{res_stot['fair_odds']:.2f}` | **Quota Minima:** `{res_stot['min_odds']:.2f}`")
+            
+            init_stot = safe_odds_val(res_stot['min_odds'])
+            odd_stot_in = st.number_input(f"Quota Bookmaker (Over {line_shots_tot} Tiri {team_choice_t})", min_value=1.01, max_value=20.0, value=init_stot, step=0.02, key=f"odd_stot_in_{sport_api_key}")
+            edge_stot = (res_stot['prob'] * odd_stot_in) - 1.0
+            kp_stot, ke_stot = MatchAnalystEngine.calculate_kelly(res_stot['prob'], odd_stot_in, current_bankroll, kelly_fraction)
+            if odd_stot_in >= res_stot['min_odds'] and edge_stot >= min_edge_val:
+                st.success(f"VALORE PRESENTE: Edge {edge_stot*100:+.2f}% | Stake: {kp_stot}% ({ke_stot:.2f} €)")
+                if st.button("SALVA BET TIRI TOTALI", key=f"btn_save_stot_{sport_api_key}"):
+                    save_user_bet(user_id, f"{h2} vs {a2}", res_stot["market"], odd_stot_in, ke_stot, edge_stot)
+                    st.rerun()
+            else:
+                st.error(f"NO BET (Quota insufficiente - Edge: {edge_stot*100:+.2f}%)")
+
+        with col_s4:
+            st.markdown("##### Mercato Tiri nello Specchio Squadra")
+            team_choice_sot = st.radio("Seleziona Squadra (Tiri in Porta)", [h2, a2], horizontal=True, key=f"c2_team_sot_{sport_api_key}")
+            line_shots_sot = st.selectbox("Linea Tiri nello Specchio", [2.5, 3.5, 4.5, 5.5, 6.5, 7.5], index=2, key=f"c2_line_ssot_{sport_api_key}")
+            is_home_sot = (team_choice_sot == h2)
+            opp_choice_sot = a2 if is_home_sot else h2
+            
+            res_ssot = MatchAnalystEngine.analyze_team_shots(team_choice_sot, opp_choice_sot, is_home_sot, is_sot=True, line=line_shots_sot, min_edge=min_edge_val)
+            st.metric("Probabilità Modello", f"{res_ssot['prob']*100:.1f}%")
+            st.write(f"**Quota Equa:** `{res_ssot['fair_odds']:.2f}` | **Quota Minima:** `{res_ssot['min_odds']:.2f}`")
+            
+            init_ssot = safe_odds_val(res_ssot['min_odds'])
+            odd_ssot_in = st.number_input(f"Quota Bookmaker (Over {line_shots_sot} SOT {team_choice_sot})", min_value=1.01, max_value=20.0, value=init_ssot, step=0.02, key=f"odd_ssot_in_{sport_api_key}")
+            edge_ssot = (res_ssot['prob'] * odd_ssot_in) - 1.0
+            kp_ssot, ke_ssot = MatchAnalystEngine.calculate_kelly(res_ssot['prob'], odd_ssot_in, current_bankroll, kelly_fraction)
+            if odd_ssot_in >= res_ssot['min_odds'] and edge_ssot >= min_edge_val:
+                st.success(f"VALORE PRESENTE: Edge {edge_ssot*100:+.2f}% | Stake: {kp_ssot}% ({ke_ssot:.2f} €)")
+                if st.button("SALVA BET TIRI IN PORTA SQUADRA", key=f"btn_save_ssot_{sport_api_key}"):
+                    save_user_bet(user_id, f"{h2} vs {a2}", res_ssot["market"], odd_ssot_in, ke_ssot, edge_ssot)
+                    st.rerun()
+            else:
+                st.error(f"NO BET (Quota insufficiente - Edge: {edge_ssot*100:+.2f}%)")
     else:
         st.info("Nessuna partita in programma.")
 
@@ -1146,7 +1244,7 @@ with tab2:
 if is_serie_a:
     with tab3:
         st.markdown("### PRESTAZIONI CALCIATORI & PORTIERI (SERIE A 2026/2027)")
-        st.caption("Analisi quantitativa per tiri in porta, falli commessi, falli subiti e parate del portiere.")
+        st.caption("Analisi quantitativa contemporanea per Tiri in Porta, Falli Commessi, Falli Subiti e Parate.")
         
         if matches:
             match_options_c3 = [f"{clean_team_name(m.get('home_team',''))} vs {clean_team_name(m.get('away_team',''))}" for m in matches]
@@ -1178,68 +1276,100 @@ if is_serie_a:
                     st.error(f"ATTENZIONE: {chosen_p['name']} è attualmente inserito in Infermeria per infortunio. Mercato disabilitato.")
                     return
                 
+                # SEZIONE PORTIERE
                 if chosen_p["role"] == "Goalkeeper":
                     st.markdown("#### Mercato: Parate Portiere")
                     save_line = st.selectbox("Seleziona Linea Parate", [1.5, 2.5, 3.5, 4.5], index=1, key=f"{key_prefix}_save_line")
                     res_sv = MatchAnalystEngine.analyze_goalkeeper_saves(chosen_p, opp_team, save_line, min_edge_val)
-                    st.metric("Probabilità Modello", f"{res_sv['prob']*100:.1f}%")
-                    st.write(f"**Quota Equa:** `{res_sv['fair_odds']:.2f}` | **Quota Minima:** `{res_sv['min_odds']:.2f}`")
                     
-                    init_sv = safe_odds_val(res_sv['min_odds'])
-                    odd_sv_in = st.number_input("Quota Parate Bookmaker", min_value=1.01, max_value=20.0, value=init_sv, step=0.02, key=f"{key_prefix}_odd_sv")
-                    edge_sv = (res_sv['prob'] * odd_sv_in) - 1.0
-                    kpsv, kesv = MatchAnalystEngine.calculate_kelly(res_sv['prob'], odd_sv_in, current_bankroll, kelly_fraction)
-                    if odd_sv_in >= res_sv['min_odds'] and edge_sv >= min_edge_val:
-                        st.success(f"VALORE PRESENTE: Edge {edge_sv*100:+.2f}% | Stake: {kpsv}% ({kesv:.2f} €)")
-                        if st.button("SALVA BET PARATE", key=f"{key_prefix}_btn_sv"):
-                            save_user_bet(user_id, f"{h3} vs {a3}", res_sv["market"], odd_sv_in, kesv, edge_sv)
-                            st.rerun()
-                    else:
-                        st.error(f"NO BET (Quota insufficiente - Edge: {edge_sv*100:+.2f}%)")
-                else:
-                    st.markdown("#### Selezione Mercato & Linea Statistica")
-                    market_choice = st.selectbox(
-                        "Seleziona Mercato Statistico Giocatore",
-                        [
-                            "Over 0.5 Tiri in Porta",
-                            "Over 1.5 Tiri in Porta",
-                            "Over 0.5 Falli Commessi",
-                            "Over 1.5 Falli Commessi",
-                            "Over 2.5 Falli Commessi",
-                            "Over 0.5 Falli Subiti",
-                            "Over 1.5 Falli Subiti",
-                            "Over 2.5 Falli Subiti"
-                        ],
-                        key=f"{key_prefix}_mkt_choice"
-                    )
-                    
-                    if "Tiri in Porta" in market_choice:
-                        line = 0.5 if "0.5" in market_choice else 1.5
-                        res_p = MatchAnalystEngine.analyze_player_sot(chosen_p, opp_team, line, min_edge_val)
-                    elif "Falli Commessi" in market_choice:
-                        line = 0.5 if "0.5" in market_choice else (1.5 if "1.5" in market_choice else 2.5)
-                        res_p = MatchAnalystEngine.analyze_player_fouls(chosen_p, opp_team, line, min_edge_val)
-                    else:  # Falli Subiti
-                        line = 0.5 if "0.5" in market_choice else (1.5 if "1.5" in market_choice else 2.5)
-                        res_p = MatchAnalystEngine.analyze_player_fouls_drawn(chosen_p, opp_team, line, min_edge_val)
-                        
-                    col_p1, col_p2 = st.columns(2)
-                    with col_p1:
-                        st.metric("Probabilità Modello", f"{res_p['prob']*100:.1f}%")
-                        st.write(f"**Quota Equa:** `{res_p['fair_odds']:.2f}` | **Quota Minima (Valore):** `{res_p['min_odds']:.2f}`")
-                        st.caption(res_p["note"])
-                    with col_p2:
-                        init_p = safe_odds_val(res_p['min_odds'])
-                        odd_p_in = st.number_input("Quota sul tuo Bookmaker", min_value=1.01, max_value=20.0, value=init_p, step=0.02, key=f"{key_prefix}_odd_p")
-                        edge_p = (res_p['prob'] * odd_p_in) - 1.0
-                        kpp, kep = MatchAnalystEngine.calculate_kelly(res_p['prob'], odd_p_in, current_bankroll, kelly_fraction)
-                        if odd_p_in >= res_p['min_odds'] and edge_p >= min_edge_val:
-                            st.success(f"VALORE PRESENTE: Edge {edge_p*100:+.2f}% | Stake: {kpp}% ({kep:.2f} €)")
-                            if st.button(f"SALVA BET ({market_choice})", key=f"{key_prefix}_btn_save"):
-                                save_user_bet(user_id, f"{h3} vs {a3}", res_p["market"], odd_p_in, kep, edge_p)
+                    cp1, cp2 = st.columns(2)
+                    with cp1:
+                        st.metric("Probabilità Modello", f"{res_sv['prob']*100:.1f}%")
+                        st.write(f"**Quota Equa:** `{res_sv['fair_odds']:.2f}` | **Quota Minima:** `{res_sv['min_odds']:.2f}`")
+                        st.caption(res_sv["note"])
+                    with cp2:
+                        init_sv = safe_odds_val(res_sv['min_odds'])
+                        odd_sv_in = st.number_input("Quota Parate Bookmaker", min_value=1.01, max_value=20.0, value=init_sv, step=0.02, key=f"{key_prefix}_odd_sv")
+                        edge_sv = (res_sv['prob'] * odd_sv_in) - 1.0
+                        kpsv, kesv = MatchAnalystEngine.calculate_kelly(res_sv['prob'], odd_sv_in, current_bankroll, kelly_fraction)
+                        if odd_sv_in >= res_sv['min_odds'] and edge_sv >= min_edge_val:
+                            st.success(f"VALORE PRESENTE: Edge {edge_sv*100:+.2f}% | Stake: {kpsv}% ({kesv:.2f} €)")
+                            if st.button("SALVA BET PARATE", key=f"{key_prefix}_btn_sv"):
+                                save_user_bet(user_id, f"{h3} vs {a3}", res_sv["market"], odd_sv_in, kesv, edge_sv)
                                 st.rerun()
                         else:
-                            st.error(f"NO BET (Quota insufficiente - Edge: {edge_p*100:+.2f}%)")
+                            st.error(f"NO BET (Quota insufficiente - Edge: {edge_sv*100:+.2f}%)")
+                
+                # SEZIONE GIOCATORE DI MOVIMENTO (3 COLONNE CHIARE E IMMEDIATE)
+                else:
+                    st.markdown("#### Pannello Statistico Completo Calciatore")
+                    col_p_sot, col_p_fc, col_p_fd = st.columns(3)
+                    
+                    # 1. TIRI IN PORTA
+                    with col_p_sot:
+                        st.markdown("##### Tiri in Porta")
+                        line_sot = st.selectbox("Linea SOT", [0.5, 1.5, 2.5], index=0, key=f"{key_prefix}_sot_line")
+                        res_sot = MatchAnalystEngine.analyze_player_sot(chosen_p, opp_team, line_sot, min_edge_val)
+                        
+                        st.metric("Probabilità SOT", f"{res_sot['prob']*100:.1f}%")
+                        st.write(f"**Quota Minima:** `{res_sot['min_odds']:.2f}`")
+                        st.caption(res_sot["note"])
+                        
+                        init_sot = safe_odds_val(res_sot['min_odds'])
+                        odd_sot_in = st.number_input("Quota Bookmaker (Tiri)", min_value=1.01, max_value=20.0, value=init_sot, step=0.02, key=f"{key_prefix}_odd_sot")
+                        edge_sot = (res_sot['prob'] * odd_sot_in) - 1.0
+                        kp_sot, ke_sot = MatchAnalystEngine.calculate_kelly(res_sot['prob'], odd_sot_in, current_bankroll, kelly_fraction)
+                        if odd_sot_in >= res_sot['min_odds'] and edge_sot >= min_edge_val:
+                            st.success(f"VALORE: Edge {edge_sot*100:+.2f}%\nStake: {kp_sot}% ({ke_sot:.2f} €)")
+                            if st.button("SALVA BET TIRI", key=f"{key_prefix}_btn_sot"):
+                                save_user_bet(user_id, f"{h3} vs {a3}", res_sot["market"], odd_sot_in, ke_sot, edge_sot)
+                                st.rerun()
+                        else:
+                            st.error(f"NO BET (Edge: {edge_sot*100:+.2f}%)")
+                            
+                    # 2. FALLI COMMESSI
+                    with col_p_fc:
+                        st.markdown("##### Falli Commessi")
+                        line_fc = st.selectbox("Linea Falli Fatti", [0.5, 1.5, 2.5], index=1, key=f"{key_prefix}_fc_line")
+                        res_fc = MatchAnalystEngine.analyze_player_fouls(chosen_p, opp_team, line_fc, min_edge_val)
+                        
+                        st.metric("Probabilità Falli Fatti", f"{res_fc['prob']*100:.1f}%")
+                        st.write(f"**Quota Minima:** `{res_fc['min_odds']:.2f}`")
+                        st.caption(res_fc["note"])
+                        
+                        init_fc = safe_odds_val(res_fc['min_odds'])
+                        odd_fc_in = st.number_input("Quota Bookmaker (Falli Fatti)", min_value=1.01, max_value=20.0, value=init_fc, step=0.02, key=f"{key_prefix}_odd_fc")
+                        edge_fc = (res_fc['prob'] * odd_fc_in) - 1.0
+                        kp_fc, ke_fc = MatchAnalystEngine.calculate_kelly(res_fc['prob'], odd_fc_in, current_bankroll, kelly_fraction)
+                        if odd_fc_in >= res_fc['min_odds'] and edge_fc >= min_edge_val:
+                            st.success(f"VALORE: Edge {edge_fc*100:+.2f}%\nStake: {kp_fc}% ({ke_fc:.2f} €)")
+                            if st.button("SALVA BET FALLI FATTI", key=f"{key_prefix}_btn_fc"):
+                                save_user_bet(user_id, f"{h3} vs {a3}", res_fc["market"], odd_fc_in, ke_fc, edge_fc)
+                                st.rerun()
+                        else:
+                            st.error(f"NO BET (Edge: {edge_fc*100:+.2f}%)")
+                            
+                    # 3. FALLI SUBITI
+                    with col_p_fd:
+                        st.markdown("##### Falli Subiti")
+                        line_fd = st.selectbox("Linea Falli Subiti", [0.5, 1.5, 2.5], index=1, key=f"{key_prefix}_fd_line")
+                        res_fd = MatchAnalystEngine.analyze_player_fouls_drawn(chosen_p, opp_team, line_fd, min_edge_val)
+                        
+                        st.metric("Probabilità Falli Subiti", f"{res_fd['prob']*100:.1f}%")
+                        st.write(f"**Quota Minima:** `{res_fd['min_odds']:.2f}`")
+                        st.caption(res_fd["note"])
+                        
+                        init_fd = safe_odds_val(res_fd['min_odds'])
+                        odd_fd_in = st.number_input("Quota Bookmaker (Falli Subiti)", min_value=1.01, max_value=20.0, value=init_fd, step=0.02, key=f"{key_prefix}_odd_fd")
+                        edge_fd = (res_fd['prob'] * odd_fd_in) - 1.0
+                        kp_fd, ke_fd = MatchAnalystEngine.calculate_kelly(res_fd['prob'], odd_fd_in, current_bankroll, kelly_fraction)
+                        if odd_fd_in >= res_fd['min_odds'] and edge_fd >= min_edge_val:
+                            st.success(f"VALORE: Edge {edge_fd*100:+.2f}%\nStake: {kp_fd}% ({ke_fd:.2f} €)")
+                            if st.button("SALVA BET FALLI SUBITI", key=f"{key_prefix}_btn_fd"):
+                                save_user_bet(user_id, f"{h3} vs {a3}", res_fd["market"], odd_fd_in, ke_fd, edge_fd)
+                                st.rerun()
+                        else:
+                            st.error(f"NO BET (Edge: {edge_fd*100:+.2f}%)")
                         
             with tab_h: render_player_panel(h3_players, h3, a3, "tab_h_p")
             with tab_a: render_player_panel(a3_players, a3, h3, "tab_a_p")
