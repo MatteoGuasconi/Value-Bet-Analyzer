@@ -1,18 +1,14 @@
 """
 Database Rose, Allenatori e Moduli Tattici Stagione 2026/2027.
-Elabora automaticamente i file .txt per:
-- Serie A (20 squadre con Allenatori e Moduli)
-- Premier League (20 squadre)
-- La Liga (20 squadre)
-- Bundesliga (18 squadre)
-- Ligue 1 (18 squadre)
+Gestione accurata dei ruoli (Portieri, Difensori, Centrocampisti, Attaccanti)
+e dei moduli tattici per tutti i 5 campionati europei.
 """
 
 import os
 import glob
 import streamlit as st
 
-# ALLENATORI E MODULI SERIE A 2026/2027
+# ALLENATORI E MODULI UFFICIALI SERIE A 2026/2027
 SERIE_A_TACTICS = {
     "Atalanta": {"coach": "Maurizio Sarri", "formation": "4-3-3", "style": "Pressing Alto & Sovrapposizioni"},
     "Bologna": {"coach": "Domenico Tedesco", "formation": "4-2-3-1", "style": "Attacco Rapido & Controllo Ritmi"},
@@ -45,7 +41,9 @@ CLEAN_TEAM_NAMES = {
     "barcelona": "Barcellona", "fc barcelona": "Barcellona", "bayern munich": "Bayern Monaco",
     "bayern munchen": "Bayern Monaco", "paris saint-germain": "PSG", "paris saint germain": "PSG",
     "psg": "PSG", "olympique de marseille": "Marseille", "marsiglia": "Marseille", "monaco": "Monaco",
-    "atalanta": "Atalanta", "sassuolo": "Sassuolo", "frosinone": "Frosinone"
+    "atalanta": "Atalanta", "sassuolo": "Sassuolo", "frosinone": "Frosinone", "cagliari": "Cagliari",
+    "empoli": "Empoli", "genoa": "Genoa", "monza": "Monza", "lecce": "Lecce", "udinese": "Udinese",
+    "verona": "Verona", "venezia": "Venezia", "como": "Como", "parma": "Parma"
 }
 
 def clean_team_name(raw_name: str) -> str:
@@ -55,12 +53,21 @@ def clean_team_name(raw_name: str) -> str:
         if k in norm: return v
     return raw_name.strip()
 
+def normalize_role(role_text: str) -> str:
+    """Mappa con precisione assoluta il ruolo del calciatore."""
+    r = role_text.strip().lower()
+    if any(k in r for k in ["portiere", "goalkeeper", "port", "por", "gk"]):
+        return "Goalkeeper"
+    elif any(k in r for k in ["difensore", "defender", "dif", "terzino", "cb", "lb", "rb", "df"]):
+        return "Defender"
+    elif any(k in r for k in ["centrocampista", "midfielder", "centr", "mediano", "trequartista", "mezzala", "esterno", "cm", "cdm", "cam", "mf"]):
+        return "Midfielder"
+    elif any(k in r for k in ["attaccante", "attacker", "forward", "punta", "centravanti", "att", "fw", "st"]):
+        return "Attacker"
+    return "Midfielder"
+
 @st.cache_data(ttl=86400, show_spinner=False)
 def load_all_rosters_from_files() -> dict:
-    """
-    Scansiona e parsa automaticamente tutti i file .txt presenti nella directory.
-    Supporta i formati di Serie A, Premier League, La Liga, Bundesliga e Ligue 1.
-    """
     parsed_db = {
         "Serie A (Italia)": {},
         "Premier League (Inghilterra)": {},
@@ -109,13 +116,8 @@ def load_all_rosters_from_files() -> dict:
                             
                         if len(parts) >= 3:
                             p_name = parts[0]
-                            role_str = parts[1].lower()
+                            pos = normalize_role(parts[1])
                             num = parts[2]
-                            
-                            pos = "Midfielder"
-                            if "port" in role_str or "goal" in role_str: pos = "Goalkeeper"
-                            elif "dif" in role_str or "def" in role_str: pos = "Defender"
-                            elif "att" in role_str or "cen" in role_str or "pun" in role_str: pos = "Attacker"
                         else:
                             p_name = parts[0]
                             num = parts[1]
@@ -141,7 +143,6 @@ def load_all_rosters_from_files() -> dict:
     return parsed_db
 
 def get_team_squad_from_db(league_label: str, team_name: str) -> list[dict]:
-    """Cerca e restituisce la rosa esatta dal database dei file .txt."""
     db = load_all_rosters_from_files()
     cleaned = clean_team_name(team_name)
     
