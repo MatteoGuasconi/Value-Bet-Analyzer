@@ -1,10 +1,12 @@
 import datetime
-import os
 import numpy as np
 import pandas as pd
 import requests
 from scipy.stats import poisson
 import streamlit as st
+
+# Importazione dal database dinamico rose e tattiche
+from squads_db import get_team_squad_from_db, SERIE_A_TACTICS, clean_team_name
 
 # Configurazione della pagina
 st.set_page_config(
@@ -35,7 +37,7 @@ st.markdown(
         display: none !important;
     }
     
-    /* FIX MENU LATERALE SU SMARTPHONE & SAFARI */
+    /* FIX DEFINITIVO MENU LATERALE SU SMARTPHONE & SAFARI */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
@@ -194,28 +196,6 @@ st.markdown(
         margin-bottom: 14px;
     }
     
-    .lineup-badge-prob {
-        background-color: rgba(245, 158, 11, 0.15);
-        border: 1px solid #F59E0B;
-        color: #FCD34D;
-        font-size: 0.80rem;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 4px;
-        display: inline-block;
-    }
-    
-    .lineup-badge-off {
-        background-color: rgba(45, 212, 191, 0.15);
-        border: 1px solid #2DD4BF;
-        color: #2DD4BF;
-        font-size: 0.80rem;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 4px;
-        display: inline-block;
-    }
-    
     .stButton>button {
         background-color: #2DD4BF !important;
         color: #0B132B !important;
@@ -306,14 +286,10 @@ ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
 FOOTBALL_KEY = st.secrets.get("FOOTBALL_API_KEY", "f59b5ad05a6b45fa5f19582d3e493f7f")
 
 # Sessione Utente
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "user_tier" not in st.session_state:
-    st.session_state.user_tier = "free"
-if "access_token" not in st.session_state:
-    st.session_state.access_token = None
-if "last_free_scan_week" not in st.session_state:
-    st.session_state.last_free_scan_week = None
+if "user" not in st.session_state: st.session_state.user = None
+if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
+if "access_token" not in st.session_state: st.session_state.access_token = None
+if "last_free_scan_week" not in st.session_state: st.session_state.last_free_scan_week = None
 
 def get_headers(token=None):
     auth_bearer = token or SB_KEY
@@ -385,8 +361,7 @@ def login_user(email, password):
                 st.session_state.user_tier = prof_res.json()[0].get("tier", "free")
                 st.session_state.last_free_scan_week = prof_res.json()[0].get("last_free_scan_week")
             return True, None
-        err = res.json().get("error_description") or res.json().get("msg") or "Credenziali non corrette."
-        return False, err
+        return False, "Credenziali non corrette."
     except Exception as e:
         return False, str(e)
 
@@ -396,8 +371,7 @@ def register_user(email, password):
     try:
         res = requests.post(url, json={"email": email, "password": password}, headers=get_headers(), timeout=10)
         if res.status_code in [200, 201]: return True, "Registrazione completata. Puoi accedere ora."
-        err = res.json().get("msg") or res.json().get("error_description") or "Errore di registrazione."
-        return False, err
+        return False, "Errore registrazione."
     except Exception as e:
         return False, str(e)
 
@@ -421,7 +395,7 @@ def redeem_vip_code(user_id, code_input):
         return True, "Codice valido. Piano Premium attivato."
     return False, "Codice promozionale non valido."
 
-# Schermata di Accesso
+# Schermata Login
 if not st.session_state.user:
     st.title("VALUE BET ANALYZER")
     st.markdown('<div class="slogan-box">In questa suite non si forzano le giocate: si opera solo ed esclusivamente in presenza di valore matematico misurabile. Nel lungo periodo, il valore coincide con il profitto.</div>', unsafe_allow_html=True)
@@ -435,7 +409,7 @@ if not st.session_state.user:
                 if log_email and log_pwd:
                     ok, err = login_user(log_email, log_pwd)
                     if ok: st.rerun()
-                    else: st.error(f"Errore accesso: {err}")
+                    else: st.error(err)
         with tab_reg:
             reg_email = st.text_input("Email", key="reg_email")
             reg_pwd = st.text_input("Password (min. 6 caratteri)", type="password", key="reg_pwd")
@@ -518,106 +492,30 @@ def update_bet_status(bet_id, new_status, odds, stake):
         try: requests.patch(url, json={"status": new_status, "profit": profit_val}, headers=hdrs, timeout=10)
         except Exception: pass
 
-# COMPETIZIONI & CAMPIONATI
+# CONFIGURAZIONE CAMPIONATI
 LEAGUES_CONFIG = {
-    "Serie A (Italia)": {"key": "soccer_italy_serie_a", "league_id": 135, "has_players": True},
-    "Premier League (Inghilterra)": {"key": "soccer_epl", "league_id": 39, "has_players": True},
-    "La Liga (Spagna)": {"key": "soccer_spain_la_liga", "league_id": 140, "has_players": True},
-    "Bundesliga (Germania)": {"key": "soccer_germany_bundesliga", "league_id": 78, "has_players": True},
-    "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "league_id": 61, "has_players": True}
+    "Serie A (Italia)": {"key": "soccer_italy_serie_a", "has_players": True},
+    "Premier League (Inghilterra)": {"key": "soccer_epl", "has_players": False},
+    "La Liga (Spagna)": {"key": "soccer_spain_la_liga", "has_players": False},
+    "Bundesliga (Germania)": {"key": "soccer_germany_bundesliga", "has_players": False},
+    "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "has_players": False}
 }
 
-CLEAN_TEAM_NAMES = {
-    "inter milan": "Inter", "internazionale": "Inter", "ac milan": "Milan", "milan": "Milan",
-    "juventus": "Juventus", "as roma": "Roma", "ss lazio": "Lazio", "napoli": "Napoli",
-    "fiorentina": "Fiorentina", "bologna": "Bologna", "torino": "Torino", "parma": "Parma",
-    "cagliari": "Cagliari", "empoli": "Empoli", "genoa": "Genoa", "monza": "Monza",
-    "lecce": "Lecce", "udinese": "Udinese", "verona": "Verona", "venezia": "Venezia", "como": "Como",
-    "manchester city": "Manchester City", "arsenal": "Arsenal", "liverpool": "Liverpool",
-    "chelsea": "Chelsea", "tottenham": "Tottenham", "real madrid": "Real Madrid",
-    "barcelona": "Barcellona", "fc barcelona": "Barcellona", "bayern munich": "Bayern Monaco",
-    "bayern munchen": "Bayern Monaco", "paris saint germain": "PSG", "psg": "PSG"
-}
-
-def clean_name(raw_name):
-    for eng, ita in CLEAN_TEAM_NAMES.items():
-        if eng.lower() in raw_name.lower(): return ita
-    return raw_name
-
-# FETCH PARTITE REALI VIA THE ODDS API
+# Fetch Partite Live da The Odds API
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_real_matches(sport_key, api_key):
     if not api_key: return []
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?apiKey={api_key}&regions=eu&markets=h2h,totals&oddsFormat=decimal"
     try:
         res = requests.get(url, timeout=10)
-        if res.status_code == 200:
-            return res.json()
-    except Exception:
-        pass
+        if res.status_code == 200: return res.json()
+    except Exception: pass
     return []
 
-# MOTORE DINAMICO DI CARICAMENTO ROSE
-@st.cache_data(ttl=3600, show_spinner=False)
-def load_dynamic_squads_data():
-    """
-    Legge automaticamente i file delle rose se presenti (squads.txt o squads_data.py).
-    """
-    squads_dict = {}
-    
-    # 1. Tentativo di lettura da squads.txt
-    if os.path.exists("squads.txt"):
-        try:
-            with open("squads.txt", "r", encoding="utf-8") as f:
-                for line in f:
-                    parts = [p.strip() for p in line.strip().split("|")]
-                    if len(parts) >= 4:
-                        # Formato: Campionato | Squadra | Calciatore | Ruolo | Numero
-                        league, team, p_name, role = parts[0], parts[1], parts[2], parts[3]
-                        num = parts[4] if len(parts) > 4 else "-"
-                        
-                        # Mappatura ruolo
-                        pos = "Midfielder"
-                        r_low = role.lower()
-                        if "port" in r_low or "goal" in r_low: pos = "Goalkeeper"
-                        elif "dif" in r_low or "def" in r_low: pos = "Defender"
-                        elif "att" in r_low or "cen" in r_low or "pun" in r_low: pos = "Attacker"
-                        
-                        # Statistiche stimate per ruolo (verranno aggiornate da API)
-                        if pos == "Goalkeeper": s, f, sv = 0.0, 0.1, 3.1
-                        elif pos == "Attacker": s, f, sv = 1.45, 1.25, 0.0
-                        elif pos == "Midfielder": s, f, sv = 0.85, 1.55, 0.0
-                        else: s, f, sv = 0.35, 1.45, 0.0
-                        
-                        c_team = clean_name(team)
-                        if c_team not in squads_dict: squads_dict[c_team] = []
-                        squads_dict[c_team].append({
-                            "name": p_name, "role": pos, "number": num,
-                            "sot_90": s, "fouls_c_90": f, "saves_90": sv,
-                            "penalties": (pos == "Attacker")
-                        })
-            if squads_dict: return squads_dict
-        except Exception:
-            pass
-            
-    return squads_dict
-
-def get_team_squad(team_name, api_key):
-    """Restituisce la rosa per la squadra richiesta."""
-    squads_db = load_dynamic_squads_data()
-    cleaned = clean_name(team_name)
-    
-    for t_name, players in squads_db.items():
-        if t_name.lower() in cleaned.lower() or cleaned.lower() in t_name.lower():
-            return players
-            
-    # Se il file delle rose non e ancora stato allegato
-    return []
-
-# RENDERING CAMPO TATTICO
+# Rendering Campo Tattico 11 vs 11
 def render_visual_pitch_html(team_name, formation_str, players_list, injured_names=None):
     if not players_list:
-        return f'<div style="background:#131D38;border:1px dashed #2DD4BF;border-radius:8px;padding:24px;text-align:center;color:#CBD5E1;">In attesa di caricare il file rose per <b>{team_name}</b></div>'
+        return f'<div style="background:#131D38;border:1px dashed #2DD4BF;border-radius:8px;padding:24px;text-align:center;color:#CBD5E1;">In attesa di caricare la distinta per <b>{team_name}</b></div>'
         
     if injured_names is None: injured_names = []
     gk = [p for p in players_list if p.get('role') == 'Goalkeeper']
@@ -666,20 +564,20 @@ class MatchAnalystEngine:
         return min(fair, 20.0), min(min_entry, 20.0)
 
     @staticmethod
-    def analyze_team_goals_over15(team, opp, is_home, min_edge=0.015, injuries_df=None):
+    def analyze_team_goals_over15(team, opp, is_home, min_edge=0.015):
         xg_final = 1.65 if is_home else 1.25
         prob = float(1.0 - (poisson.pmf(0, xg_final) + poisson.pmf(1, xg_final)))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
         return {
-            "market": f"Over 1.5 Gol ({clean_name(team)})",
+            "market": f"Over 1.5 Gol ({clean_team_name(team)})",
             "market_type": "Over 1.5 Gol Squadra",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
-            "metric_name": "xG Team Finale", "metric_val": f"{xg_final:.2f}",
+            "metric_name": "xG Finale", "metric_val": f"{xg_final:.2f}",
             "note": f"xG Proiettato Modello: {xg_final:.2f}"
         }
 
     @staticmethod
-    def analyze_corners_multiline(h_team, a_team, line=9.5, min_edge=0.015, injuries_df=None):
+    def analyze_corners_multiline(h_team, a_team, line=9.5, min_edge=0.015):
         corners_final = 9.80
         prob = float(1.0 - poisson.cdf(line - 0.5, corners_final))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
@@ -692,7 +590,7 @@ class MatchAnalystEngine:
         }
 
     @staticmethod
-    def analyze_player_sot(player, opp_team, line=0.5, min_edge=0.015, injuries_df=None):
+    def analyze_player_sot(player, opp_team, line=0.5, min_edge=0.015):
         xsot = player.get("sot_90", 1.0) * (84 / 90)
         prob = float(1.0 - poisson.cdf(line - 0.5, xsot))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
@@ -704,7 +602,7 @@ class MatchAnalystEngine:
         }
 
     @staticmethod
-    def analyze_player_fouls(player, opp_team, line=1.5, min_edge=0.015, injuries_df=None):
+    def analyze_player_fouls(player, opp_team, line=1.5, min_edge=0.015):
         xf = player.get("fouls_c_90", 1.0) * (85 / 90)
         prob = float(1.0 - poisson.cdf(line - 0.5, xf))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
@@ -716,15 +614,15 @@ class MatchAnalystEngine:
         }
 
     @staticmethod
-    def analyze_goalkeeper_saves(player, opp_team, line=2.5, min_edge=0.015, injuries_df=None):
-        xsaves = 3.10
+    def analyze_goalkeeper_saves(player, opp_team, line=2.5, min_edge=0.015):
+        xsaves = player.get("saves_90", 3.0)
         prob = float(1.0 - poisson.cdf(line - 0.5, xsaves))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
         return {
             "market": f"Over {line} Parate ({player['name']})",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "Parate Proiettate", "metric_val": f"{xsaves:.2f}",
-            "note": "Save rate stimato 72%"
+            "note": "Media parate per 90 minuti"
         }
 
 # Header & Sidebar
@@ -743,6 +641,7 @@ st.sidebar.markdown("### SELEZIONA COMPETIZIONE")
 selected_league_label = st.sidebar.selectbox("Campionato / Torneo", list(LEAGUES_CONFIG.keys()), index=0)
 selected_league_cfg = LEAGUES_CONFIG[selected_league_label]
 sport_api_key = selected_league_cfg["key"]
+is_serie_a = selected_league_cfg["has_players"]
 
 if not is_premium:
     st.sidebar.markdown("---")
@@ -769,7 +668,7 @@ kelly_fraction = st.sidebar.select_slider("Frazione di Kelly", options=[0.25, 0.
 min_edge_pct = st.sidebar.slider("Soglia Minima Edge (%)", min_value=1.0, max_value=3.0, value=1.5, step=0.5)
 min_edge_val = min_edge_pct / 100.0
 
-# Calcolo Bankroll
+# Bankroll
 bets_df = fetch_user_bets(user_id)
 total_profit = 0.0
 yield_pct = 0.0
@@ -807,33 +706,41 @@ st.title("VALUE BET ANALYZER")
 st.markdown('<div class="slogan-box">In questa suite non si forzano le giocate: si opera solo ed esclusivamente in presenza di valore matematico misurabile. Nel lungo periodo, il valore coincide con il profitto.</div>', unsafe_allow_html=True)
 
 if matches:
-    st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • {len(matches)} PARTITE DISPONIBILI</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • {len(matches)} PARTITE LIVE DISPONIBILI</div>', unsafe_allow_html=True)
 else:
-    st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA IN PROGRAMMA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
 
-# 8 SCHEDE ORIGINALI
-tab_scan, tab1, tab2, tab3, tab4, tab_inj, tab5, tab6 = st.tabs([
-    "Scanner Top 5 del Turno",
-    "Mercati Principali",
-    "Statistiche & Tattica Squadre",
-    "Prestazioni Calciatori & Portieri",
-    "Focus Disciplinare & Arbitri",
-    "Infermeria",
-    "Registro Scommesse",
-    "Gestione Account"
-])
+# GESTIONE SCHEDE (8 PER SERIE A, 5 PER ALTRE LEGHE)
+if is_serie_a:
+    tab_scan, tab1, tab2, tab3, tab4, tab_inj, tab5, tab6 = st.tabs([
+        "Scanner Top 5 del Turno",
+        "Mercati Principali",
+        "Statistiche & Tattica Squadre",
+        "Prestazioni Calciatori & Portieri",
+        "Focus Disciplinare & Arbitri",
+        "Infermeria Serie A",
+        "Registro Scommesse",
+        "Gestione Account"
+    ])
+else:
+    tab_scan, tab1, tab2, tab5, tab6 = st.tabs([
+        "Scanner Top 5 del Turno",
+        "Mercati Principali",
+        "Statistiche & Tattica Squadre",
+        "Registro Scommesse",
+        "Gestione Account"
+    ])
 
 # 1. SCANNER TOP 5 (CON 1 RICERCA SETTIMANALE PER FREE)
 with tab_scan:
     st.markdown(f"### TOP 5 VALUE BETS ({selected_league_label.upper()})")
-    
     user_has_access = is_premium
     if not is_premium:
         if can_scan_free:
             st.markdown(f"""
             <div class="free-scan-banner">
                 <b style="color: #2DD4BF; font-size: 1.05rem;">🎯 PIANO FREE: 1 RICERCA SETTIMANALE DISPONIBILE (1/1)</b><br>
-                Sblocca l'analisi completa di tutte le 5 giocate di valore per questa settimana.
+                Sblocca l'analisi completa di tutte le 5 giocate per questa settimana.
             </div>
             """, unsafe_allow_html=True)
             if st.button("ESEGUI LA TUA RICERCA GRATUITA SETTIMANALE", use_container_width=True, key="btn_use_free_scan"):
@@ -843,7 +750,7 @@ with tab_scan:
             st.markdown(f"""
             <div class="free-scan-banner" style="border-color: #F59E0B;">
                 <b style="color: #FCD34D; font-size: 1.05rem;">🔒 LIMITE SETTIMANALE RAGGIUNTO (0/1)</b><br>
-                Hai gia utilizzato la tua ricerca gratuita per questa settimana. Reset previsto per <b>lunedi prossimo</b>.
+                Hai gia utilizzato la tua ricerca gratuita. Reset automatico previsto per <b>lunedi prossimo</b>.
             </div>
             """, unsafe_allow_html=True)
             if st.session_state.get("last_free_scan_week") == get_current_week_str():
@@ -852,14 +759,14 @@ with tab_scan:
     if matches:
         all_opportunities = []
         for m in matches:
-            h = clean_name(m.get("home_team", ""))
-            a = clean_name(m.get("away_team", ""))
+            h = clean_team_name(m.get("home_team", ""))
+            a = clean_team_name(m.get("away_team", ""))
             m_title = f"{h} vs {a}"
             m_date = m.get("commence_time", "")[:10]
-            all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_team_goals_over15(h, a, True, min_edge_val, injuries_df)})
-            all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_team_goals_over15(a, h, False, min_edge_val, injuries_df)})
+            all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_team_goals_over15(h, a, True, min_edge_val)})
+            all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_team_goals_over15(a, h, False, min_edge_val)})
             for l_c in [8.5, 9.5, 10.5]:
-                all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_corners_multiline(h, a, l_c, min_edge_val, injuries_df)})
+                all_opportunities.append({"match": m_title, "date": m_date, **MatchAnalystEngine.analyze_corners_multiline(h, a, l_c, min_edge_val)})
         
         valid_opps = [op for op in all_opportunities if op["min_odds"] >= 1.40]
         valid_opps.sort(key=lambda x: x["prob"], reverse=True)
@@ -890,9 +797,9 @@ with tab1:
     st.markdown(f"### TOP MERCATI PRINCIPALI ({selected_league_label.upper()})")
     if matches:
         for m in matches:
-            h = clean_name(m.get("home_team", ""))
-            a = clean_name(m.get("away_team", ""))
-            res = MatchAnalystEngine.analyze_team_goals_over15(h, a, True, min_edge_val, injuries_df)
+            h = clean_team_name(m.get("home_team", ""))
+            a = clean_team_name(m.get("away_team", ""))
+            res = MatchAnalystEngine.analyze_team_goals_over15(h, a, True, min_edge_val)
             st.write(f"**{h} vs {a}** | Over 1.5 Gol {h} -> Quota Minima: `{res['min_odds']:.2f}` (Prob: {res['prob']*100:.1f}%)")
     else:
         st.info("Nessuna quota live disponibile al momento.")
@@ -901,87 +808,108 @@ with tab1:
 with tab2:
     st.markdown(f"### STATISTICHE & QUADRO TATTICO ({selected_league_label.upper()})")
     if matches:
-        match_options = [f"{clean_name(m.get('home_team',''))} vs {clean_name(m.get('away_team',''))}" for m in matches]
+        match_options = [f"{clean_team_name(m.get('home_team',''))} vs {clean_team_name(m.get('away_team',''))}" for m in matches]
         sel_idx = st.selectbox("Seleziona Incontro da Analizzare", range(len(match_options)), format_func=lambda x: match_options[x], key="c2_match_sel")
         m_sel = matches[sel_idx]
-        h2 = clean_name(m_sel.get("home_team",""))
-        a2 = clean_name(m_sel.get("away_team",""))
+        h2 = clean_team_name(m_sel.get("home_team",""))
+        a2 = clean_team_name(m_sel.get("away_team",""))
         
-        h2_squad = get_team_squad(h2, FOOTBALL_KEY)
-        a2_squad = get_team_squad(a2, FOOTBALL_KEY)
+        # Recupero Allenatore e Modulo Tattico per Serie A
+        h2_tactic = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato"})
+        a2_tactic = SERIE_A_TACTICS.get(a2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato"})
+        
+        col_tac1, col_tac2 = st.columns(2)
+        with col_tac1:
+            st.markdown(f"""
+            <div class="tactical-card">
+                <b>{h2.upper()} (Casa)</b><br>
+                • <b>Allenatore:</b> {h2_tactic['coach']}<br>
+                • <b>Modulo Tattico:</b> {h2_tactic['formation']}<br>
+                • <b>Identita Tattica:</b> {h2_tactic['style']}
+            </div>
+            """, unsafe_allow_html=True)
+        with col_tac2:
+            st.markdown(f"""
+            <div class="tactical-card">
+                <b>{a2.upper()} (Trasferta)</b><br>
+                • <b>Allenatore:</b> {a2_tactic['coach']}<br>
+                • <b>Modulo Tattico:</b> {a2_tactic['formation']}<br>
+                • <b>Identita Tattica:</b> {a2_tactic['style']}
+            </div>
+            """, unsafe_allow_html=True)
+        
+        h2_squad = get_team_squad_from_db(selected_league_label, h2)
+        a2_squad = get_team_squad_from_db(selected_league_label, a2)
         
         col_pitch_h, col_pitch_a = st.columns(2)
-        with col_pitch_h: st.markdown(render_visual_pitch_html(h2, "4-3-3", h2_squad), unsafe_allow_html=True)
-        with col_pitch_a: st.markdown(render_visual_pitch_html(a2, "4-3-3", a2_squad), unsafe_allow_html=True)
+        with col_pitch_h: st.markdown(render_visual_pitch_html(h2, h2_tactic['formation'], h2_squad), unsafe_allow_html=True)
+        with col_pitch_a: st.markdown(render_visual_pitch_html(a2, a2_tactic['formation'], a2_squad), unsafe_allow_html=True)
     else:
         st.info("Nessuna partita in programma.")
 
-# 4. PRESTAZIONI CALCIATORI & PORTIERI
-with tab3:
-    st.markdown(f"### PRESTAZIONI CALCIATORI & PORTIERI ({selected_league_label.upper()})")
-    if matches:
-        match_options_c3 = [f"{clean_name(m.get('home_team',''))} vs {clean_name(m.get('away_team',''))}" for m in matches]
-        sel_m3_idx = st.selectbox("Seleziona Incontro", range(len(match_options_c3)), format_func=lambda x: match_options_c3[x], key="c3_match_sel")
-        m3 = matches[sel_m3_idx]
-        h3 = clean_name(m3.get("home_team",""))
-        a3 = clean_name(m3.get("away_team",""))
-        
-        h3_players = get_team_squad(h3, FOOTBALL_KEY)
-        a3_players = get_team_squad(a3, FOOTBALL_KEY)
-        
-        tab_h, tab_a = st.tabs([f"Squadra Casa: {h3}", f"Squadra Trasferta: {a3}"])
-        
-        def render_player_panel(players_list, team_name, opp_team, key_prefix):
-            if not players_list:
-                st.info(f"Nessun calciatore caricato per {team_name}. Incolla il testo delle rose per visualizzare l'elenco.")
-                return
-            p_display = [f"{p['name']} ({p['role']} #{p['number']})" for p in players_list]
-            sel_p_i = st.selectbox(f"Seleziona Calciatore ({team_name})", range(len(p_display)), format_func=lambda x: p_display[x], key=f"{key_prefix}_sel")
-            chosen_p = players_list[sel_p_i]
+# 4. PRESTAZIONI CALCIATORI & PORTIERI (ESCLUSIVA SERIE A 2026/2027)
+if is_serie_a:
+    with tab3:
+        st.markdown("### PRESTAZIONI CALCIATORI & PORTIERI (SERIE A 2026/2027)")
+        if matches:
+            match_options_c3 = [f"{clean_team_name(m.get('home_team',''))} vs {clean_team_name(m.get('away_team',''))}" for m in matches]
+            sel_m3_idx = st.selectbox("Seleziona Incontro", range(len(match_options_c3)), format_func=lambda x: match_options_c3[x], key="c3_match_sel")
+            m3 = matches[sel_m3_idx]
+            h3 = clean_team_name(m3.get("home_team",""))
+            a3 = clean_team_name(m3.get("away_team",""))
             
-            if chosen_p["role"] == "Goalkeeper":
-                st.markdown("#### Mercato: Parate Portiere")
-                saves_res = MatchAnalystEngine.analyze_goalkeeper_saves(chosen_p, opp_team, 2.5, min_edge_val, injuries_df)
-                st.metric("Probabilita Modello", f"{saves_res['prob']*100:.1f}%")
-                st.write(f"**Quota Equa:** `{saves_res['fair_odds']:.2f}` | **Quota Minima:** `{saves_res['min_odds']:.2f}`")
-            else:
-                col_m1, col_m2 = st.columns(2)
-                with col_m1:
-                    st.markdown("#### Mercato: Tiri in Porta")
-                    sot_res = MatchAnalystEngine.analyze_player_sot(chosen_p, opp_team, 0.5, min_edge_val, injuries_df)
-                    st.metric("Probabilita Modello", f"{sot_res['prob']*100:.1f}%")
-                    st.write(f"**Quota Equa:** `{sot_res['fair_odds']:.2f}` | **Quota Minima:** `{sot_res['min_odds']:.2f}`")
-                with col_m2:
-                    st.markdown("#### Mercato: Falli Commessi")
-                    foul_res = MatchAnalystEngine.analyze_player_fouls(chosen_p, opp_team, 1.5, min_edge_val, injuries_df)
-                    st.metric("Probabilita Modello", f"{foul_res['prob']*100:.1f}%")
-                    st.write(f"**Quota Equa:** `{foul_res['fair_odds']:.2f}` | **Quota Minima:** `{foul_res['min_odds']:.2f}`")
-                    
-        with tab_h: render_player_panel(h3_players, h3, a3, "tab_h_p")
-        with tab_a: render_player_panel(a3_players, a3, h3, "tab_a_p")
-    else:
-        st.info("Nessuna partita disponibile.")
+            h3_players = get_team_squad_from_db(selected_league_label, h3)
+            a3_players = get_team_squad_from_db(selected_league_label, a3)
+            
+            tab_h, tab_a = st.tabs([f"Squadra Casa: {h3}", f"Squadra Trasferta: {a3}"])
+            
+            def render_player_panel(players_list, team_name, opp_team, key_prefix):
+                p_display = [f"{p['name']} ({p['role']} #{p['number']})" for p in players_list]
+                sel_p_i = st.selectbox(f"Seleziona Calciatore ({team_name})", range(len(p_display)), format_func=lambda x: p_display[x], key=f"{key_prefix}_sel")
+                chosen_p = players_list[sel_p_i]
+                
+                if chosen_p["role"] == "Goalkeeper":
+                    st.markdown("#### Mercato: Parate Portiere")
+                    saves_res = MatchAnalystEngine.analyze_goalkeeper_saves(chosen_p, opp_team, 2.5, min_edge_val)
+                    st.metric("Probabilità Modello", f"{saves_res['prob']*100:.1f}%")
+                    st.write(f"**Quota Equa:** `{saves_res['fair_odds']:.2f}` | **Quota Minima:** `{saves_res['min_odds']:.2f}`")
+                else:
+                    col_m1, col_m2 = st.columns(2)
+                    with col_m1:
+                        st.markdown("#### Mercato: Tiri in Porta")
+                        sot_res = MatchAnalystEngine.analyze_player_sot(chosen_p, opp_team, 0.5, min_edge_val)
+                        st.metric("Probabilità Modello", f"{sot_res['prob']*100:.1f}%")
+                        st.write(f"**Quota Equa:** `{sot_res['fair_odds']:.2f}` | **Quota Minima:** `{sot_res['min_odds']:.2f}`")
+                    with col_m2:
+                        st.markdown("#### Mercato: Falli Commessi")
+                        foul_res = MatchAnalystEngine.analyze_player_fouls(chosen_p, opp_team, 1.5, min_edge_val)
+                        st.metric("Probabilità Modello", f"{foul_res['prob']*100:.1f}%")
+                        st.write(f"**Quota Equa:** `{foul_res['fair_odds']:.2f}` | **Quota Minima:** `{foul_res['min_odds']:.2f}`")
+                        
+            with tab_h: render_player_panel(h3_players, h3, a3, "tab_h_p")
+            with tab_a: render_player_panel(a3_players, a3, h3, "tab_a_p")
+        else:
+            st.info("Nessuna partita disponibile.")
 
-# 5. FOCUS DISCIPLINARE & ARBITRI
-with tab4:
-    st.markdown("### FOCUS DISCIPLINARE & ARBITRI")
-    st.info("Statistiche arbitrali integrate con modello di Poisson.")
+    # 5. FOCUS DISCIPLINARE & ARBITRI
+    with tab4:
+        st.markdown("### FOCUS DISCIPLINARE & ARBITRI")
+        st.info("Statistiche arbitrali e calcolo cartellini per la Serie A.")
 
-# 6. INFERMERIA
-with tab_inj:
-    st.markdown("### GESTIONE INFERMERIA & INDISPONIBILI")
-    c_in1, c_in2 = st.columns(2)
-    with c_in1:
-        inj_team = st.text_input("Squadra", placeholder="es. Inter, Arsenal, Real Madrid...")
-        inj_player = st.text_input("Nome Calciatore", placeholder="es. Nome Giocatore")
-    with c_in2:
-        inj_imp = st.selectbox("Importanza Tattica", ["Top Player Offensivo", "Difensore Chiave", "Portiere Titolare"])
-        inj_diag = st.text_input("Diagnosi", placeholder="es. Lesione muscolare")
-        if st.button("AGGIUNGI IN INFERMERIA", use_container_width=True):
-            if inj_team and inj_player:
-                save_injury(inj_team, inj_player, inj_imp, inj_diag, "Da definire")
-                st.success("Infortunio registrato.")
-                st.rerun()
+    # 6. INFERMERIA
+    with tab_inj:
+        st.markdown("### GESTIONE INFERMERIA & INDISPONIBILI SERIE A")
+        col_inj_in1, col_inj_in2 = st.columns(2)
+        with col_inj_in1:
+            inj_team = st.text_input("Squadra", placeholder="es. Inter, Juventus, Milan...", key="inj_team_input")
+            inj_player = st.text_input("Nome Calciatore", placeholder="es. Nome Giocatore", key="inj_player_input")
+        with col_inj_in2:
+            inj_imp = st.selectbox("Importanza Tattica", ["Top Player Offensivo", "Difensore Chiave", "Portiere Titolare"], key="inj_importance_select")
+            inj_diag = st.text_input("Diagnosi", placeholder="es. Lesione muscolare", key="inj_type_input")
+            if st.button("AGGIUNGI IN INFERMERIA", use_container_width=True):
+                if inj_team and inj_player:
+                    save_injury(inj_team, inj_player, inj_imp, inj_diag, "Da definire")
+                    st.success("Infortunio registrato.")
 
 # 7. REGISTRO SCOMMESSE
 with tab5:
