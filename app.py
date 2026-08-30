@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Alto
+# Styling CSS Dark Fintech
 st.markdown(
     """
     <style>
@@ -193,17 +193,6 @@ st.markdown(
         padding: 12px 16px;
         margin-top: 10px;
         margin-bottom: 14px;
-    }
-    
-    .lineup-badge-off {
-        background-color: rgba(45, 212, 191, 0.15);
-        border: 1px solid #2DD4BF;
-        color: #2DD4BF;
-        font-size: 0.80rem;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 4px;
-        display: inline-block;
     }
     
     .stButton>button {
@@ -511,7 +500,7 @@ LEAGUES_CONFIG = {
     "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "has_players": False}
 }
 
-# ORGANICO COMPLETO ARBITRI CAN A-B
+# ORGANICO ARBITRI CAN A-B
 SERIE_A_REFEREES_DB = {
     "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
     "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
@@ -555,7 +544,7 @@ SERIE_A_REFEREES_DB = {
     "cosso": {"name": "Francesco Cosso", "fouls_avg": 26.4, "cards_avg": 4.5, "severity": "Standard"}
 }
 
-# Fetch Partite Live da The Odds API
+# Fetch Partite Live
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_real_matches(sport_key, api_key):
     if not api_key: return []
@@ -566,57 +555,43 @@ def fetch_real_matches(sport_key, api_key):
     except Exception: pass
     return []
 
-# RENDERING CAMPO TATTICO (ESATTAMENTE 11 TITOLARI COERENTI CON IL MODULO)
+# RENDERING CAMPO TATTICO (11 TITOLARI COERENTI AL 100% CON IL MODULO)
 def render_visual_pitch_html(team_name, formation_str, players_list, injured_names=None):
     if not players_list:
         return f'<div style="background:#131D38;border:1px dashed #2DD4BF;border-radius:8px;padding:24px;text-align:center;color:#CBD5E1;">In attesa di caricare la distinta per <b>{team_name}</b></div>'
         
     if injured_names is None: injured_names = []
     
-    # Suddivisione giocatori per ruolo
+    # Ripartizione rigorosa per ruolo effettivo
     gk_pool = [p for p in players_list if p.get('role') == 'Goalkeeper']
     def_pool = [p for p in players_list if p.get('role') == 'Defender']
     mid_pool = [p for p in players_list if p.get('role') == 'Midfielder']
     att_pool = [p for p in players_list if p.get('role') == 'Attacker']
     
-    # Conteggi esatti in base al modulo
+    # 1 Solo Portiere
+    gk_player = gk_pool[0] if gk_pool else {"name": "Portiere", "number": "1", "role": "Goalkeeper"}
+    
+    # Riconoscimento numero di giocatori per reparto dal modulo
     num_d, num_m, num_a = 4, 3, 3
     if "3-5-2" in formation_str: num_d, num_m, num_a = 3, 5, 2
     elif "4-2-3-1" in formation_str: num_d, num_m, num_a = 4, 5, 1
     elif "3-4-2-1" in formation_str: num_d, num_m, num_a = 3, 4, 3
     elif "4-3-3" in formation_str: num_d, num_m, num_a = 4, 3, 3
+    elif "5-3-2" in formation_str: num_d, num_m, num_a = 5, 3, 2
     
-    gk_player = gk_pool[0] if gk_pool else {"name": "Portiere", "number": "1"}
+    # Selezione giocatori di movimento (nessun portiere può andare nei reparti di movimento)
+    selected_defs = def_pool[:num_d]
+    selected_mids = mid_pool[:num_m]
+    selected_atts = att_pool[:num_a]
     
-    used_names = {gk_player.get("name")}
-    
-    def pick_players(pool, count):
-        selected = []
-        for p in pool:
-            if p.get("name") not in used_names:
-                selected.append(p)
-                used_names.add(p.get("name"))
-                if len(selected) == count: break
-        return selected
-        
-    defs = pick_players(def_pool, num_d)
-    mids = pick_players(mid_pool, num_m)
-    atts = pick_players(att_pool, num_a)
-    
-    # Se mancano giocatori per completare gli 11, attingi dai rimanenti
-    all_remaining = [p for p in players_list if p.get("name") not in used_names]
-    while len(defs) < num_d and all_remaining:
-        p = all_remaining.pop(0)
-        defs.append(p)
-        used_names.add(p.get("name"))
-    while len(mids) < num_m and all_remaining:
-        p = all_remaining.pop(0)
-        mids.append(p)
-        used_names.add(p.get("name"))
-    while len(atts) < num_a and all_remaining:
-        p = all_remaining.pop(0)
-        atts.append(p)
-        used_names.add(p.get("name"))
+    # Se mancano giocatori in un ruolo di movimento, attingi solo da altri ruoli di movimento
+    outfield_reserves = def_pool[num_d:] + mid_pool[num_m:] + att_pool[num_a:]
+    while len(selected_defs) < num_d and outfield_reserves:
+        selected_defs.append(outfield_reserves.pop(0))
+    while len(selected_mids) < num_m and outfield_reserves:
+        selected_mids.append(outfield_reserves.pop(0))
+    while len(selected_atts) < num_a and outfield_reserves:
+        selected_atts.append(outfield_reserves.pop(0))
     
     def badge(p, is_gk=False):
         p_name = p.get('name', 'Giocatore')
@@ -627,9 +602,9 @@ def render_visual_pitch_html(team_name, formation_str, players_list, injured_nam
         nom = f"<s>{p_name}</s>" if is_inj else p_name
         return f'<div style="text-align:center;width:70px;display:inline-block;margin:2px;"><div style="width:28px;height:28px;border-radius:50%;background:{c};color:{tc};font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 2px auto;border:2px solid #000;">{num}</div><div style="color:#FFFFFF;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{nom}</div></div>'
         
-    atts_h = "".join([badge(p) for p in atts])
-    mids_h = "".join([badge(p) for p in mids])
-    defs_h = "".join([badge(p) for p in defs])
+    atts_h = "".join([badge(p) for p in selected_atts])
+    mids_h = "".join([badge(p) for p in selected_mids])
+    defs_h = "".join([badge(p) for p in selected_defs])
     gk_h = badge(gk_player, is_gk=True)
     
     return f'<div style="background:linear-gradient(180deg,#1e5138 0%,#143a28 100%);border:2px solid #2DD4BF;border-radius:8px;padding:14px 6px;text-align:center;margin-bottom:15px;"><div style="color:#2DD4BF;font-weight:800;font-size:13px;margin-bottom:10px;">{team_name.upper()} • {formation_str} (11 Titolari)</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{atts_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{mids_h}</div><div style="display:flex;justify-content:center;margin-bottom:10px;">{defs_h}</div><div style="display:flex;justify-content:center;">{gk_h}</div></div>'
@@ -703,7 +678,7 @@ class MatchAnalystEngine:
             "market": f"Over {line} Falli Commessi ({player['name']})",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "xFouls Attesi", "metric_val": f"{xf:.2f}",
-            "note": f"Media Falli/90m: {player.get('fouls_c_90', 1.0):.2f}"
+            "note": f"Media Falli Commessi/90m: {player.get('fouls_c_90', 1.0):.2f}"
         }
 
     @staticmethod
@@ -1012,6 +987,7 @@ with tab2:
         h2 = clean_team_name(m_sel.get("home_team",""))
         a2 = clean_team_name(m_sel.get("away_team",""))
         
+        # Recupero Allenatore e Modulo Tattico per Serie A
         h2_tactic = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato"})
         a2_tactic = SERIE_A_TACTICS.get(a2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato"})
         
@@ -1100,7 +1076,6 @@ if is_serie_a:
                         key=f"{key_prefix}_mkt_choice"
                     )
                     
-                    # Calcolo in base alla selezione
                     if "Tiri in Porta" in market_choice:
                         line = 0.5 if "0.5" in market_choice else 1.5
                         res_p = MatchAnalystEngine.analyze_player_sot(chosen_p, opp_team, line, min_edge_val)
