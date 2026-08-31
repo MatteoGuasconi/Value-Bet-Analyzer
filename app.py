@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Alto
+# Styling CSS Dark Fintech
 st.markdown(
     """
     <style>
@@ -36,7 +36,7 @@ st.markdown(
         display: none !important;
     }
     
-    /* FIX DEFINITIVO MENU LATERALE SU SMARTPHONE & SAFARI */
+    /* FIX MENU LATERALE SMARTPHONE & SAFARI */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
@@ -62,7 +62,7 @@ st.markdown(
         height: 24px !important;
     }
     
-    /* FIX ICONA MOSTRA PASSWORD */
+    /* FIX ICONA PASSWORD */
     [data-testid="stTextInput"] button {
         color: #2DD4BF !important;
         background-color: #2D3A5D !important;
@@ -515,11 +515,11 @@ def update_bet_status(bet_id, new_status, odds, stake):
 
 # COMPETIZIONI & CAMPIONATI
 LEAGUES_CONFIG = {
-    "Serie A (Italia)": {"key": "soccer_italy_serie_a", "has_players": True},
-    "Premier League (Inghilterra)": {"key": "soccer_epl", "has_players": False},
-    "La Liga (Spagna)": {"key": "soccer_spain_la_liga", "has_players": False},
-    "Bundesliga (Germania)": {"key": "soccer_germany_bundesliga", "has_players": False},
-    "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "has_players": False}
+    "Serie A (Italia)": {"key": "soccer_italy_serie_a", "league_id": 135, "has_players": True},
+    "Premier League (Inghilterra)": {"key": "soccer_epl", "league_id": 39, "has_players": False},
+    "La Liga (Spagna)": {"key": "soccer_spain_la_liga", "league_id": 140, "has_players": False},
+    "Bundesliga (Germania)": {"key": "soccer_germany_bundesliga", "league_id": 78, "has_players": False},
+    "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "league_id": 61, "has_players": False}
 }
 
 API_FOOTBALL_TEAM_IDS = {
@@ -533,110 +533,86 @@ API_FOOTBALL_TEAM_IDS = {
     "Bayern Monaco": 157, "PSG": 85
 }
 
-# RILEVAMENTO FORMAZIONI UFFICIALI IN TEMPO REALE CON API-FOOTBALL (CACHE 3 MINUTI)
-@st.cache_data(ttl=180, show_spinner=False)
-def fetch_live_official_lineup(home_team, away_team, api_key):
+# RILEVAMENTO FORMAZIONI IN TEMPO REALE CON API-FOOTBALL
+@st.cache_data(ttl=120, show_spinner=False)
+def fetch_live_official_lineup(home_team, away_team, match_date_str, api_key):
+    """Interroga direttamente API-Football per rilevare le formazioni ufficiali a referto."""
     h_name = clean_team_name(home_team)
     a_name = clean_team_name(away_team)
     h_id = API_FOOTBALL_TEAM_IDS.get(h_name)
     
     if not h_id or not api_key:
-        return "PROBABILE", None, None, None, None
+        return "PROBABILE", None, None, None, None, "API Key o ID squadra non configurato."
         
     headers = {"x-apisports-key": api_key}
     fixture_id = None
     
-    # 1. Cerca la partita specifica per team
-    for param in ["next=3", "last=2"]:
-        url = f"https://v3.football.api-sports.io/fixtures?team={h_id}&{param}"
-        try:
-            res = requests.get(url, headers=headers, timeout=6)
-            if res.status_code == 200:
-                fixtures = res.json().get("response", [])
-                for fix in fixtures:
-                    t_h = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
-                    t_a = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
-                    if (h_name.lower() in t_h.lower() or t_h.lower() in h_name.lower()) and \
-                       (a_name.lower() in t_a.lower() or t_a.lower() in a_name.lower()):
-                        fixture_id = fix.get("fixture", {}).get("id")
-                        break
-            if fixture_id: break
-        except Exception:
-            pass
-
-    # 2. Se abbiamo il fixture_id, recupera la distinta ufficiale depositata
-    if fixture_id:
-        try:
-            l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=6)
-            if l_res.status_code == 200:
-                l_data = l_res.json().get("response", [])
-                if len(l_data) >= 2:
-                    pos_map = {"G": "Goalkeeper", "D": "Defender", "M": "Midfielder", "F": "Attacker"}
-                    def parse_official_xi(team_obj):
-                        form_str = team_obj.get("formation", "4-3-3")
-                        starters = []
-                        for p in team_obj.get("startXI", []):
-                            p_info = p.get("player", {})
-                            p_pos = pos_map.get(p_info.get("pos", "M"), "Midfielder")
-                            sot_val = 1.45 if p_pos == "Attacker" else (0.85 if p_pos == "Midfielder" else 0.35)
-                            starters.append({
-                                "name": p_info.get("name", "Giocatore"),
-                                "role": p_pos,
-                                "number": str(p_info.get("number", "-")),
-                                "sot_90": 0.0 if p_pos == "Goalkeeper" else sot_val,
-                                "fouls_c_90": 0.1 if p_pos == "Goalkeeper" else 1.45,
-                                "saves_90": 3.2 if p_pos == "Goalkeeper" else 0.0,
-                                "penalties": (p_pos == "Attacker")
-                            })
-                        return form_str, starters
-
-                    form_h, xi_h = parse_official_xi(l_data[0])
-                    form_a, xi_a = parse_official_xi(l_data[1])
-                    if len(xi_h) >= 11 and len(xi_a) >= 11:
-                        return "UFFICIALE", form_h, xi_h, form_a, xi_a
-        except Exception:
-            pass
-            
-    return "PROBABILE", None, None, None, None
-
-# FETCH STATISTICHE REALI DEI CALCIATORI DA API-FOOTBALL (P90)
-@st.cache_data(ttl=43200, show_spinner=False)
-def fetch_player_p90_stats_api(team_name, api_key):
-    """Recupera le metriche P90 reali da API-Football per la squadra."""
-    cleaned = clean_team_name(team_name)
-    team_id = API_FOOTBALL_TEAM_IDS.get(cleaned)
-    if not team_id or not api_key: return {}
+    # Query 1: Cerca le partite della data specifica
+    date_formatted = match_date_str[:10] if match_date_str else datetime.datetime.now().strftime("%Y-%m-%d")
+    url_date = f"https://v3.football.api-sports.io/fixtures?date={date_formatted}&team={h_id}"
     
-    headers = {"x-apisports-key": api_key}
-    stats_map = {}
-    now_year = datetime.datetime.now().year
-    
-    for season in [now_year, now_year - 1, 2024]:
-        url = f"https://v3.football.api-sports.io/players?team={team_id}&season={season}"
-        try:
-            res = requests.get(url, headers=headers, timeout=8)
-            if res.status_code == 200:
-                data = res.json().get("response", [])
-                if data:
-                    for entry in data:
-                        p_name = entry.get("player", {}).get("name", "").lower()
-                        st_list = entry.get("statistics", [])
-                        if st_list:
-                            s = st_list[0]
-                            mins = s.get("games", {}).get("minutes") or 0
-                            if mins >= 45:
-                                factor = 90.0 / mins
-                                stats_map[p_name] = {
-                                    "sot_90": round((s.get("shots", {}).get("on") or 0) * factor, 2),
-                                    "tot_shots_90": round((s.get("shots", {}).get("total") or 0) * factor, 2),
-                                    "fouls_c_90": round((s.get("fouls", {}).get("committed") or 0) * factor, 2),
-                                    "fouls_d_90": round((s.get("fouls", {}).get("drawn") or 0) * factor, 2),
-                                    "saves_90": round((s.get("goals", {}).get("saves") or 0) * factor, 2)
-                                }
-                    if stats_map: break
-        except Exception:
-            pass
-    return stats_map
+    try:
+        res = requests.get(url_date, headers=headers, timeout=6)
+        if res.status_code == 200 and res.json().get("response"):
+            fixtures = res.json().get("response")
+            for fix in fixtures:
+                fixture_id = fix.get("fixture", {}).get("id")
+                break
+    except Exception:
+        pass
+        
+    # Query 2: Fallback su partite recenti / imminenti del team
+    if not fixture_id:
+        for param in ["next=5", "last=3"]:
+            url_fb = f"https://v3.football.api-sports.io/fixtures?team={h_id}&{param}"
+            try:
+                res_fb = requests.get(url_fb, headers=headers, timeout=6)
+                if res_fb.status_code == 200:
+                    for fix in res_fb.json().get("response", []):
+                        t_h = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
+                        t_a = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
+                        if (h_name.lower() in t_h.lower() or t_h.lower() in h_name.lower()) and \
+                           (a_name.lower() in t_a.lower() or t_a.lower() in a_name.lower()):
+                            fixture_id = fix.get("fixture", {}).get("id")
+                            break
+                if fixture_id: break
+            except Exception:
+                pass
+
+    if not fixture_id:
+        return "PROBABILE", None, None, None, None, "Partita non ancora indicizzata nei server live di API-Football."
+
+    # Query 3: Lettura formazioni depositate sul fixture_id trovato
+    try:
+        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=6)
+        if l_res.status_code == 200:
+            l_data = l_res.json().get("response", [])
+            if len(l_data) >= 2 and len(l_data[0].get("startXI", [])) >= 11:
+                pos_map = {"G": "Goalkeeper", "D": "Defender", "M": "Midfielder", "F": "Attacker"}
+                def parse_xi(t_obj):
+                    form_str = t_obj.get("formation", "4-3-3")
+                    starters = []
+                    for p in t_obj.get("startXI", []):
+                        p_info = p.get("player", {})
+                        p_pos = pos_map.get(p_info.get("pos", "M"), "Midfielder")
+                        starters.append({
+                            "name": p_info.get("name", "Giocatore"),
+                            "role": p_pos,
+                            "number": str(p_info.get("number", "-")),
+                            "sot_90": 0.0 if p_pos == "Goalkeeper" else (1.45 if p_pos == "Attacker" else 0.85),
+                            "fouls_c_90": 0.1 if p_pos == "Goalkeeper" else 1.45,
+                            "saves_90": 3.2 if p_pos == "Goalkeeper" else 0.0,
+                            "penalties": (p_pos == "Attacker")
+                        })
+                    return form_str, starters
+
+                form_h, xi_h = parse_xi(l_data[0])
+                form_a, xi_a = parse_xi(l_data[1])
+                return "UFFICIALE", form_h, xi_h, form_a, xi_a, f"Distinta ufficiale confermata (Fixture ID: {fixture_id})."
+    except Exception as e:
+        return "PROBABILE", None, None, None, None, f"Errore di connessione: {str(e)}"
+        
+    return "PROBABILE", None, None, None, None, f"Distinta ufficiale non ancora depositata a referto dai club (Fixture ID: {fixture_id})."
 
 # Fetch Partite Live
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -947,18 +923,6 @@ class MatchAnalystEngine:
             "note": "Media parate per 90 minuti (Save Rate stimato 72%)"
         }
 
-    @staticmethod
-    def analyze_disciplinary_match(h_team, a_team, ref_data, line=4.5, min_edge=0.015):
-        cards_exp = ref_data.get("cards_avg", 4.5)
-        prob = float(1.0 - poisson.cdf(line - 0.5, cards_exp))
-        fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
-        return {
-            "market": f"Over {line} Cartellini Totali",
-            "prob": prob, "fair_odds": fair, "min_odds": min_odds,
-            "metric_name": "Cartellini Attesi", "metric_val": f"{cards_exp:.2f}",
-            "note": f"Arbitro: {ref_data['name']} (Media: {ref_data['cards_avg']:.1f} cartellini - Severità: {ref_data['severity']})"
-        }
-
 # Header & Sidebar
 is_premium = st.session_state.user_tier == "premium"
 tier_label = "PIANO PREMIUM (ATTIVO)" if is_premium else "PIANO FREE"
@@ -1058,7 +1022,7 @@ if matches:
 else:
     st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA IN PROGRAMMA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
 
-# 8 SCHEDE PER SERIE A, 5 PER ALTRE LEGHE
+# GESTIONE SCHEDE (8 PER SERIE A, 5 PER ALTRE LEGHE)
 if is_serie_a:
     tab_scan, tab1, tab2, tab3, tab4, tab_inj, tab5, tab6 = st.tabs([
         "Scanner Top 5 del Turno",
@@ -1342,14 +1306,18 @@ with tab2:
         m_sel = matches[sel_idx]
         h2 = clean_team_name(m_sel.get("home_team",""))
         a2 = clean_team_name(m_sel.get("away_team",""))
+        m_date_raw = m_sel.get("commence_time", "")
         
-        col_btn_ref, _ = st.columns([1, 2])
+        col_btn_ref, col_btn_info = st.columns([1, 2])
         with col_btn_ref:
             if st.button("🔄 CONTROLLA FORMAZIONI UFFICIALI LIVE", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
                 
-        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a = fetch_live_official_lineup(h2, a2, FOOTBALL_KEY)
+        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a, diag_msg = fetch_live_official_lineup(h2, a2, m_date_raw, FOOTBALL_KEY)
+        
+        with col_btn_info:
+            st.caption(f"**Stato Rilevamento API:** {diag_msg}")
         
         h2_tactic_base = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
         a2_tactic_base = SERIE_A_TACTICS.get(a2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
@@ -1507,7 +1475,7 @@ with tab2:
                 st.error(f"NO BET (Quota insufficiente - Edge: {edge_ssot*100:+.2f}%)")
 
         st.markdown("---")
-        # RIGA 3: TIRI TOTALI MATCH & TIRI IN PORTA TOTALI MATCH (ENTRAMBE LE SQUADRE)
+        # RIGA 3: TIRI TOTALI MATCH & TIRI IN PORTA TOTALI MATCH
         col_s5, col_s6 = st.columns(2)
         with col_s5:
             st.markdown("##### Mercato Tiri in Porta Totali Match (Entrambe le Squadre)")
@@ -1563,30 +1531,11 @@ if is_serie_a:
             m3 = matches[sel_m3_idx]
             h3 = clean_team_name(m3["home_team"])
             a3 = clean_team_name(m3["away_team"])
+            m3_date = m3.get("commence_time", "")
             
-            st_lineup, _, xi_h_off, _, xi_a_off = fetch_live_official_lineup(h3, a3, FOOTBALL_KEY)
+            st_lineup, _, xi_h_off, _, xi_a_off, _ = fetch_live_official_lineup(h3, a3, m3_date, FOOTBALL_KEY)
             h3_players = xi_h_off if st_lineup == "UFFICIALE" and xi_h_off else get_team_squad_from_db(selected_league_label, h3)
             a3_players = xi_a_off if st_lineup == "UFFICIALE" and xi_a_off else get_team_squad_from_db(selected_league_label, a3)
-            
-            # Arricchimento metriche con statistiche reali P90 da API-Football
-            pstats_h = fetch_player_p90_stats_api(h3, FOOTBALL_KEY)
-            pstats_a = fetch_player_p90_stats_api(a3, FOOTBALL_KEY)
-            
-            def overlay_api_p90(plist, pstats):
-                for p in plist:
-                    pn_low = p["name"].lower()
-                    for k, v in pstats.items():
-                        if k in pn_low or pn_low in k or k.split()[-1] in pn_low:
-                            p["sot_90"] = v.get("sot_90", p.get("sot_90", 1.0))
-                            p["tot_shots_90"] = v.get("tot_shots_90", p.get("tot_shots_90", 2.0))
-                            p["fouls_c_90"] = v.get("fouls_c_90", p.get("fouls_c_90", 1.4))
-                            p["fouls_d_90"] = v.get("fouls_d_90", p.get("fouls_d_90", 1.4))
-                            p["saves_90"] = v.get("saves_90", p.get("saves_90", 3.0))
-                            break
-                return plist
-                
-            h3_players = overlay_api_p90(h3_players, pstats_h)
-            a3_players = overlay_api_p90(a3_players, pstats_a)
             
             tab_h, tab_a = st.tabs([f"Squadra Casa: {h3}", f"Squadra Trasferta: {a3}"])
             
