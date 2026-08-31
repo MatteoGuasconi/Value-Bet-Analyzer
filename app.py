@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech
+# Styling CSS Dark Fintech - Palette Frost Indigo con Contrasto Alto
 st.markdown(
     """
     <style>
@@ -36,7 +36,7 @@ st.markdown(
         display: none !important;
     }
     
-    /* FIX MENU LATERALE SMARTPHONE & SAFARI */
+    /* FIX DEFINITIVO MENU LATERALE SU SMARTPHONE & SAFARI */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
@@ -62,7 +62,7 @@ st.markdown(
         height: 24px !important;
     }
     
-    /* FIX ICONA PASSWORD */
+    /* FIX ICONA MOSTRA PASSWORD */
     [data-testid="stTextInput"] button {
         color: #2DD4BF !important;
         background-color: #2D3A5D !important;
@@ -533,46 +533,47 @@ API_FOOTBALL_TEAM_IDS = {
     "Bayern Monaco": 157, "PSG": 85
 }
 
-# RILEVAMENTO FORMAZIONI IN TEMPO REALE CON API-FOOTBALL
-@st.cache_data(ttl=120, show_spinner=False)
-def fetch_live_official_lineup(home_team, away_team, match_date_str, api_key):
-    """Interroga direttamente API-Football per rilevare le formazioni ufficiali a referto."""
+# RILEVAMENTO FORMAZIONI IN TEMPO REALE CON API-FOOTBALL (SCANNER UNIVERSALE)
+@st.cache_data(ttl=90, show_spinner=False)
+def fetch_live_official_lineup(home_team, away_team, api_key):
+    """Cerca la partita in corso o imminente su API-Football e ne estrae la distinta ufficiale."""
     h_name = clean_team_name(home_team)
     a_name = clean_team_name(away_team)
     h_id = API_FOOTBALL_TEAM_IDS.get(h_name)
+    a_id = API_FOOTBALL_TEAM_IDS.get(a_name)
     
-    if not h_id or not api_key:
-        return "PROBABILE", None, None, None, None, "API Key o ID squadra non configurato."
+    if not api_key:
+        return "PROBABILE", None, None, None, None, "API Key non configurata."
         
     headers = {"x-apisports-key": api_key}
     fixture_id = None
     
-    # Query 1: Cerca le partite della data specifica
-    date_formatted = match_date_str[:10] if match_date_str else datetime.datetime.now().strftime("%Y-%m-%d")
-    url_date = f"https://v3.football.api-sports.io/fixtures?date={date_formatted}&team={h_id}"
-    
+    # Canale 1: Partite LIVE in corso
     try:
-        res = requests.get(url_date, headers=headers, timeout=6)
-        if res.status_code == 200 and res.json().get("response"):
-            fixtures = res.json().get("response")
-            for fix in fixtures:
-                fixture_id = fix.get("fixture", {}).get("id")
-                break
+        res_live = requests.get("https://v3.football.api-sports.io/fixtures?live=all", headers=headers, timeout=5)
+        if res_live.status_code == 200:
+            for fix in res_live.json().get("response", []):
+                th = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
+                ta = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
+                if (h_name.lower() in th.lower() or th.lower() in h_name.lower()) or \
+                   (a_name.lower() in ta.lower() or ta.lower() in a_name.lower()):
+                    fixture_id = fix.get("fixture", {}).get("id")
+                    break
     except Exception:
         pass
         
-    # Query 2: Fallback su partite recenti / imminenti del team
-    if not fixture_id:
-        for param in ["next=5", "last=3"]:
-            url_fb = f"https://v3.football.api-sports.io/fixtures?team={h_id}&{param}"
+    # Canale 2: Partite recenti e imminenti della squadra di casa o trasferta
+    if not fixture_id and (h_id or a_id):
+        target_id = h_id or a_id
+        for endpoint_param in ["last=5", "next=5"]:
             try:
-                res_fb = requests.get(url_fb, headers=headers, timeout=6)
-                if res_fb.status_code == 200:
-                    for fix in res_fb.json().get("response", []):
-                        t_h = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
-                        t_a = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
-                        if (h_name.lower() in t_h.lower() or t_h.lower() in h_name.lower()) and \
-                           (a_name.lower() in t_a.lower() or t_a.lower() in a_name.lower()):
+                res_t = requests.get(f"https://v3.football.api-sports.io/fixtures?team={target_id}&{endpoint_param}", headers=headers, timeout=5)
+                if res_t.status_code == 200:
+                    for fix in res_t.json().get("response", []):
+                        th = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
+                        ta = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
+                        if (h_name.lower() in th.lower() or th.lower() in h_name.lower()) and \
+                           (a_name.lower() in ta.lower() or ta.lower() in a_name.lower()):
                             fixture_id = fix.get("fixture", {}).get("id")
                             break
                 if fixture_id: break
@@ -580,11 +581,11 @@ def fetch_live_official_lineup(home_team, away_team, match_date_str, api_key):
                 pass
 
     if not fixture_id:
-        return "PROBABILE", None, None, None, None, "Partita non ancora indicizzata nei server live di API-Football."
+        return "PROBABILE", None, None, None, None, "In attesa del fischio d'inizio o caricamento match nei server live."
 
-    # Query 3: Lettura formazioni depositate sul fixture_id trovato
+    # Canale 3: Download distinta ufficiale depositata
     try:
-        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=6)
+        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=5)
         if l_res.status_code == 200:
             l_data = l_res.json().get("response", [])
             if len(l_data) >= 2 and len(l_data[0].get("startXI", [])) >= 11:
@@ -608,11 +609,11 @@ def fetch_live_official_lineup(home_team, away_team, match_date_str, api_key):
 
                 form_h, xi_h = parse_xi(l_data[0])
                 form_a, xi_a = parse_xi(l_data[1])
-                return "UFFICIALE", form_h, xi_h, form_a, xi_a, f"Distinta ufficiale confermata (Fixture ID: {fixture_id})."
+                return "UFFICIALE", form_h, xi_h, form_a, xi_a, f"Distinta ufficiale confermata (ID Match: {fixture_id})."
     except Exception as e:
-        return "PROBABILE", None, None, None, None, f"Errore di connessione: {str(e)}"
+        return "PROBABILE", None, None, None, None, f"Errore lettura distinta: {str(e)}"
         
-    return "PROBABILE", None, None, None, None, f"Distinta ufficiale non ancora depositata a referto dai club (Fixture ID: {fixture_id})."
+    return "PROBABILE", None, None, None, None, f"Distinta in fase di deposito (ID Match: {fixture_id})."
 
 # Fetch Partite Live
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -862,8 +863,7 @@ class MatchAnalystEngine:
     def analyze_player_total_shots(player, opp_team, line=1.5, min_edge=0.015):
         sot_rate = player.get("sot_90", 1.0)
         pos = player.get("role", "Midfielder")
-        tot_rate = player.get("tot_shots_90", sot_rate * (2.6 if pos == "Attacker" else 2.0))
-        tot_shots_exp = max(0.3, tot_rate * (84 / 90))
+        tot_shots_exp = max(0.3, sot_rate * (2.6 if pos == "Attacker" else 2.0) * (84 / 90))
         prob = float(1.0 - poisson.cdf(line - 0.5, tot_shots_exp))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
         return {
@@ -900,7 +900,7 @@ class MatchAnalystEngine:
     @staticmethod
     def analyze_player_fouls_drawn(player, opp_team, line=1.5, min_edge=0.015):
         pos = player.get("role", "Midfielder")
-        base_fd = player.get("fouls_d_90", (1.85 if pos == "Attacker" else (1.40 if pos == "Midfielder" else 0.65)))
+        base_fd = 1.85 if pos == "Attacker" else (1.40 if pos == "Midfielder" else 0.65)
         xf_drawn = base_fd * (86 / 90)
         prob = float(1.0 - poisson.cdf(line - 0.5, xf_drawn))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
@@ -908,7 +908,7 @@ class MatchAnalystEngine:
             "market": f"Over {line} Falli Subiti ({player['name']})",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "Falli Subiti Attesi", "metric_val": f"{xf_drawn:.2f}",
-            "note": f"Media Falli Subiti/90m: {xf_drawn:.2f} (Ruolo: {pos})"
+            "note": f"Indice falli subiti stimato per 90 minuti (Ruolo: {pos})"
         }
 
     @staticmethod
@@ -921,6 +921,18 @@ class MatchAnalystEngine:
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "Parate Proiettate", "metric_val": f"{xsaves:.2f}",
             "note": "Media parate per 90 minuti (Save Rate stimato 72%)"
+        }
+
+    @staticmethod
+    def analyze_disciplinary_match(h_team, a_team, ref_data, line=4.5, min_edge=0.015):
+        cards_exp = ref_data.get("cards_avg", 4.5)
+        prob = float(1.0 - poisson.cdf(line - 0.5, cards_exp))
+        fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
+        return {
+            "market": f"Over {line} Cartellini Totali",
+            "prob": prob, "fair_odds": fair, "min_odds": min_odds,
+            "metric_name": "Cartellini Attesi", "metric_val": f"{cards_exp:.2f}",
+            "note": f"Arbitro: {ref_data['name']} (Media: {ref_data['cards_avg']:.1f} cartellini - Severità: {ref_data['severity']})"
         }
 
 # Header & Sidebar
@@ -1022,7 +1034,7 @@ if matches:
 else:
     st.markdown(f'<div class="round-badge">{selected_league_label.upper()} • NESSUNA PARTITA IN PROGRAMMA NELLE PROSSIME 48-72H</div>', unsafe_allow_html=True)
 
-# GESTIONE SCHEDE (8 PER SERIE A, 5 PER ALTRE LEGHE)
+# 8 SCHEDE PER SERIE A, 5 PER ALTRE LEGHE
 if is_serie_a:
     tab_scan, tab1, tab2, tab3, tab4, tab_inj, tab5, tab6 = st.tabs([
         "Scanner Top 5 del Turno",
@@ -1297,7 +1309,7 @@ with tab1:
     else:
         st.info("Nessuna quota live disponibile al momento.")
 
-# 3. STATISTICHE & TATTICA SQUADRE (CON CONTROLLO FORMAZIONI UFFICIALI IN TEMPO REALE)
+# 3. STATISTICHE & TATTICA SQUADRE (CON SCANNER LIVE MULTICANALE)
 with tab2:
     st.markdown(f"### STATISTICHE & QUADRO TATTICO ({selected_league_label.upper()})")
     if matches:
@@ -1306,18 +1318,17 @@ with tab2:
         m_sel = matches[sel_idx]
         h2 = clean_team_name(m_sel.get("home_team",""))
         a2 = clean_team_name(m_sel.get("away_team",""))
-        m_date_raw = m_sel.get("commence_time", "")
         
         col_btn_ref, col_btn_info = st.columns([1, 2])
         with col_btn_ref:
-            if st.button("🔄 CONTROLLA FORMAZIONI UFFICIALI LIVE", use_container_width=True):
+            if st.button("🔄 FORZA CONTROLLO DISTINTA UFFICIALE", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
                 
-        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a, diag_msg = fetch_live_official_lineup(h2, a2, m_date_raw, FOOTBALL_KEY)
+        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a, diag_msg = fetch_live_official_lineup(h2, a2, FOOTBALL_KEY)
         
         with col_btn_info:
-            st.caption(f"**Stato Rilevamento API:** {diag_msg}")
+            st.caption(f"**Stato Server API:** {diag_msg}")
         
         h2_tactic_base = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
         a2_tactic_base = SERIE_A_TACTICS.get(a2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
@@ -1531,9 +1542,8 @@ if is_serie_a:
             m3 = matches[sel_m3_idx]
             h3 = clean_team_name(m3["home_team"])
             a3 = clean_team_name(m3["away_team"])
-            m3_date = m3.get("commence_time", "")
             
-            st_lineup, _, xi_h_off, _, xi_a_off, _ = fetch_live_official_lineup(h3, a3, m3_date, FOOTBALL_KEY)
+            st_lineup, _, xi_h_off, _, xi_a_off, _ = fetch_live_official_lineup(h3, a3, FOOTBALL_KEY)
             h3_players = xi_h_off if st_lineup == "UFFICIALE" and xi_h_off else get_team_squad_from_db(selected_league_label, h3)
             a3_players = xi_a_off if st_lineup == "UFFICIALE" and xi_a_off else get_team_squad_from_db(selected_league_label, a3)
             
