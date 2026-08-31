@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Dark Fintech - Contrasto Alto e Testi Bianchi
+# Styling CSS Definitivo - Testi bianchi e Menu a Tendina leggibili (Sfondo bianco, Testo nero)
 st.markdown(
     """
     <style>
@@ -24,9 +24,25 @@ st.markdown(
         color: #FFFFFF !important;
     }
     
-    h1, h2, h3, h4, h5, h6, p, span, div, label, button, select, .stTextInput label, .stNumberInput label, .stSelectbox label {
+    h1, h2, h3, h4, h5, h6, p, span, div, label, .stTextInput label, .stNumberInput label, .stSelectbox label {
         color: #FFFFFF !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    /* FIX DEFINITIVO LEGGIBILITÀ MENU A TENDINA (SELECTBOX) */
+    div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #000000 !important;
+    }
+    div[data-baseweb="popover"] div {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    div[data-baseweb="popover"] span {
+        color: #000000 !important;
     }
     
     [data-testid="stToolbar"], footer {
@@ -92,15 +108,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Inizializzazione Stato Scommesse, Infortuni
+# Inizializzazione Stato Scommesse e Infortuni
 if "history_bets" not in st.session_state:
     st.session_state.history_bets = []
 if "injuries_list" not in st.session_state:
     st.session_state.injuries_list = []
 
 # Sidebar - Gestione Bankroll ed Esclusività
-st.sidebar.markdown("### 👑 SERIE A • PROTOCOLLO v4.0")
-st.sidebar.markdown("**Modalità:** `Esclusiva Proprietario`")
+st.sidebar.markdown("### SERIE A • PROTOCOLLO v4.0")
+st.sidebar.markdown("**Modalità:** Esclusiva Proprietario")
 
 st.sidebar.markdown("---")
 initial_bankroll = st.sidebar.number_input("Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0)
@@ -115,7 +131,7 @@ current_bankroll = initial_bankroll + total_profit
 yield_val = (total_profit / total_stake_history * 100.0) if total_stake_history > 0 else 0.0
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📊 STATISTICHE PORTAFOGLIO")
+st.sidebar.markdown("### STATISTICHE PORTAFOGLIO")
 st.sidebar.markdown(f"""
     <div class="metric-card">
         <div class="metric-title">Capitale Attuale</div>
@@ -136,11 +152,11 @@ st.title("VALUE BET ANALYZER • SERIE A")
 
 # Navigazione Tab
 tab_analyzer, tab_players, tab_injuries, tab_register, tab_kpi = st.tabs([
-    "🎯 Analisi Squadre & Match",
-    "⚡ Statistiche Giocatori (SOT & Falli)",
-    "🏥 Gestione Infermeria",
-    "📝 Registro Scommesse",
-    "📈 KPI & Statistiche"
+    "Analisi Squadre & Match",
+    "Statistiche Giocatori (SOT & Falli)",
+    "Gestione Infermeria",
+    "Registro Scommesse",
+    "KPI & Statistiche"
 ])
 
 # MOTOR QUANTITATIVO DA PROTOCOLLO
@@ -152,14 +168,12 @@ class QuantitativeEngine:
         ev = (p_reale * quota_book) - 1.0
         b = quota_book - 1.0
         
-        # Kelly Mezzato (Kelly/2)
         if b > 0:
             kelly_full = ((p_reale * b) - (1.0 - p_reale)) / b
             kelly_half = max(0.0, kelly_full * 0.50)
         else:
             kelly_half = 0.0
             
-        # Cap di fascia da protocollo
         if edge < 0.03:
             cap_fascia = 0.05
         elif edge <= 0.07:
@@ -184,7 +198,7 @@ class QuantitativeEngine:
         }
 
 with tab_analyzer:
-    st.markdown("### 🏟️ ANALISI MATCH & MERCATI DI SQUADRA")
+    st.markdown("### ANALISI MATCH & MERCATI DI SQUADRA")
     st.caption("Protocollo Match Analyst v4.0: Seleziona il mercato per sbloccare i parametri statistici corretti.")
     
     col_in1, col_in2 = st.columns(2)
@@ -197,11 +211,11 @@ with tab_analyzer:
         market_category = st.selectbox(
             "Protocollo / Categoria Mercato",
             [
-                "⚽ Gol (Over 2.5, Over 1.5 Team, 1X2, BTTS)",
-                "🚩 Calci d'Angolo (Over/Under Totali e Team)",
-                "🎯 Tiri in Porta / SOT (Team)",
-                "🏆 Handicap & Risultati Esatti / Parziale-Finale",
-                "✍️ Mercato Personalizzato / Tutti gli Altri"
+                "Gol (Over 2.5, Over 1.5 Team, 1X2, BTTS)",
+                "Calci d'Angolo (Over/Under Totali e Team)",
+                "Tiri in Porta / SOT (Team)",
+                "Handicap & Risultati Esatti / Parziale-Finale",
+                "Mercato Personalizzato / Tutti gli Altri"
             ]
         )
         exact_market_name = st.text_input("Specifica Mercato e Linea", placeholder="es. Over 2.5 / Over 8.5 Corner / Over 1.5 Atalanta")
@@ -209,11 +223,8 @@ with tab_analyzer:
 
     st.markdown("---")
     
-    # -------------------------------------------------------------
-    # CAMPI DINAMICI INTUITIVI IN BASE AL MERCATO SELEZIONATO
-    # -------------------------------------------------------------
-    if "⚽ Gol" in market_category:
-        st.markdown("#### 📊 PARAMETRI GOL & EXPECTED GOALS (xG)")
+    if "Gol" in market_category:
+        st.markdown("#### PARAMETRI GOL & EXPECTED GOALS (xG)")
         col_st1, col_st2, col_st3 = st.columns(3)
         with col_st1: xg_home = st.number_input("xG Casa (ultime 8 / normalizzato)", min_value=0.1, max_value=5.0, value=1.65, step=0.05)
         with col_st2: xg_away = st.number_input("xG Trasferta (ultime 8 / normalizzato)", min_value=0.1, max_value=5.0, value=1.15, step=0.05)
@@ -229,8 +240,8 @@ with tab_analyzer:
         else:
             p_model = min(0.95, max(0.05, 0.50 + (xg_home - xg_away) * 0.10))
 
-    elif "🚩 Calci d'Angolo" in market_category:
-        st.markdown("#### 🚩 PARAMETRI CALCI D'ANGOLO (Protocollo Corner)")
+    elif "Calci d'Angolo" in market_category:
+        st.markdown("#### PARAMETRI CALCI D'ANGOLO (Protocollo Corner)")
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1: mean_corners = st.number_input("Media Corner Combinati / Proiettati", min_value=2.0, max_value=18.0, value=9.5, step=0.5)
         with col_c2: cross_vol = st.number_input("Volume Cross / Gara (Correzione +8% se >20)", min_value=10.0, max_value=35.0, value=19.0, step=1.0)
@@ -242,8 +253,8 @@ with tab_analyzer:
         
         p_model = float(1.0 - poisson.cdf(8, c_mod)) if "Over 8.5" in exact_market_name else 0.55
 
-    elif "🎯 Tiri in Porta" in market_category:
-        st.markdown("#### 🎯 PARAMETRI TIRI IN PORTA / SOT TEAM")
+    elif "Tiri in Porta" in market_category:
+        st.markdown("#### PARAMETRI TIRI IN PORTA / SOT TEAM")
         col_t1, col_t2 = st.columns(2)
         with col_t1: base_sot = st.number_input("Media SOT / Tiri in Porta Proiettati", min_value=1.0, max_value=15.0, value=4.5, step=0.5)
         with col_t2: low_block = st.selectbox("Atteggiamento Avversario", ["Normale / Linea Alta", "Blocco Basso (Low Block)"])
@@ -252,7 +263,7 @@ with tab_analyzer:
         p_model = float(1.0 - poisson.cdf(3, sot_mod)) if "Over 3.5" in exact_market_name else 0.52
 
     else:
-        st.markdown("#### ✍️ PARAMETRI MERCATO PERSONALIZZATO")
+        st.markdown("#### PARAMETRI MERCATO PERSONALIZZATO")
         col_p1, col_p2 = st.columns(2)
         with col_p1: est_prob = st.slider("Stima Probabilità Reale (%)", min_value=5.0, max_value=95.0, value=55.0, step=1.0)
         p_model = est_prob / 100.0
@@ -260,7 +271,7 @@ with tab_analyzer:
     calc_res = QuantitativeEngine.calculate_metrics(p_model, quota_bk, current_bankroll)
 
     st.markdown("---")
-    st.markdown("### 📋 REPORT DI VALUTAZIONE TECNICO-QUANTITATIVA")
+    st.markdown("### REPORT DI VALUTAZIONE TECNICO-QUANTITATIVA")
     
     rep_col1, rep_col2, rep_col3 = st.columns(3)
     with rep_col1:
@@ -275,7 +286,7 @@ with tab_analyzer:
 
     st.markdown("---")
     if calc_res['edge'] >= 3.0 and quota_bk >= 1.70:
-        st.success(f"✅ **BET QUALIFICATO**: Il match rispetta tutti i filtri quantitativi del protocollo v4.0.")
+        st.success(f"**BET QUALIFICATO**: Il match rispetta tutti i filtri quantitativi del protocollo v4.0.")
         if st.button("REGISTRA SCOMMESSA NEL REGISTRO"):
             new_bet = {
                 "id": len(st.session_state.history_bets) + 1,
@@ -292,10 +303,10 @@ with tab_analyzer:
             st.success("Scommessa salvata con successo nel Registro!")
             st.rerun()
     else:
-        st.warning("⚠️ **NO BET**: L'opportunità non soddisfa i requisiti minimi di Edge (≥3%) o Quota (≥1.70) previsti dal protocollo.")
+        st.warning("**NO BET**: L'opportunità non soddisfa i requisiti minimi di Edge (≥3%) o Quota (≥1.70) previsti dal protocollo.")
 
 with tab_players:
-    st.markdown("### ⚡ ANALISI STATISTICA GIOCATORI (SOT & FALLI)")
+    st.markdown("### ANALISI STATISTICA GIOCATORI (SOT & FALLI)")
     st.caption("Protocollo Tiri in Porta Giocatori & Falli Serie A: Inserisci le metriche P90 del calciatore.")
     
     col_p1, col_p2 = st.columns(2)
@@ -344,7 +355,7 @@ with tab_players:
             st.rerun()
 
 with tab_injuries:
-    st.markdown("### 🏥 GESTIONE INFERMERIA & INDISPONIBILI SERIE A")
+    st.markdown("### GESTIONE INFERMERIA & INDISPONIBILI SERIE A")
     st.caption("Inserisci i calciatori infortunati per ponderare correttamente l'impatto quantitativo su xG e linee statistiche.")
     
     col_inj1, col_inj2 = st.columns(2)
@@ -373,7 +384,7 @@ with tab_injuries:
         st.info("Nessun calciatore registrato in infermeria.")
 
 with tab_register:
-    st.markdown("### 📝 REGISTRO OPERATIVO SCOMMESSE")
+    st.markdown("### REGISTRO OPERATIVO SCOMMESSE")
     st.caption("Storico completo delle giocate effettuate e tracciamento dei profitti.")
     
     if st.session_state.history_bets:
@@ -404,7 +415,7 @@ with tab_register:
         st.info("Nessuna scommessa registrata nel registro operativo.")
 
 with tab_kpi:
-    st.markdown("### 📈 ANALISI KPI & PERFORMANCE")
+    st.markdown("### ANALISI KPI & PERFORMANCE")
     st.markdown(f"""
         - **Capitale Iniziale:** `{initial_bankroll:.2f} €`
         - **Capitale Attuale:** `{current_bankroll:.2f} €`
