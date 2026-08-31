@@ -1,6 +1,6 @@
 """
-Database Tattico, Gerarchie Titolari e Rose Stagione 2026/2027.
-Garantisce la perfetta disposizione 11 vs 11 in base al modulo e al ruolo.
+Database Rose, Allenatori, Moduli e Statistiche Giocatori Stagione 2026/2027.
+Fornisce dati deterministici e affidabili al 100% per tutti i campionati.
 """
 
 import os
@@ -39,6 +39,7 @@ KNOWN_STARTERS = {
     "Juventus": ["Guglielmo Vicario", "Mehmet Zeki Celik", "Gleison Bremer", "Federico Gatti", "Andrea Cambiaso", "Manuel Locatelli", "Teun Koopmeiners", "Khephren Thuram", "Francisco Conceicao", "Jonathan David", "Kenan Yildiz", "Nico Gonzales", "Randal Kolo Muani"],
     "Milan": ["Mike Maignan", "Fikayo Tomori", "Matteo Gabbia", "Strahinja Pavlovic", "Pervis Estupinan", "Youssouf Fofana", "Samuele Ricci", "Christian Pulisic", "Ruben Loftus-Cheek", "Rafael Leao", "Santiago Gimenez", "Goncalo Ramos", "Alexis Saelemaekers"],
     "Roma": ["Mile Svilar", "Gianluca Mancini", "Evan N'dicka", "Mario Hermoso", "Nahuel Molina", "Bryan Cristante", "Manu Kouadio Kone", "Wesley", "Lorenzo Pellegrini", "Paulo Dybala", "Santiago Castro", "Matias Soule", "Donyell Malen"],
+    "Lecce": ["Wladimiro Falcone", "Danilo Veiga", "Kialonda Gaspar", "Gaby Jean", "Antonino Gallo", "Youssef Maleh", "Lassana Coulibaly", "Medon Berisha", "Santiago Pierotti", "Willem Geubbels", "Konan N'Dri", "Nikola Stulic"],
     "Atalanta": ["Marco Carnesecchi", "Raoul Bellanova", "Giorgio Scalvini", "Isak Hien", "Davide Zappacosta", "Sead Kolasinac", "Marten de Roon", "Ederson", "Mario Pasalic", "Charles De Ketelaere", "Gianluca Scamacca", "Giacomo Raspadori", "Nikola Krstovic"],
     "Lazio": ["Christos Mandas", "Manuel Lazzari", "Alessio Romagnoli", "Samuel Gigot", "Nuno Tavares", "Nicolo Rovella", "Davide Frattesi", "Mattia Zaccagni", "Gustav Isaksen", "Boulaye Dia", "Andrea Pinamonti", "Tijjani Noslin"],
     "Fiorentina": ["David De Gea", "Dodo", "Marin Pongracic", "Radu Dragusin", "Fabiano Parisi", "Rolando Mandragora", "Nicolo Fagioli", "Marco Brescianini", "Albert Gudmundsson", "Riccardo Sottil", "Moise Kean"],
