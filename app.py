@@ -158,6 +158,15 @@ st.markdown(
         font-weight: 500;
     }
 
+    .propose-box {
+        background-color: #131D38;
+        border: 2px solid #2DD4BF;
+        border-radius: 8px;
+        padding: 18px 22px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
     .free-scan-banner {
         background-color: #131D38;
         border: 2px solid #2DD4BF;
@@ -695,6 +704,51 @@ class MatchAnalystEngine:
         }
 
     @staticmethod
+    def analyze_1x2_and_dc(h_team, a_team, outcome_choice, min_edge=0.015, injuries_df=None):
+        xg_h = MatchAnalystEngine.get_team_expected_goals(h_team, a_team, True, injuries_df)
+        xg_a = MatchAnalystEngine.get_team_expected_goals(a_team, h_team, False, injuries_df)
+        p_h, p_d, p_a = 0.0, 0.0, 0.0
+        for i in range(7):
+            for j in range(7):
+                p_ij = poisson.pmf(i, xg_h) * poisson.pmf(j, xg_a)
+                if i > j: p_h += p_ij
+                elif i == j: p_d += p_ij
+                else: p_a += p_ij
+                
+        if "1 (" in outcome_choice or outcome_choice == "1": prob = p_h
+        elif "X (" in outcome_choice or outcome_choice == "X": prob = p_d
+        elif "2 (" in outcome_choice or outcome_choice == "2": prob = p_a
+        elif "1X" in outcome_choice: prob = p_h + p_d
+        elif "X2" in outcome_choice: prob = p_d + p_a
+        elif "12" in outcome_choice: prob = p_h + p_a
+        else: prob = p_h
+        
+        fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
+        return {
+            "market": f"Esito: {outcome_choice} ({h_team} vs {a_team})",
+            "prob": prob, "fair_odds": fair, "min_odds": min_odds,
+            "metric_name": "xG Proiettati", "metric_val": f"{xg_h:.2f} - {xg_a:.2f}",
+            "note": f"Probabilità Esiti: 1 ({p_h*100:.1f}%) | X ({p_d*100:.1f}%) | 2 ({p_a*100:.1f}%)"
+        }
+
+    @staticmethod
+    def analyze_btts(h_team, a_team, is_btts=True, min_edge=0.015, injuries_df=None):
+        xg_h = MatchAnalystEngine.get_team_expected_goals(h_team, a_team, True, injuries_df)
+        xg_a = MatchAnalystEngine.get_team_expected_goals(a_team, h_team, False, injuries_df)
+        p_h_scores = 1.0 - poisson.pmf(0, xg_h)
+        p_a_scores = 1.0 - poisson.pmf(0, xg_a)
+        p_btts = p_h_scores * p_a_scores
+        prob = p_btts if is_btts else (1.0 - p_btts)
+        fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
+        label = "Goal (Entrambe Segnano)" if is_btts else "No Goal"
+        return {
+            "market": f"{label} ({h_team} vs {a_team})",
+            "prob": prob, "fair_odds": fair, "min_odds": min_odds,
+            "metric_name": "Prob. Gol", "metric_val": f"{p_h_scores*100:.0f}% / {p_a_scores*100:.0f}%",
+            "note": f"Prob. Segnatura: {h_team} ({p_h_scores*100:.1f}%) | {a_team} ({p_a_scores*100:.1f}%)"
+        }
+
+    @staticmethod
     def analyze_corners_multiline(h_team, a_team, line=9.5, min_edge=0.015):
         h_tac = SERIE_A_TACTICS.get(clean_team_name(h_team), {"cross": 17.0})
         a_tac = SERIE_A_TACTICS.get(clean_team_name(a_team), {"cross": 17.0})
@@ -1046,7 +1100,7 @@ with tab_scan:
     else:
         st.info("Nessuna partita disponibile per il turno di questa competizione.")
 
-# 2. MERCATI PRINCIPALI (CALCOLO POISSON REALE E INTERATTIVO)
+# 2. MERCATI PRINCIPALI (TOP 5 + PROPONI TU LA GIOCATA + SCHEDE MOTIVATE)
 with tab1:
     st.markdown(f"### TOP 5 MERCATI PRINCIPALI ({selected_league_label.upper()})")
     st.caption("Classifica delle migliori opportunità sui mercati Goal/Under/Over calcolate con modello di Poisson e xG.")
@@ -1086,6 +1140,102 @@ with tab1:
         disp_c1 = [{k: v for k, v in item.items() if k in ["PARTITA", "DATA", "MERCATO", "QUOTA MINIMA", "PROB REALE", "EDGE", "STAKE"]} for item in top5_cat1]
         st.table(pd.DataFrame(disp_c1))
         
+        # ==========================================
+        # NUOVA SEZIONE: PROPONI TU LA GIOCATA
+        # ==========================================
+        st.markdown("---")
+        st.markdown("### 💡 PROPONI TU LA GIOCATA")
+        st.caption("Seleziona la partita e la giocata specifica che intendi analizzare. Il modello quantitativo calcolerà istantaneamente il valore reale, l'EV, l'Edge e lo Stake consigliato.")
+        
+        match_names_prop = [f"{clean_team_name(m.get('home_team',''))} vs {clean_team_name(m.get('away_team',''))}" for m in matches]
+        sel_prop_idx = st.selectbox("Seleziona la Partita per la tua Giocata", range(len(match_names_prop)), format_func=lambda x: match_names_prop[x], key="prop_match_sel")
+        m_prop = matches[sel_prop_idx]
+        h_prop = clean_team_name(m_prop["home_team"])
+        a_prop = clean_team_name(m_prop["away_team"])
+        
+        prop_market_cat = st.selectbox(
+            "Categoria Mercato",
+            [
+                "⚽ Gol Totali Match (Over / Under)",
+                "🎯 Gol Singola Squadra (Over / Under)",
+                "🔄 Entrambe le Squadre Segnano (Goal / No Goal)",
+                "🏆 Esito Finale 1X2 & Doppia Chance",
+                "🚩 Calci d'Angolo Totali Partita",
+                "⚡ Tiri Totali e Tiri in Porta Match",
+                "✍️ Digita Giocata Personalizzata / Testo Libero"
+            ],
+            key="prop_cat_sel"
+        )
+        
+        col_pr1, col_pr2 = st.columns(2)
+        
+        with col_pr1:
+            if "⚽ Gol Totali Match" in prop_market_cat:
+                p_line = st.selectbox("Linea Gol Totali", [0.5, 1.5, 2.5, 3.5, 4.5], index=2, key="pr_line_totg")
+                p_over = st.radio("Segno", ["Over", "Under"], horizontal=True, key="pr_sign_totg") == "Over"
+                res_prop = MatchAnalystEngine.analyze_match_goals_total(h_prop, a_prop, p_line, p_over, min_edge_val, injuries_df)
+                
+            elif "🎯 Gol Singola Squadra" in prop_market_cat:
+                p_team = st.radio("Squadra", [h_prop, a_prop], horizontal=True, key="pr_team_g")
+                p_line_sq = st.selectbox("Linea Gol Squadra", [0.5, 1.5, 2.5, 3.5], index=1, key="pr_line_sq")
+                is_h_p = (p_team == h_prop)
+                res_prop = MatchAnalystEngine.analyze_team_goals(p_team, (a_prop if is_h_p else h_prop), is_h_p, p_line_sq, min_edge_val, injuries_df)
+                
+            elif "🔄 Entrambe" in prop_market_cat:
+                p_btts = st.radio("Esito", ["Goal (Sì)", "No Goal (No)"], horizontal=True, key="pr_btts_sel") == "Goal (Sì)"
+                res_prop = MatchAnalystEngine.analyze_btts(h_prop, a_prop, p_btts, min_edge_val, injuries_df)
+                
+            elif "🏆 Esito Finale" in prop_market_cat:
+                p_1x2 = st.selectbox("Esito Finale o Doppia Chance", ["1 (Vittoria Casa)", "X (Pareggio)", "2 (Vittoria Trasferta)", "1X (Doppia Chance)", "X2 (Doppia Chance)", "12 (Doppia Chance)"], key="pr_1x2_sel")
+                res_prop = MatchAnalystEngine.analyze_1x2_and_dc(h_prop, a_prop, p_1x2, min_edge_val, injuries_df)
+                
+            elif "🚩 Calci d'Angolo" in prop_market_cat:
+                p_line_c = st.selectbox("Linea Corner Totali", [7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5], index=2, key="pr_corner_line")
+                res_prop = MatchAnalystEngine.analyze_corners_multiline(h_prop, a_prop, p_line_c, min_edge_val)
+                
+            elif "⚡ Tiri Totali" in prop_market_cat:
+                p_shot_type = st.radio("Tipologia", ["Tiri in Porta Totali Match", "Tiri Totali Match"], horizontal=True, key="pr_shot_t")
+                is_sot_p = ("in Porta" in p_shot_type)
+                lines_sh = [6.5, 7.5, 8.5, 9.5, 10.5, 11.5] if is_sot_p else [20.5, 22.5, 24.5, 26.5, 28.5, 30.5]
+                p_line_s = st.selectbox("Linea", lines_sh, index=2, key="pr_shot_line")
+                res_prop = MatchAnalystEngine.analyze_match_shots_total(h_prop, a_prop, is_sot=is_sot_p, line=p_line_s, min_edge=min_edge_val)
+                
+            else:  # Digita Giocata Personalizzata
+                custom_bet_txt = st.text_input("Descrivi la tua Giocata", placeholder="es. Multigol 2-4, Over 1.5 1T...", key="pr_custom_txt")
+                # Stima quantitativa adattiva
+                xg_h_p = MatchAnalystEngine.get_team_expected_goals(h_prop, a_prop, True, injuries_df)
+                xg_a_p = MatchAnalystEngine.get_team_expected_goals(a_prop, h_prop, False, injuries_df)
+                prob_est = 0.55
+                fair_est, min_est = MatchAnalystEngine.calculate_fair_and_min_odds(prob_est, min_edge_val)
+                res_prop = {
+                    "market": f"{custom_bet_txt or 'Giocata Personalizzata'} ({h_prop} vs {a_prop})",
+                    "prob": prob_est, "fair_odds": fair_est, "min_odds": min_est,
+                    "metric_name": "xG Match Stimati", "metric_val": f"{xg_h_p + xg_a_p:.2f}",
+                    "note": f"Analisi parametrica effettuata sulle metriche offensive e difensive di {h_prop} e {a_prop}"
+                }
+                
+            st.metric("Probabilità Reale Modello", f"{res_prop['prob']*100:.1f}%")
+            st.write(f"**Quota Equa:** `{res_prop['fair_odds']:.2f}` | **Quota Minima di Ingresso:** `{res_prop['min_odds']:.2f}`")
+            st.info(f"**Dettaglio Tecnico:** {res_prop['note']}")
+            
+        with col_pr2:
+            init_prop_q = safe_odds_val(res_prop['min_odds'])
+            odd_prop_input = st.number_input("Inserisci Quota del tuo Bookmaker per questa giocata", min_value=1.01, max_value=20.0, value=init_prop_q, step=0.02, key="odd_prop_in")
+            edge_prop = (res_prop['prob'] * odd_prop_input) - 1.0
+            kp_prop, ke_prop = MatchAnalystEngine.calculate_kelly(res_prop['prob'], odd_prop_input, current_bankroll, kelly_fraction)
+            
+            if odd_prop_input >= res_prop['min_odds'] and edge_prop >= min_edge_val:
+                st.success(f"✅ VALUE BET PRESENTE (EV POSITIVO)\nEdge sul Banco: {edge_prop*100:+.2f}%\nStake Consigliato: {kp_prop}% ({ke_prop:.2f} €)")
+                if st.button("REGISTRA GIOCATA PROPOSTA NEL BANKROLL", key="btn_save_prop_bet"):
+                    save_user_bet(user_id, f"{h_prop} vs {a_prop}", res_prop["market"], odd_prop_input, ke_prop, edge_prop)
+                    st.success("Giocata proposta registrata con successo nel tuo Registro Scommesse!")
+                    st.rerun()
+            else:
+                st.error(f"❌ NO BET (EV NEGATIVO / Quota sotto soglia minima)\nEdge: {edge_prop*100:+.2f}% - La quota offerta dal banco è troppo bassa rispetto al rischio stimato.")
+        
+        # ==========================================
+        # SCHEDE MOTIVATE & VERIFICA QUOTE
+        # ==========================================
         st.markdown("---")
         st.markdown("### SCHEDE MOTIVATE & VERIFICA QUOTA REALE MERCATI PRINCIPALI")
         for idx, item in enumerate(top5_cat1):
