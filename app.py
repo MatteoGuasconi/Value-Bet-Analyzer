@@ -543,48 +543,100 @@ def fetch_live_official_lineup(home_team, away_team, api_key):
     if not h_id or not api_key:
         return "PROBABILE", None, None, None, None
         
-    url = f"https://v3.football.api-sports.io/fixtures?team={h_id}&next=3"
     headers = {"x-apisports-key": api_key}
-    try:
-        res = requests.get(url, headers=headers, timeout=6)
-        if res.status_code == 200:
-            fixtures = res.json().get("response", [])
-            for fix in fixtures:
-                t_h = fix.get("teams", {}).get("home", {}).get("name", "")
-                t_a = fix.get("teams", {}).get("away", {}).get("name", "")
-                if h_name.lower() in t_h.lower() or a_name.lower() in t_a.lower():
-                    f_id = fix.get("fixture", {}).get("id")
-                    if f_id:
-                        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={f_id}", headers=headers, timeout=6)
-                        if l_res.status_code == 200:
-                            l_data = l_res.json().get("response", [])
-                            if len(l_data) >= 2:
-                                # Parsing dei titolari ufficiali a referto
-                                def parse_official_xi(team_obj):
-                                    form_str = team_obj.get("formation", "4-3-3")
-                                    starters = []
-                                    pos_map = {"G": "Goalkeeper", "D": "Defender", "M": "Midfielder", "F": "Attacker"}
-                                    for p in team_obj.get("startXI", []):
-                                        p_info = p.get("player", {})
-                                        p_pos = pos_map.get(p_info.get("pos", "M"), "Midfielder")
-                                        sot_val = 1.45 if p_pos == "Attacker" else (0.85 if p_pos == "Midfielder" else 0.35)
-                                        starters.append({
-                                            "name": p_info.get("name", "Giocatore"),
-                                            "role": p_pos,
-                                            "number": str(p_info.get("number", "-")),
-                                            "sot_90": 0.0 if p_pos == "Goalkeeper" else sot_val,
-                                            "fouls_c_90": 0.1 if p_pos == "Goalkeeper" else 1.45,
-                                            "saves_90": 3.2 if p_pos == "Goalkeeper" else 0.0,
-                                            "penalties": (p_pos == "Attacker")
-                                        })
-                                    return form_str, starters
+    fixture_id = None
+    
+    # 1. Cerca la partita specifica per team
+    for param in ["next=3", "last=2"]:
+        url = f"https://v3.football.api-sports.io/fixtures?team={h_id}&{param}"
+        try:
+            res = requests.get(url, headers=headers, timeout=6)
+            if res.status_code == 200:
+                fixtures = res.json().get("response", [])
+                for fix in fixtures:
+                    t_h = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
+                    t_a = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
+                    if (h_name.lower() in t_h.lower() or t_h.lower() in h_name.lower()) and \
+                       (a_name.lower() in t_a.lower() or t_a.lower() in a_name.lower()):
+                        fixture_id = fix.get("fixture", {}).get("id")
+                        break
+            if fixture_id: break
+        except Exception:
+            pass
 
-                                form_h, xi_h = parse_official_xi(l_data[0])
-                                form_a, xi_a = parse_official_xi(l_data[1])
-                                return "UFFICIALE", form_h, xi_h, form_a, xi_a
-    except Exception:
-        pass
+    # 2. Se abbiamo il fixture_id, recupera la distinta ufficiale depositata
+    if fixture_id:
+        try:
+            l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=6)
+            if l_res.status_code == 200:
+                l_data = l_res.json().get("response", [])
+                if len(l_data) >= 2:
+                    pos_map = {"G": "Goalkeeper", "D": "Defender", "M": "Midfielder", "F": "Attacker"}
+                    def parse_official_xi(team_obj):
+                        form_str = team_obj.get("formation", "4-3-3")
+                        starters = []
+                        for p in team_obj.get("startXI", []):
+                            p_info = p.get("player", {})
+                            p_pos = pos_map.get(p_info.get("pos", "M"), "Midfielder")
+                            sot_val = 1.45 if p_pos == "Attacker" else (0.85 if p_pos == "Midfielder" else 0.35)
+                            starters.append({
+                                "name": p_info.get("name", "Giocatore"),
+                                "role": p_pos,
+                                "number": str(p_info.get("number", "-")),
+                                "sot_90": 0.0 if p_pos == "Goalkeeper" else sot_val,
+                                "fouls_c_90": 0.1 if p_pos == "Goalkeeper" else 1.45,
+                                "saves_90": 3.2 if p_pos == "Goalkeeper" else 0.0,
+                                "penalties": (p_pos == "Attacker")
+                            })
+                        return form_str, starters
+
+                    form_h, xi_h = parse_official_xi(l_data[0])
+                    form_a, xi_a = parse_official_xi(l_data[1])
+                    if len(xi_h) >= 11 and len(xi_a) >= 11:
+                        return "UFFICIALE", form_h, xi_h, form_a, xi_a
+        except Exception:
+            pass
+            
     return "PROBABILE", None, None, None, None
+
+# FETCH STATISTICHE REALI DEI CALCIATORI DA API-FOOTBALL (P90)
+@st.cache_data(ttl=43200, show_spinner=False)
+def fetch_player_p90_stats_api(team_name, api_key):
+    """Recupera le metriche P90 reali da API-Football per la squadra."""
+    cleaned = clean_team_name(team_name)
+    team_id = API_FOOTBALL_TEAM_IDS.get(cleaned)
+    if not team_id or not api_key: return {}
+    
+    headers = {"x-apisports-key": api_key}
+    stats_map = {}
+    now_year = datetime.datetime.now().year
+    
+    for season in [now_year, now_year - 1, 2024]:
+        url = f"https://v3.football.api-sports.io/players?team={team_id}&season={season}"
+        try:
+            res = requests.get(url, headers=headers, timeout=8)
+            if res.status_code == 200:
+                data = res.json().get("response", [])
+                if data:
+                    for entry in data:
+                        p_name = entry.get("player", {}).get("name", "").lower()
+                        st_list = entry.get("statistics", [])
+                        if st_list:
+                            s = st_list[0]
+                            mins = s.get("games", {}).get("minutes") or 0
+                            if mins >= 45:
+                                factor = 90.0 / mins
+                                stats_map[p_name] = {
+                                    "sot_90": round((s.get("shots", {}).get("on") or 0) * factor, 2),
+                                    "tot_shots_90": round((s.get("shots", {}).get("total") or 0) * factor, 2),
+                                    "fouls_c_90": round((s.get("fouls", {}).get("committed") or 0) * factor, 2),
+                                    "fouls_d_90": round((s.get("fouls", {}).get("drawn") or 0) * factor, 2),
+                                    "saves_90": round((s.get("goals", {}).get("saves") or 0) * factor, 2)
+                                }
+                    if stats_map: break
+        except Exception:
+            pass
+    return stats_map
 
 # Fetch Partite Live
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -834,8 +886,8 @@ class MatchAnalystEngine:
     def analyze_player_total_shots(player, opp_team, line=1.5, min_edge=0.015):
         sot_rate = player.get("sot_90", 1.0)
         pos = player.get("role", "Midfielder")
-        multiplier = 2.6 if pos == "Attacker" else (2.2 if pos == "Midfielder" else 1.8)
-        tot_shots_exp = max(0.3, sot_rate * multiplier * (84 / 90))
+        tot_rate = player.get("tot_shots_90", sot_rate * (2.6 if pos == "Attacker" else 2.0))
+        tot_shots_exp = max(0.3, tot_rate * (84 / 90))
         prob = float(1.0 - poisson.cdf(line - 0.5, tot_shots_exp))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
         return {
@@ -872,7 +924,7 @@ class MatchAnalystEngine:
     @staticmethod
     def analyze_player_fouls_drawn(player, opp_team, line=1.5, min_edge=0.015):
         pos = player.get("role", "Midfielder")
-        base_fd = 1.85 if pos == "Attacker" else (1.40 if pos == "Midfielder" else 0.65)
+        base_fd = player.get("fouls_d_90", (1.85 if pos == "Attacker" else (1.40 if pos == "Midfielder" else 0.65)))
         xf_drawn = base_fd * (86 / 90)
         prob = float(1.0 - poisson.cdf(line - 0.5, xf_drawn))
         fair, min_odds = MatchAnalystEngine.calculate_fair_and_min_odds(prob, min_edge)
@@ -880,7 +932,7 @@ class MatchAnalystEngine:
             "market": f"Over {line} Falli Subiti ({player['name']})",
             "prob": prob, "fair_odds": fair, "min_odds": min_odds,
             "metric_name": "Falli Subiti Attesi", "metric_val": f"{xf_drawn:.2f}",
-            "note": f"Indice falli subiti stimato per 90 minuti (Ruolo: {pos})"
+            "note": f"Media Falli Subiti/90m: {xf_drawn:.2f} (Ruolo: {pos})"
         }
 
     @staticmethod
@@ -1027,7 +1079,7 @@ else:
         "Gestione Account"
     ])
 
-# 1. SCANNER TOP 5
+# 1. SCANNER TOP 5 (CON POSSIBILITÀ DI CAMBIARE LINEA E QUOTA)
 with tab_scan:
     st.markdown(f"### TOP 5 VALUE BETS ({selected_league_label.upper()})")
     user_has_access = is_premium
@@ -1291,7 +1343,12 @@ with tab2:
         h2 = clean_team_name(m_sel.get("home_team",""))
         a2 = clean_team_name(m_sel.get("away_team",""))
         
-        # 1. Controllo formazioni ufficiali da API-Football a 45-60m dal via
+        col_btn_ref, _ = st.columns([1, 2])
+        with col_btn_ref:
+            if st.button("🔄 CONTROLLA FORMAZIONI UFFICIALI LIVE", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+                
         status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a = fetch_live_official_lineup(h2, a2, FOOTBALL_KEY)
         
         h2_tactic_base = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
@@ -1301,9 +1358,9 @@ with tab2:
         formation_a_used = form_off_a if status_lineup == "UFFICIALE" and form_off_a else a2_tactic_base["formation"]
         
         if status_lineup == "UFFICIALE":
-            st.markdown('<div class="lineup-badge-off">🟢 FORMAZIONE UFFICIALE (Confermata a Referto)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="lineup-badge-off">🟢 FORMAZIONE UFFICIALE (Distinta a Referto Ricevuta)</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="lineup-badge-prob">🟡 FORMAZIONE PROBABILE (Pre-Partita)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="lineup-badge-prob">🟡 FORMAZIONE PROBABILE (Pre-Partita - In attesa distinta ufficiale)</div>', unsafe_allow_html=True)
             
         st.write("")
         
@@ -1507,10 +1564,29 @@ if is_serie_a:
             h3 = clean_team_name(m3["home_team"])
             a3 = clean_team_name(m3["away_team"])
             
-            # Controllo titolari ufficiali per prioritizzare la lista
             st_lineup, _, xi_h_off, _, xi_a_off = fetch_live_official_lineup(h3, a3, FOOTBALL_KEY)
             h3_players = xi_h_off if st_lineup == "UFFICIALE" and xi_h_off else get_team_squad_from_db(selected_league_label, h3)
             a3_players = xi_a_off if st_lineup == "UFFICIALE" and xi_a_off else get_team_squad_from_db(selected_league_label, a3)
+            
+            # Arricchimento metriche con statistiche reali P90 da API-Football
+            pstats_h = fetch_player_p90_stats_api(h3, FOOTBALL_KEY)
+            pstats_a = fetch_player_p90_stats_api(a3, FOOTBALL_KEY)
+            
+            def overlay_api_p90(plist, pstats):
+                for p in plist:
+                    pn_low = p["name"].lower()
+                    for k, v in pstats.items():
+                        if k in pn_low or pn_low in k or k.split()[-1] in pn_low:
+                            p["sot_90"] = v.get("sot_90", p.get("sot_90", 1.0))
+                            p["tot_shots_90"] = v.get("tot_shots_90", p.get("tot_shots_90", 2.0))
+                            p["fouls_c_90"] = v.get("fouls_c_90", p.get("fouls_c_90", 1.4))
+                            p["fouls_d_90"] = v.get("fouls_d_90", p.get("fouls_d_90", 1.4))
+                            p["saves_90"] = v.get("saves_90", p.get("saves_90", 3.0))
+                            break
+                return plist
+                
+            h3_players = overlay_api_p90(h3_players, pstats_h)
+            a3_players = overlay_api_p90(a3_players, pstats_a)
             
             tab_h, tab_a = st.tabs([f"Squadra Casa: {h3}", f"Squadra Trasferta: {a3}"])
             
