@@ -158,15 +158,6 @@ st.markdown(
         font-weight: 500;
     }
 
-    .propose-box {
-        background-color: #131D38;
-        border: 2px solid #2DD4BF;
-        border-radius: 8px;
-        padding: 18px 22px;
-        margin-top: 10px;
-        margin-bottom: 20px;
-    }
-
     .free-scan-banner {
         background-color: #131D38;
         border: 2px solid #2DD4BF;
@@ -209,8 +200,19 @@ st.markdown(
         border: 1px solid #F59E0B;
         color: #FCD34D;
         font-size: 0.80rem;
-        font-weight: 600;
-        padding: 4px 10px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+    
+    .lineup-badge-off {
+        background-color: rgba(45, 212, 191, 0.15);
+        border: 1px solid #2DD4BF;
+        color: #2DD4BF;
+        font-size: 0.80rem;
+        font-weight: 700;
+        padding: 5px 12px;
         border-radius: 4px;
         display: inline-block;
     }
@@ -520,49 +522,69 @@ LEAGUES_CONFIG = {
     "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "has_players": False}
 }
 
-# ORGANICO ARBITRI CAN A-B COMPLETO
-SERIE_A_REFEREES_DB = {
-    "doveri": {"name": "Daniele Doveri", "fouls_avg": 25.4, "cards_avg": 4.1, "severity": "Standard"},
-    "massa": {"name": "Davide Massa", "fouls_avg": 26.8, "cards_avg": 4.9, "severity": "Standard"},
-    "mariani": {"name": "Maurizio Mariani", "fouls_avg": 27.8, "cards_avg": 4.8, "severity": "Severo"},
-    "guida": {"name": "Marco Guida", "fouls_avg": 27.4, "cards_avg": 5.1, "severity": "Severo"},
-    "sozza": {"name": "Simone Sozza", "fouls_avg": 21.5, "cards_avg": 3.6, "severity": "Permissivo"},
-    "colombo": {"name": "Andrea Colombo", "fouls_avg": 26.2, "cards_avg": 4.6, "severity": "Standard"},
-    "la penna": {"name": "Federico La Penna", "fouls_avg": 25.8, "cards_avg": 4.3, "severity": "Standard"},
-    "pairetto": {"name": "Luca Pairetto", "fouls_avg": 28.0, "cards_avg": 5.2, "severity": "Severo"},
-    "ayroldi": {"name": "Giovanni Ayroldi", "fouls_avg": 28.5, "cards_avg": 5.5, "severity": "Severo"},
-    "chiffi": {"name": "Daniele Chiffi", "fouls_avg": 24.8, "cards_avg": 4.2, "severity": "Standard"},
-    "di bello": {"name": "Marco Di Bello", "fouls_avg": 27.9, "cards_avg": 5.3, "severity": "Severo"},
-    "abisso": {"name": "Rosario Abisso", "fouls_avg": 26.5, "cards_avg": 4.7, "severity": "Standard"},
-    "feliciani": {"name": "Ermanno Feliciani", "fouls_avg": 25.0, "cards_avg": 4.0, "severity": "Standard"},
-    "giua": {"name": "Antonio Giua", "fouls_avg": 28.2, "cards_avg": 5.4, "severity": "Severo"},
-    "zufferli": {"name": "Luca Zufferli", "fouls_avg": 24.5, "cards_avg": 3.8, "severity": "Permissivo"},
-    "piccinini": {"name": "Marco Piccinini", "fouls_avg": 26.0, "cards_avg": 4.5, "severity": "Standard"},
-    "fabbri": {"name": "Michael Fabbri", "fouls_avg": 26.1, "cards_avg": 4.5, "severity": "Standard"},
-    "rapuano": {"name": "Antonio Rapuano", "fouls_avg": 27.3, "cards_avg": 5.0, "severity": "Severo"},
-    "marcenaro": {"name": "Matteo Marcenaro", "fouls_avg": 27.1, "cards_avg": 5.0, "severity": "Severo"},
-    "marinelli": {"name": "Livio Marinelli", "fouls_avg": 25.2, "cards_avg": 4.2, "severity": "Standard"},
-    "aureliano": {"name": "Gianluca Aureliano", "fouls_avg": 27.5, "cards_avg": 4.9, "severity": "Severo"},
-    "marchetti": {"name": "Matteo Marchetti", "fouls_avg": 25.6, "cards_avg": 4.4, "severity": "Standard"},
-    "maresca": {"name": "Fabio Maresca", "fouls_avg": 28.2, "cards_avg": 5.4, "severity": "Severo"},
-    "ferrieri_caputi": {"name": "Maria Sole Ferrieri Caputi", "fouls_avg": 24.9, "cards_avg": 4.0, "severity": "Standard"},
-    "fourneau": {"name": "Francesco Fourneau", "fouls_avg": 26.4, "cards_avg": 4.6, "severity": "Standard"},
-    "manganelli": {"name": "Gianluca Manganiello", "fouls_avg": 25.1, "cards_avg": 4.2, "severity": "Standard"},
-    "massimi": {"name": "Luca Massimi", "fouls_avg": 26.7, "cards_avg": 4.7, "severity": "Standard"},
-    "prontera": {"name": "Alessandro Prontera", "fouls_avg": 27.0, "cards_avg": 4.8, "severity": "Standard"},
-    "santoro": {"name": "Alberto Santoro", "fouls_avg": 26.3, "cards_avg": 4.5, "severity": "Standard"},
-    "volpi": {"name": "Manuel Volpi", "fouls_avg": 28.0, "cards_avg": 5.1, "severity": "Severo"},
-    "rutella": {"name": "Daniele Rutella", "fouls_avg": 27.6, "cards_avg": 4.9, "severity": "Severo"},
-    "bonacina": {"name": "Kevin Bonacina", "fouls_avg": 25.8, "cards_avg": 4.3, "severity": "Standard"},
-    "crezzini": {"name": "Valerio Crezzini", "fouls_avg": 26.0, "cards_avg": 4.5, "severity": "Standard"},
-    "collu": {"name": "Giuseppe Collu", "fouls_avg": 27.2, "cards_avg": 4.8, "severity": "Severo"},
-    "di_marco": {"name": "Davide Di Marco", "fouls_avg": 25.5, "cards_avg": 4.1, "severity": "Standard"},
-    "perenzoni": {"name": "Daniele Perenzoni", "fouls_avg": 26.9, "cards_avg": 4.7, "severity": "Standard"},
-    "pezzuto": {"name": "Ivano Pezzuto", "fouls_avg": 26.2, "cards_avg": 4.4, "severity": "Standard"},
-    "scatena": {"name": "Gabriele Scatena", "fouls_avg": 25.9, "cards_avg": 4.3, "severity": "Standard"},
-    "tremolada": {"name": "Paride Tremolada", "fouls_avg": 27.0, "cards_avg": 4.8, "severity": "Standard"},
-    "cosso": {"name": "Francesco Cosso", "fouls_avg": 26.4, "cards_avg": 4.5, "severity": "Standard"}
+API_FOOTBALL_TEAM_IDS = {
+    "Inter": 505, "Juventus": 496, "Milan": 489, "Napoli": 492,
+    "Atalanta": 499, "Roma": 497, "Lazio": 487, "Fiorentina": 502,
+    "Bologna": 500, "Torino": 503, "Parma": 511, "Cagliari": 490,
+    "Empoli": 511, "Genoa": 495, "Monza": 1579, "Lecce": 867,
+    "Udinese": 494, "Verona": 504, "Venezia": 517, "Como": 880,
+    "Sassuolo": 488, "Frosinone": 512, "Manchester City": 50, "Arsenal": 42,
+    "Liverpool": 40, "Chelsea": 49, "Real Madrid": 541, "Barcellona": 529,
+    "Bayern Monaco": 157, "PSG": 85
 }
+
+# RILEVAMENTO FORMAZIONI UFFICIALI IN TEMPO REALE CON API-FOOTBALL (CACHE 3 MINUTI)
+@st.cache_data(ttl=180, show_spinner=False)
+def fetch_live_official_lineup(home_team, away_team, api_key):
+    h_name = clean_team_name(home_team)
+    a_name = clean_team_name(away_team)
+    h_id = API_FOOTBALL_TEAM_IDS.get(h_name)
+    
+    if not h_id or not api_key:
+        return "PROBABILE", None, None, None, None
+        
+    url = f"https://v3.football.api-sports.io/fixtures?team={h_id}&next=3"
+    headers = {"x-apisports-key": api_key}
+    try:
+        res = requests.get(url, headers=headers, timeout=6)
+        if res.status_code == 200:
+            fixtures = res.json().get("response", [])
+            for fix in fixtures:
+                t_h = fix.get("teams", {}).get("home", {}).get("name", "")
+                t_a = fix.get("teams", {}).get("away", {}).get("name", "")
+                if h_name.lower() in t_h.lower() or a_name.lower() in t_a.lower():
+                    f_id = fix.get("fixture", {}).get("id")
+                    if f_id:
+                        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={f_id}", headers=headers, timeout=6)
+                        if l_res.status_code == 200:
+                            l_data = l_res.json().get("response", [])
+                            if len(l_data) >= 2:
+                                # Parsing dei titolari ufficiali a referto
+                                def parse_official_xi(team_obj):
+                                    form_str = team_obj.get("formation", "4-3-3")
+                                    starters = []
+                                    pos_map = {"G": "Goalkeeper", "D": "Defender", "M": "Midfielder", "F": "Attacker"}
+                                    for p in team_obj.get("startXI", []):
+                                        p_info = p.get("player", {})
+                                        p_pos = pos_map.get(p_info.get("pos", "M"), "Midfielder")
+                                        sot_val = 1.45 if p_pos == "Attacker" else (0.85 if p_pos == "Midfielder" else 0.35)
+                                        starters.append({
+                                            "name": p_info.get("name", "Giocatore"),
+                                            "role": p_pos,
+                                            "number": str(p_info.get("number", "-")),
+                                            "sot_90": 0.0 if p_pos == "Goalkeeper" else sot_val,
+                                            "fouls_c_90": 0.1 if p_pos == "Goalkeeper" else 1.45,
+                                            "saves_90": 3.2 if p_pos == "Goalkeeper" else 0.0,
+                                            "penalties": (p_pos == "Attacker")
+                                        })
+                                    return form_str, starters
+
+                                form_h, xi_h = parse_official_xi(l_data[0])
+                                form_a, xi_a = parse_official_xi(l_data[1])
+                                return "UFFICIALE", form_h, xi_h, form_a, xi_a
+    except Exception:
+        pass
+    return "PROBABILE", None, None, None, None
 
 # Fetch Partite Live
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -1005,7 +1027,7 @@ else:
         "Gestione Account"
     ])
 
-# 1. SCANNER TOP 5 (CON POSSIBILITÀ DI CAMBIARE LINEA E QUOTA)
+# 1. SCANNER TOP 5
 with tab_scan:
     st.markdown(f"### TOP 5 VALUE BETS ({selected_league_label.upper()})")
     user_has_access = is_premium
@@ -1140,9 +1162,7 @@ with tab1:
         disp_c1 = [{k: v for k, v in item.items() if k in ["PARTITA", "DATA", "MERCATO", "QUOTA MINIMA", "PROB REALE", "EDGE", "STAKE"]} for item in top5_cat1]
         st.table(pd.DataFrame(disp_c1))
         
-        # ==========================================
-        # NUOVA SEZIONE: PROPONI TU LA GIOCATA
-        # ==========================================
+        # PROPONI TU LA GIOCATA
         st.markdown("---")
         st.markdown("### 💡 PROPONI TU LA GIOCATA")
         st.caption("Seleziona la partita e la giocata specifica che intendi analizzare. Il modello quantitativo calcolerà istantaneamente il valore reale, l'EV, l'Edge e lo Stake consigliato.")
@@ -1200,9 +1220,8 @@ with tab1:
                 p_line_s = st.selectbox("Linea", lines_sh, index=2, key="pr_shot_line")
                 res_prop = MatchAnalystEngine.analyze_match_shots_total(h_prop, a_prop, is_sot=is_sot_p, line=p_line_s, min_edge=min_edge_val)
                 
-            else:  # Digita Giocata Personalizzata
+            else:
                 custom_bet_txt = st.text_input("Descrivi la tua Giocata", placeholder="es. Multigol 2-4, Over 1.5 1T...", key="pr_custom_txt")
-                # Stima quantitativa adattiva
                 xg_h_p = MatchAnalystEngine.get_team_expected_goals(h_prop, a_prop, True, injuries_df)
                 xg_a_p = MatchAnalystEngine.get_team_expected_goals(a_prop, h_prop, False, injuries_df)
                 prob_est = 0.55
@@ -1233,9 +1252,7 @@ with tab1:
             else:
                 st.error(f"❌ NO BET (EV NEGATIVO / Quota sotto soglia minima)\nEdge: {edge_prop*100:+.2f}% - La quota offerta dal banco è troppo bassa rispetto al rischio stimato.")
         
-        # ==========================================
         # SCHEDE MOTIVATE & VERIFICA QUOTE
-        # ==========================================
         st.markdown("---")
         st.markdown("### SCHEDE MOTIVATE & VERIFICA QUOTA REALE MERCATI PRINCIPALI")
         for idx, item in enumerate(top5_cat1):
@@ -1264,7 +1281,7 @@ with tab1:
     else:
         st.info("Nessuna quota live disponibile al momento.")
 
-# 3. STATISTICHE & TATTICA SQUADRE (CON GOL, CORNER, TIRI SQUADRA E TIRI TOTALI MATCH)
+# 3. STATISTICHE & TATTICA SQUADRE (CON CONTROLLO FORMAZIONI UFFICIALI IN TEMPO REALE)
 with tab2:
     st.markdown(f"### STATISTICHE & QUADRO TATTICO ({selected_league_label.upper()})")
     if matches:
@@ -1274,10 +1291,20 @@ with tab2:
         h2 = clean_team_name(m_sel.get("home_team",""))
         a2 = clean_team_name(m_sel.get("away_team",""))
         
-        h2_tactic = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
-        a2_tactic = SERIE_A_TACTICS.get(a2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
+        # 1. Controllo formazioni ufficiali da API-Football a 45-60m dal via
+        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a = fetch_live_official_lineup(h2, a2, FOOTBALL_KEY)
         
-        st.markdown('<div class="lineup-badge-prob">FORMAZIONE PROBABILE (Pre-Partita)</div>', unsafe_allow_html=True)
+        h2_tactic_base = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
+        a2_tactic_base = SERIE_A_TACTICS.get(a2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
+        
+        formation_h_used = form_off_h if status_lineup == "UFFICIALE" and form_off_h else h2_tactic_base["formation"]
+        formation_a_used = form_off_a if status_lineup == "UFFICIALE" and form_off_a else a2_tactic_base["formation"]
+        
+        if status_lineup == "UFFICIALE":
+            st.markdown('<div class="lineup-badge-off">🟢 FORMAZIONE UFFICIALE (Confermata a Referto)</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="lineup-badge-prob">🟡 FORMAZIONE PROBABILE (Pre-Partita)</div>', unsafe_allow_html=True)
+            
         st.write("")
         
         col_tac1, col_tac2 = st.columns(2)
@@ -1285,34 +1312,34 @@ with tab2:
             st.markdown(f"""
             <div class="tactical-card">
                 <b>{h2.upper()} (Casa)</b><br>
-                • <b>Allenatore:</b> {h2_tactic['coach']}<br>
-                • <b>Modulo Tattico:</b> {h2_tactic['formation']}<br>
-                • <b>Identità Tattica:</b> {h2_tactic['style']}<br>
-                • <b>Possesso Palla Stimato:</b> {h2_tactic['possesso']:.1f}%<br>
-                • <b>Cross Medi:</b> {h2_tactic['cross']:.1f} / gara
+                • <b>Allenatore:</b> {h2_tactic_base['coach']}<br>
+                • <b>Modulo Tattico:</b> {formation_h_used}<br>
+                • <b>Identità Tattica:</b> {h2_tactic_base['style']}<br>
+                • <b>Possesso Palla Stimato:</b> {h2_tactic_base['possesso']:.1f}%<br>
+                • <b>Cross Medi:</b> {h2_tactic_base['cross']:.1f} / gara
             </div>
             """, unsafe_allow_html=True)
         with col_tac2:
             st.markdown(f"""
             <div class="tactical-card">
                 <b>{a2.upper()} (Trasferta)</b><br>
-                • <b>Allenatore:</b> {a2_tactic['coach']}<br>
-                • <b>Modulo Tattico:</b> {a2_tactic['formation']}<br>
-                • <b>Identità Tattica:</b> {a2_tactic['style']}<br>
-                • <b>Possesso Palla Stimato:</b> {a2_tactic['possesso']:.1f}%<br>
-                • <b>Cross Medi:</b> {a2_tactic['cross']:.1f} / gara
+                • <b>Allenatore:</b> {a2_tactic_base['coach']}<br>
+                • <b>Modulo Tattico:</b> {formation_a_used}<br>
+                • <b>Identità Tattica:</b> {a2_tactic_base['style']}<br>
+                • <b>Possesso Palla Stimato:</b> {a2_tactic_base['possesso']:.1f}%<br>
+                • <b>Cross Medi:</b> {a2_tactic_base['cross']:.1f} / gara
             </div>
             """, unsafe_allow_html=True)
         
         inj_h_list = injuries_df[injuries_df["team"].str.lower() == h2.lower()]["player_name"].tolist() if not injuries_df.empty else []
         inj_a_list = injuries_df[injuries_df["team"].str.lower() == a2.lower()]["player_name"].tolist() if not injuries_df.empty else []
 
-        h2_squad = get_team_squad_from_db(selected_league_label, h2)
-        a2_squad = get_team_squad_from_db(selected_league_label, a2)
+        h2_squad = xi_off_h if status_lineup == "UFFICIALE" and xi_off_h else get_team_squad_from_db(selected_league_label, h2)
+        a2_squad = xi_off_a if status_lineup == "UFFICIALE" and xi_off_a else get_team_squad_from_db(selected_league_label, a2)
         
         col_pitch_h, col_pitch_a = st.columns(2)
-        with col_pitch_h: st.markdown(render_visual_pitch_html(h2, h2_tactic['formation'], h2_squad, inj_h_list), unsafe_allow_html=True)
-        with col_pitch_a: st.markdown(render_visual_pitch_html(a2, a2_tactic['formation'], a2_squad, inj_a_list), unsafe_allow_html=True)
+        with col_pitch_h: st.markdown(render_visual_pitch_html(h2, formation_h_used, h2_squad, inj_h_list), unsafe_allow_html=True)
+        with col_pitch_a: st.markdown(render_visual_pitch_html(a2, formation_a_used, a2_squad, inj_a_list), unsafe_allow_html=True)
         
         if inj_h_list or inj_a_list:
             inj_cards_html = ""
@@ -1480,8 +1507,10 @@ if is_serie_a:
             h3 = clean_team_name(m3["home_team"])
             a3 = clean_team_name(m3["away_team"])
             
-            h3_players = get_team_squad_from_db(selected_league_label, h3)
-            a3_players = get_team_squad_from_db(selected_league_label, a3)
+            # Controllo titolari ufficiali per prioritizzare la lista
+            st_lineup, _, xi_h_off, _, xi_a_off = fetch_live_official_lineup(h3, a3, FOOTBALL_KEY)
+            h3_players = xi_h_off if st_lineup == "UFFICIALE" and xi_h_off else get_team_squad_from_db(selected_league_label, h3)
+            a3_players = xi_a_off if st_lineup == "UFFICIALE" and xi_a_off else get_team_squad_from_db(selected_league_label, a3)
             
             tab_h, tab_a = st.tabs([f"Squadra Casa: {h3}", f"Squadra Trasferta: {a3}"])
             
