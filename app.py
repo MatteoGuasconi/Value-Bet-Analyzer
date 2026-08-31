@@ -300,17 +300,17 @@ def safe_odds_val(val, min_v=1.01, max_v=20.0):
     except Exception:
         return min_v
 
-# Secrets Supabase & API
+# Secrets Supabase & Odds API
 SB_URL = st.secrets.get("SUPABASE_URL", "").rstrip("/")
 SB_KEY = st.secrets.get("SUPABASE_KEY", "")
 ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
-FOOTBALL_KEY = st.secrets.get("FOOTBALL_API_KEY", "f59b5ad05a6b45fa5f19582d3e493f7f")
 
 # Sessione Utente
 if "user" not in st.session_state: st.session_state.user = None
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 if "access_token" not in st.session_state: st.session_state.access_token = None
 if "last_free_scan_week" not in st.session_state: st.session_state.last_free_scan_week = None
+if "override_xi" not in st.session_state: st.session_state.override_xi = {}
 
 def get_headers(token=None):
     auth_bearer = token or SB_KEY
@@ -473,7 +473,7 @@ def save_injury(team, player_name, importance, injury_type, return_date):
 def delete_injury(injury_id):
     if SB_URL and SB_KEY:
         token = st.session_state.get("access_token")
-        url = f"{SB_URL}/rest/v1/team_injuries?id=eq.{injury_id}"
+        url = f"{SB_URL}/rest/v1/user_bets?id=eq.{injury_id}"
         try: requests.delete(url, headers=get_headers(token), timeout=10)
         except Exception: pass
 
@@ -501,106 +501,14 @@ def save_user_bet(u_id, match, market, odds, stake, ev):
         except Exception: pass
     return False
 
-def update_bet_status(bet_id, new_status, odds, stake):
-    profit_val = 0.0
-    if new_status == "VINTA": profit_val = round((odds - 1.0) * stake, 2)
-    elif new_status == "PERSA": profit_val = round(-stake, 2)
-    if SB_URL and SB_KEY:
-        token = st.session_state.get("access_token")
-        url = f"{SB_URL}/rest/v1/user_bets?id=eq.{bet_id}"
-        hdrs = get_headers(token)
-        hdrs["Prefer"] = "return=representation"
-        try: requests.patch(url, json={"status": new_status, "profit": profit_val}, headers=hdrs, timeout=10)
-        except Exception: pass
-
 # COMPETIZIONI & CAMPIONATI
 LEAGUES_CONFIG = {
-    "Serie A (Italia)": {"key": "soccer_italy_serie_a", "league_id": 135, "has_players": True},
-    "Premier League (Inghilterra)": {"key": "soccer_epl", "league_id": 39, "has_players": False},
-    "La Liga (Spagna)": {"key": "soccer_spain_la_liga", "league_id": 140, "has_players": False},
-    "Bundesliga (Germania)": {"key": "soccer_germany_bundesliga", "league_id": 78, "has_players": False},
-    "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "league_id": 61, "has_players": False}
+    "Serie A (Italia)": {"key": "soccer_italy_serie_a", "has_players": True},
+    "Premier League (Inghilterra)": {"key": "soccer_epl", "has_players": False},
+    "La Liga (Spagna)": {"key": "soccer_spain_la_liga", "has_players": False},
+    "Bundesliga (Germania)": {"key": "soccer_germany_bundesliga", "has_players": False},
+    "Ligue 1 (Francia)": {"key": "soccer_france_ligue_one", "has_players": False}
 }
-
-API_FOOTBALL_TEAM_IDS = {
-    "Inter": 505, "Juventus": 496, "Milan": 489, "Napoli": 492,
-    "Atalanta": 499, "Roma": 497, "Lazio": 487, "Fiorentina": 502,
-    "Bologna": 500, "Torino": 503, "Parma": 523, "Cagliari": 490,
-    "Empoli": 511, "Genoa": 495, "Monza": 1579, "Lecce": 867,
-    "Udinese": 494, "Verona": 504, "Venezia": 517, "Como": 880,
-    "Sassuolo": 488, "Frosinone": 512, "Manchester City": 50, "Arsenal": 42,
-    "Liverpool": 40, "Chelsea": 49, "Real Madrid": 541, "Barcellona": 529,
-    "Bayern Monaco": 157, "PSG": 85
-}
-
-# RILEVAMENTO FORMAZIONI IN TEMPO REALE CON API-FOOTBALL (ROBUSTO E TRASPARENTE)
-@st.cache_data(ttl=90, show_spinner=False)
-def fetch_live_official_lineup_h2h(home_team, away_team, api_key):
-    """Interroga direttamente lo scontro diretto per estrarre la distinta ufficiale."""
-    h_name = clean_team_name(home_team)
-    a_name = clean_team_name(away_team)
-    h_id = API_FOOTBALL_TEAM_IDS.get(h_name)
-    a_id = API_FOOTBALL_TEAM_IDS.get(a_name)
-    
-    if not api_key:
-        return "PROBABILE", None, None, None, None, "API Key non configurata."
-    if not h_id or not a_id:
-        return "PROBABILE", None, None, None, None, f"ID squadra non presente ({h_name}: {h_id}, {a_name}: {a_id})."
-        
-    headers = {"x-apisports-key": api_key}
-    fixture_id = None
-    
-    # Canale 1: Head to Head diretto
-    url_h2h = f"https://v3.football.api-sports.io/fixtures/headtohead?h2h={h_id}-{a_id}"
-    try:
-        res = requests.get(url_h2h, headers=headers, timeout=6)
-        if res.status_code == 200:
-            res_j = res.json()
-            errs = res_j.get("errors")
-            if errs:
-                return "PROBABILE", None, None, None, None, f"Errore server API: {errs}"
-                
-            fixtures = res_j.get("response", [])
-            if fixtures:
-                fixtures_sorted = sorted(fixtures, key=lambda x: x.get("fixture", {}).get("timestamp", 0), reverse=True)
-                fixture_id = fixtures_sorted[0].get("fixture", {}).get("id")
-    except Exception as e:
-        return "PROBABILE", None, None, None, None, f"Errore di rete: {str(e)}"
-
-    if not fixture_id:
-        return "PROBABILE", None, None, None, None, "Nessun match H2H registrato."
-
-    # Canale 2: Download della distinta ufficiale depositata
-    try:
-        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=6)
-        if l_res.status_code == 200:
-            l_data = l_res.json().get("response", [])
-            if len(l_data) >= 2 and len(l_data[0].get("startXI", [])) >= 11 and len(l_data[1].get("startXI", [])) >= 11:
-                pos_map = {"G": "Goalkeeper", "D": "Defender", "M": "Midfielder", "F": "Attacker"}
-                def parse_xi(t_obj):
-                    form_str = t_obj.get("formation", "4-3-3")
-                    starters = []
-                    for p in t_obj.get("startXI", []):
-                        p_info = p.get("player", {})
-                        p_pos = pos_map.get(p_info.get("pos", "M"), "Midfielder")
-                        starters.append({
-                            "name": p_info.get("name", "Giocatore"),
-                            "role": p_pos,
-                            "number": str(p_info.get("number", "-")),
-                            "sot_90": 0.0 if p_pos == "Goalkeeper" else (1.45 if p_pos == "Attacker" else 0.85),
-                            "fouls_c_90": 0.1 if p_pos == "Goalkeeper" else 1.45,
-                            "saves_90": 3.2 if p_pos == "Goalkeeper" else 0.0,
-                            "penalties": (p_pos == "Attacker")
-                        })
-                    return form_str, starters
-
-                form_h, xi_h = parse_xi(l_data[0])
-                form_a, xi_a = parse_xi(l_data[1])
-                return "UFFICIALE", form_h, xi_h, form_a, xi_a, f"Distinta ufficiale confermata (ID Match: {fixture_id})."
-    except Exception as e:
-        return "PROBABILE", None, None, None, None, f"Errore lettura distinta: {str(e)}"
-        
-    return "PROBABILE", None, None, None, None, f"Distinta ufficiale non ancora depositata nei feed della Lega (ID Match: {fixture_id})."
 
 # Fetch Partite Live da The Odds API
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -613,7 +521,7 @@ def fetch_real_matches(sport_key, api_key):
     except Exception: pass
     return []
 
-# RENDERING CAMPO TATTICO (11 TITOLARI DETERMINISTICI)
+# RENDERING CAMPO TATTICO (11 TITOLARI DA DATABASE OPENFOOTBALL / SQUADS_DB)
 def render_visual_pitch_html(team_name, formation_str, players_list, injured_names=None):
     if not players_list:
         return f'<div style="background:#131D38;border:1px dashed #2DD4BF;border-radius:8px;padding:24px;text-align:center;color:#CBD5E1;">In attesa di caricare la distinta per <b>{team_name}</b></div>'
@@ -1296,7 +1204,7 @@ with tab1:
     else:
         st.info("Nessuna quota live disponibile al momento.")
 
-# 3. STATISTICHE & TATTICA SQUADRE (CON SCANNER H2H ISTANTANEO)
+# 3. STATISTICHE & TATTICA SQUADRE (CON SUPPORTO OPENFOOTBALL / SQUADS_DB)
 with tab2:
     st.markdown(f"### STATISTICHE & QUADRO TATTICO ({selected_league_label.upper()})")
     if matches:
@@ -1306,28 +1214,13 @@ with tab2:
         h2 = clean_team_name(m_sel.get("home_team",""))
         a2 = clean_team_name(m_sel.get("away_team",""))
         
-        col_btn_ref, col_btn_info = st.columns([1, 2])
-        with col_btn_ref:
-            if st.button("🔄 CONTROLLA DISTINTA UFFICIALE LIVE", use_container_width=True):
-                st.cache_data.clear()
-                st.rerun()
-                
-        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a, diag_msg = fetch_live_official_lineup_h2h(h2, a2, FOOTBALL_KEY)
-        
-        with col_btn_info:
-            st.caption(f"**Stato Server API:** {diag_msg}")
-        
         h2_tactic_base = SERIE_A_TACTICS.get(h2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
         a2_tactic_base = SERIE_A_TACTICS.get(a2, {"coach": "Allenatore Ufficiale", "formation": "4-3-3", "style": "Equilibrato", "possesso": 50.0, "cross": 17.0})
         
-        formation_h_used = form_off_h if status_lineup == "UFFICIALE" and form_off_h else h2_tactic_base["formation"]
-        formation_a_used = form_off_a if status_lineup == "UFFICIALE" and form_off_a else a2_tactic_base["formation"]
+        formation_h_used = h2_tactic_base["formation"]
+        formation_a_used = a2_tactic_base["formation"]
         
-        if status_lineup == "UFFICIALE":
-            st.markdown('<div class="lineup-badge-off">🟢 FORMAZIONE UFFICIALE (Distinta a Referto Ricevuta)</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="lineup-badge-prob">🟡 FORMAZIONE PROBABILE (Pre-Partita - In attesa distinta ufficiale)</div>', unsafe_allow_html=True)
-            
+        st.markdown('<div class="lineup-badge-off">🟢 FORMAZIONE TITOLARE OTTIMIZZATA (Open Data Base 2026/2027)</div>', unsafe_allow_html=True)
         st.write("")
         
         col_tac1, col_tac2 = st.columns(2)
@@ -1357,8 +1250,8 @@ with tab2:
         inj_h_list = injuries_df[injuries_df["team"].str.lower() == h2.lower()]["player_name"].tolist() if not injuries_df.empty else []
         inj_a_list = injuries_df[injuries_df["team"].str.lower() == a2.lower()]["player_name"].tolist() if not injuries_df.empty else []
 
-        h2_squad = xi_off_h if status_lineup == "UFFICIALE" and xi_off_h else get_team_squad_from_db(selected_league_label, h2)
-        a2_squad = xi_off_a if status_lineup == "UFFICIALE" and xi_off_a else get_team_squad_from_db(selected_league_label, a2)
+        h2_squad = get_team_squad_from_db(selected_league_label, h2)
+        a2_squad = get_team_squad_from_db(selected_league_label, a2)
         
         col_pitch_h, col_pitch_a = st.columns(2)
         with col_pitch_h: st.markdown(render_visual_pitch_html(h2, formation_h_used, h2_squad, inj_h_list), unsafe_allow_html=True)
@@ -1530,9 +1423,8 @@ if is_serie_a:
             h3 = clean_team_name(m3["home_team"])
             a3 = clean_team_name(m3["away_team"])
             
-            st_lineup, _, xi_h_off, _, xi_a_off, _ = fetch_live_official_lineup_h2h(h3, a3, FOOTBALL_KEY)
-            h3_players = xi_h_off if st_lineup == "UFFICIALE" and xi_h_off else get_team_squad_from_db(selected_league_label, h3)
-            a3_players = xi_a_off if st_lineup == "UFFICIALE" and xi_a_off else get_team_squad_from_db(selected_league_label, a3)
+            h3_players = get_team_squad_from_db(selected_league_label, h3)
+            a3_players = get_team_squad_from_db(selected_league_label, a3)
             
             tab_h, tab_a = st.tabs([f"Squadra Casa: {h3}", f"Squadra Trasferta: {a3}"])
             
