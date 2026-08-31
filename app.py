@@ -36,7 +36,7 @@ st.markdown(
         display: none !important;
     }
     
-    /* FIX MENU LATERALE SMARTPHONE & SAFARI */
+    /* FIX DEFINITIVO MENU LATERALE SU SMARTPHONE & SAFARI */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
@@ -62,7 +62,7 @@ st.markdown(
         height: 24px !important;
     }
     
-    /* FIX ICONA PASSWORD */
+    /* FIX ICONA MOSTRA PASSWORD */
     [data-testid="stTextInput"] button {
         color: #2DD4BF !important;
         background-color: #2D3A5D !important;
@@ -533,10 +533,10 @@ API_FOOTBALL_TEAM_IDS = {
     "Bayern Monaco": 157, "PSG": 85
 }
 
-# RILEVAMENTO FORMAZIONI UFFICIALI TRAMITE H2H (SENZA RESTRIZIONI DI DATA)
+# RILEVAMENTO FORMAZIONI IN TEMPO REALE CON API-FOOTBALL (ROBUSTO E TRASPARENTE)
 @st.cache_data(ttl=90, show_spinner=False)
 def fetch_live_official_lineup_h2h(home_team, away_team, api_key):
-    """Interroga direttamente lo scontro diretto per estrarre la distinta ufficiale senza errori di data o fuso orario."""
+    """Interroga direttamente lo scontro diretto per estrarre la distinta ufficiale."""
     h_name = clean_team_name(home_team)
     a_name = clean_team_name(away_team)
     h_id = API_FOOTBALL_TEAM_IDS.get(h_name)
@@ -545,28 +545,32 @@ def fetch_live_official_lineup_h2h(home_team, away_team, api_key):
     if not api_key:
         return "PROBABILE", None, None, None, None, "API Key non configurata."
     if not h_id or not a_id:
-        return "PROBABILE", None, None, None, None, f"ID squadra non trovato ({h_name}: {h_id}, {a_name}: {a_id})."
+        return "PROBABILE", None, None, None, None, f"ID squadra non presente ({h_name}: {h_id}, {a_name}: {a_id})."
         
     headers = {"x-apisports-key": api_key}
     fixture_id = None
     
-    # Chiamata diretta H2H (restituisce sempre la partita corrente)
+    # Canale 1: Head to Head diretto
     url_h2h = f"https://v3.football.api-sports.io/fixtures/headtohead?h2h={h_id}-{a_id}"
     try:
         res = requests.get(url_h2h, headers=headers, timeout=6)
         if res.status_code == 200:
-            fixtures = res.json().get("response", [])
+            res_j = res.json()
+            errs = res_j.get("errors")
+            if errs:
+                return "PROBABILE", None, None, None, None, f"Errore server API: {errs}"
+                
+            fixtures = res_j.get("response", [])
             if fixtures:
-                # Ordina per data e prendi il match più recente o in corso
                 fixtures_sorted = sorted(fixtures, key=lambda x: x.get("fixture", {}).get("timestamp", 0), reverse=True)
                 fixture_id = fixtures_sorted[0].get("fixture", {}).get("id")
     except Exception as e:
-        return "PROBABILE", None, None, None, None, f"Errore connessione H2H: {str(e)}"
+        return "PROBABILE", None, None, None, None, f"Errore di rete: {str(e)}"
 
     if not fixture_id:
-        return "PROBABILE", None, None, None, None, "Nessun match H2H registrato per questa coppia."
+        return "PROBABILE", None, None, None, None, "Nessun match H2H registrato."
 
-    # Download della distinta ufficiale depositata
+    # Canale 2: Download della distinta ufficiale depositata
     try:
         l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=6)
         if l_res.status_code == 200:
@@ -596,9 +600,9 @@ def fetch_live_official_lineup_h2h(home_team, away_team, api_key):
     except Exception as e:
         return "PROBABILE", None, None, None, None, f"Errore lettura distinta: {str(e)}"
         
-    return "PROBABILE", None, None, None, None, f"Distinta ufficiale non ancora depositata a referto (ID Match: {fixture_id})."
+    return "PROBABILE", None, None, None, None, f"Distinta ufficiale non ancora depositata nei feed della Lega (ID Match: {fixture_id})."
 
-# Fetch Partite Live
+# Fetch Partite Live da The Odds API
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_real_matches(sport_key, api_key):
     if not api_key: return []
@@ -609,7 +613,7 @@ def fetch_real_matches(sport_key, api_key):
     except Exception: pass
     return []
 
-# RENDERING CAMPO TATTICO (11 TITOLARI COERENTI CON IL MODULO)
+# RENDERING CAMPO TATTICO (11 TITOLARI DETERMINISTICI)
 def render_visual_pitch_html(team_name, formation_str, players_list, injured_names=None):
     if not players_list:
         return f'<div style="background:#131D38;border:1px dashed #2DD4BF;border-radius:8px;padding:24px;text-align:center;color:#CBD5E1;">In attesa di caricare la distinta per <b>{team_name}</b></div>'
@@ -1574,7 +1578,7 @@ if is_serie_a:
                         else:
                             st.error(f"NO BET (Quota insufficiente - Edge: {edge_sv*100:+.2f}%)")
                 
-                # SEZIONE GIOCATORE DI MOVIMENTO (4 COLONNE COMPLETE: TIRI TOTALI, TIRI IN PORTA, FALLI COMMESSI, FALLI SUBITI)
+                # SEZIONE GIOCATORE DI MOVIMENTO (4 COLONNE COMPLETE)
                 else:
                     st.markdown("#### Pannello Statistico Completo Calciatore")
                     col_p_tot, col_p_sot, col_p_fc, col_p_fd = st.columns(4)
