@@ -36,7 +36,7 @@ st.markdown(
         display: none !important;
     }
     
-    /* FIX DEFINITIVO MENU LATERALE SU SMARTPHONE & SAFARI */
+    /* FIX MENU LATERALE SMARTPHONE & SAFARI */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
@@ -62,7 +62,7 @@ st.markdown(
         height: 24px !important;
     }
     
-    /* FIX ICONA MOSTRA PASSWORD */
+    /* FIX ICONA PASSWORD */
     [data-testid="stTextInput"] button {
         color: #2DD4BF !important;
         background-color: #2D3A5D !important;
@@ -525,7 +525,7 @@ LEAGUES_CONFIG = {
 API_FOOTBALL_TEAM_IDS = {
     "Inter": 505, "Juventus": 496, "Milan": 489, "Napoli": 492,
     "Atalanta": 499, "Roma": 497, "Lazio": 487, "Fiorentina": 502,
-    "Bologna": 500, "Torino": 503, "Parma": 511, "Cagliari": 490,
+    "Bologna": 500, "Torino": 503, "Parma": 523, "Cagliari": 490,
     "Empoli": 511, "Genoa": 495, "Monza": 1579, "Lecce": 867,
     "Udinese": 494, "Verona": 504, "Venezia": 517, "Como": 880,
     "Sassuolo": 488, "Frosinone": 512, "Manchester City": 50, "Arsenal": 42,
@@ -533,10 +533,10 @@ API_FOOTBALL_TEAM_IDS = {
     "Bayern Monaco": 157, "PSG": 85
 }
 
-# RILEVAMENTO FORMAZIONI IN TEMPO REALE CON API-FOOTBALL (SCANNER UNIVERSALE)
+# RILEVAMENTO FORMAZIONI UFFICIALI TRAMITE H2H (SENZA RESTRIZIONI DI DATA)
 @st.cache_data(ttl=90, show_spinner=False)
-def fetch_live_official_lineup(home_team, away_team, api_key):
-    """Cerca la partita in corso o imminente su API-Football e ne estrae la distinta ufficiale."""
+def fetch_live_official_lineup_h2h(home_team, away_team, api_key):
+    """Interroga direttamente lo scontro diretto per estrarre la distinta ufficiale senza errori di data o fuso orario."""
     h_name = clean_team_name(home_team)
     a_name = clean_team_name(away_team)
     h_id = API_FOOTBALL_TEAM_IDS.get(h_name)
@@ -544,51 +544,34 @@ def fetch_live_official_lineup(home_team, away_team, api_key):
     
     if not api_key:
         return "PROBABILE", None, None, None, None, "API Key non configurata."
+    if not h_id or not a_id:
+        return "PROBABILE", None, None, None, None, f"ID squadra non trovato ({h_name}: {h_id}, {a_name}: {a_id})."
         
     headers = {"x-apisports-key": api_key}
     fixture_id = None
     
-    # Canale 1: Partite LIVE in corso
+    # Chiamata diretta H2H (restituisce sempre la partita corrente)
+    url_h2h = f"https://v3.football.api-sports.io/fixtures/headtohead?h2h={h_id}-{a_id}"
     try:
-        res_live = requests.get("https://v3.football.api-sports.io/fixtures?live=all", headers=headers, timeout=5)
-        if res_live.status_code == 200:
-            for fix in res_live.json().get("response", []):
-                th = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
-                ta = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
-                if (h_name.lower() in th.lower() or th.lower() in h_name.lower()) or \
-                   (a_name.lower() in ta.lower() or ta.lower() in a_name.lower()):
-                    fixture_id = fix.get("fixture", {}).get("id")
-                    break
-    except Exception:
-        pass
-        
-    # Canale 2: Partite recenti e imminenti della squadra di casa o trasferta
-    if not fixture_id and (h_id or a_id):
-        target_id = h_id or a_id
-        for endpoint_param in ["last=5", "next=5"]:
-            try:
-                res_t = requests.get(f"https://v3.football.api-sports.io/fixtures?team={target_id}&{endpoint_param}", headers=headers, timeout=5)
-                if res_t.status_code == 200:
-                    for fix in res_t.json().get("response", []):
-                        th = clean_team_name(fix.get("teams", {}).get("home", {}).get("name", ""))
-                        ta = clean_team_name(fix.get("teams", {}).get("away", {}).get("name", ""))
-                        if (h_name.lower() in th.lower() or th.lower() in h_name.lower()) and \
-                           (a_name.lower() in ta.lower() or ta.lower() in a_name.lower()):
-                            fixture_id = fix.get("fixture", {}).get("id")
-                            break
-                if fixture_id: break
-            except Exception:
-                pass
+        res = requests.get(url_h2h, headers=headers, timeout=6)
+        if res.status_code == 200:
+            fixtures = res.json().get("response", [])
+            if fixtures:
+                # Ordina per data e prendi il match più recente o in corso
+                fixtures_sorted = sorted(fixtures, key=lambda x: x.get("fixture", {}).get("timestamp", 0), reverse=True)
+                fixture_id = fixtures_sorted[0].get("fixture", {}).get("id")
+    except Exception as e:
+        return "PROBABILE", None, None, None, None, f"Errore connessione H2H: {str(e)}"
 
     if not fixture_id:
-        return "PROBABILE", None, None, None, None, "In attesa del fischio d'inizio o caricamento match nei server live."
+        return "PROBABILE", None, None, None, None, "Nessun match H2H registrato per questa coppia."
 
-    # Canale 3: Download distinta ufficiale depositata
+    # Download della distinta ufficiale depositata
     try:
-        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=5)
+        l_res = requests.get(f"https://v3.football.api-sports.io/fixtures/lineups?fixture={fixture_id}", headers=headers, timeout=6)
         if l_res.status_code == 200:
             l_data = l_res.json().get("response", [])
-            if len(l_data) >= 2 and len(l_data[0].get("startXI", [])) >= 11:
+            if len(l_data) >= 2 and len(l_data[0].get("startXI", [])) >= 11 and len(l_data[1].get("startXI", [])) >= 11:
                 pos_map = {"G": "Goalkeeper", "D": "Defender", "M": "Midfielder", "F": "Attacker"}
                 def parse_xi(t_obj):
                     form_str = t_obj.get("formation", "4-3-3")
@@ -613,7 +596,7 @@ def fetch_live_official_lineup(home_team, away_team, api_key):
     except Exception as e:
         return "PROBABILE", None, None, None, None, f"Errore lettura distinta: {str(e)}"
         
-    return "PROBABILE", None, None, None, None, f"Distinta in fase di deposito (ID Match: {fixture_id})."
+    return "PROBABILE", None, None, None, None, f"Distinta ufficiale non ancora depositata a referto (ID Match: {fixture_id})."
 
 # Fetch Partite Live
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -1309,7 +1292,7 @@ with tab1:
     else:
         st.info("Nessuna quota live disponibile al momento.")
 
-# 3. STATISTICHE & TATTICA SQUADRE (CON SCANNER LIVE MULTICANALE)
+# 3. STATISTICHE & TATTICA SQUADRE (CON SCANNER H2H ISTANTANEO)
 with tab2:
     st.markdown(f"### STATISTICHE & QUADRO TATTICO ({selected_league_label.upper()})")
     if matches:
@@ -1321,11 +1304,11 @@ with tab2:
         
         col_btn_ref, col_btn_info = st.columns([1, 2])
         with col_btn_ref:
-            if st.button("🔄 FORZA CONTROLLO DISTINTA UFFICIALE", use_container_width=True):
+            if st.button("🔄 CONTROLLA DISTINTA UFFICIALE LIVE", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
                 
-        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a, diag_msg = fetch_live_official_lineup(h2, a2, FOOTBALL_KEY)
+        status_lineup, form_off_h, xi_off_h, form_off_a, xi_off_a, diag_msg = fetch_live_official_lineup_h2h(h2, a2, FOOTBALL_KEY)
         
         with col_btn_info:
             st.caption(f"**Stato Server API:** {diag_msg}")
@@ -1543,7 +1526,7 @@ if is_serie_a:
             h3 = clean_team_name(m3["home_team"])
             a3 = clean_team_name(m3["away_team"])
             
-            st_lineup, _, xi_h_off, _, xi_a_off, _ = fetch_live_official_lineup(h3, a3, FOOTBALL_KEY)
+            st_lineup, _, xi_h_off, _, xi_a_off, _ = fetch_live_official_lineup_h2h(h3, a3, FOOTBALL_KEY)
             h3_players = xi_h_off if st_lineup == "UFFICIALE" and xi_h_off else get_team_squad_from_db(selected_league_label, h3)
             a3_players = xi_a_off if st_lineup == "UFFICIALE" and xi_a_off else get_team_squad_from_db(selected_league_label, a3)
             
