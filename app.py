@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Styling CSS Corretto - Leggibilità menu a tendina e testi
+# Styling CSS Dark Fintech - Contrasto Alto e Testi Bianchi
 st.markdown(
     """
     <style>
@@ -29,7 +29,6 @@ st.markdown(
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
-    /* FIX MENU A TENDINA (SELECTBOX) CON TESTO SCURO E SFONDO CHIARO LEGGIBILE */
     div[data-baseweb="select"] > div {
         background-color: #F8FAFC !important;
         color: #0B132B !important;
@@ -40,7 +39,6 @@ st.markdown(
         color: #0B132B !important;
     }
     
-    /* MENU A TENDINA APERTO (LISTA OPZIONI) */
     div[data-baseweb="popover"] div, div[role="listbox"] div {
         background-color: #F8FAFC !important;
         color: #0B132B !important;
@@ -125,7 +123,7 @@ if "history_bets" not in st.session_state:
 if "injuries_list" not in st.session_state:
     st.session_state.injuries_list = []
 
-# Sidebar - Pulita senza scritte superflue
+# Sidebar
 st.sidebar.markdown("### 👑 SERIE A • PROTOCOLLO v4.0")
 
 st.sidebar.markdown("---")
@@ -178,14 +176,12 @@ class QuantitativeEngine:
         ev = (p_reale * quota_book) - 1.0
         b = quota_book - 1.0
         
-        # Kelly Mezzato (Kelly/2)
         if b > 0:
             kelly_full = ((p_reale * b) - (1.0 - p_reale)) / b
             kelly_half = max(0.0, kelly_full * 0.50)
         else:
             kelly_half = 0.0
             
-        # Cap di fascia da protocollo
         if edge < 0.03:
             cap_fascia = 0.05
         elif edge <= 0.07:
@@ -215,8 +211,8 @@ with tab_analyzer:
     
     col_in1, col_in2 = st.columns(2)
     with col_in1:
-        home_team = st.text_input("Squadra di Casa", value="Atalanta")
-        away_team = st.text_input("Squadra Trasferta", value="Bologna")
+        home_team = st.text_input("Squadra di Casa", value="Inter")
+        away_team = st.text_input("Squadra Trasferta", value="Napoli")
         match_day = st.text_input("Competizione & Giornata", value="Serie A - Giornata 28")
         
     with col_in2:
@@ -230,17 +226,38 @@ with tab_analyzer:
                 "✍️ Mercato Personalizzato / Tutti gli Altri"
             ]
         )
-        exact_market_name = st.text_input("Specifica Mercato e Linea", placeholder="es. Over 2.5 / Over 8.5 Corner / Over 1.5 Atalanta")
+        exact_market_name = st.text_input("Specifica Mercato e Linea", placeholder="es. Over 2.5 / Over 8.5 Corner / Over 1.5 Inter")
         quota_bk = st.number_input("Quota Bookmaker (es. Vincitù / Sharp)", min_value=1.01, max_value=50.0, value=1.85, step=0.01)
 
     st.markdown("---")
     
+    # Calcolo impatto infermeria sugli xG / xGA
+    def get_injury_penalty(team_name):
+        penalty_xg = 0.0
+        for inj in st.session_state.injuries_list:
+            if inj["team"].strip().lower() == team_name.strip().lower():
+                imp = inj["importance"]
+                if "Top player" in imp: penalty_xg += 0.10
+                elif "Attaccante titolare" in imp: penalty_xg += 0.05
+                elif "Centrocampista top" in imp: penalty_xg += 0.05
+                elif "Centrocampista titolare" in imp: penalty_xg += 0.02
+        return penalty_xg
+
+    pen_home = get_injury_penalty(home_team)
+    pen_away = get_injury_penalty(away_team)
+    
+    if pen_home > 0 or pen_away > 0:
+        st.info(f"🏥 Impatto Infermeria rilevato dal modello -> Penalità xG applicata: {home_team} (-{pen_home*100:.0f}%), {away_team} (-{pen_away*100:.0f}%)")
+
     if "⚽ Gol" in market_category:
         st.markdown("#### 📊 PARAMETRI GOL & EXPECTED GOALS (xG)")
         col_st1, col_st2, col_st3 = st.columns(3)
-        with col_st1: xg_home = st.number_input("xG Casa (ultime 8 / normalizzato)", min_value=0.1, max_value=5.0, value=1.65, step=0.05)
-        with col_st2: xg_away = st.number_input("xG Trasferta (ultime 8 / normalizzato)", min_value=0.1, max_value=5.0, value=1.15, step=0.05)
+        with col_st1: xg_home_raw = st.number_input("xG Base Casa (ultime 8)", min_value=0.1, max_value=5.0, value=1.65, step=0.05)
+        with col_st2: xg_away_raw = st.number_input("xG Base Trasferta (ultime 8)", min_value=0.1, max_value=5.0, value=1.15, step=0.05)
         with col_st3: conf_level = st.selectbox("Confidenza Modello", ["ALTA", "MEDIA", "BASSA"], index=0)
+        
+        xg_home = max(0.1, xg_home_raw * (1.0 - pen_home))
+        xg_away = max(0.1, xg_away_raw * (1.0 - pen_away))
         
         lambda_tot = xg_home + xg_away
         if "Over 2.5" in exact_market_name:
@@ -368,19 +385,33 @@ with tab_players:
 
 with tab_injuries:
     st.markdown("### 🏥 GESTIONE INFERMERIA & INDISPONIBILI SERIE A")
-    st.caption("Inserisci i calciatori infortunati per ponderare correttamente l'impatto quantitativo su xG e linee statistiche.")
+    st.caption("Inserisci i calciatori infortunati. L'impatto percentuale aggiornerà automaticamente gli xG.")
     
     col_inj1, col_inj2 = st.columns(2)
     with col_inj1:
-        inj_team = st.text_input("Squadra di Serie A", placeholder="es. Atalanta, Bologna, Milan...")
-        inj_player = st.text_input("Nome Calciatore Indisponibile", placeholder="es. Scamacca")
+        inj_team = st.text_input("Squadra di Serie A", placeholder="es. Inter, Napoli, Milan...")
+        inj_player = st.text_input("Nome Calciatore Indisponibile", placeholder="es. Hakan Calhanoglu")
     with col_inj2:
-        inj_imp = st.selectbox("Importanza Tattica", ["Top Player Offensivo (-12% xG)", "Titolare Mediano / Regista", "Difensore Centrale Titolare", "Portiere Titolare"])
-        inj_date = st.text_input("Data Rientro Prevista", value="Da valutare")
+        inj_imp = st.selectbox(
+            "Ruolo ed Impatto Tattico",
+            [
+                "Top player (-10% xG)",
+                "Attaccante titolare (-5% xG)",
+                "Attaccante riserva (0%)",
+                "Centrocampista top (-5% xG)",
+                "Centrocampista titolare (-2% xG)",
+                "Centrocampista riserva (0%)",
+                "Difensore top (-5% xGA)",
+                "Difensore titolare (-2% xGA)",
+                "Difensore riserva (0%)",
+                "Portiere titolare (-5% xGA)",
+                "Portiere riserva (0%)"
+            ]
+        )
         if st.button("REGISTRA INDISPONIBILE"):
             if inj_team and inj_player:
                 st.session_state.injuries_list.append({
-                    "team": inj_team, "player": inj_player, "importance": inj_imp, "return": inj_date
+                    "team": inj_team, "player": inj_player, "importance": inj_imp
                 })
                 st.success(f"Indisponibile registrato per {inj_team}.")
                 st.rerun()
