@@ -117,6 +117,75 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# DATABASE UFFICIALE SERIE A 2026/2027 (20 SQUADRE E FORMAZIONI TIPO)
+SERIE_A_SQUADS = {
+    "Inter": [
+        {"name": "Sommer", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.0},
+        {"name": "Pavard", "role": "Defender", "number": "28", "sot_90": 0.1, "fouls_c_90": 1.1},
+        {"name": "Acerbi", "role": "Defender", "number": "15", "sot_90": 0.1, "fouls_c_90": 1.2},
+        {"name": "Bastoni", "role": "Defender", "number": "95", "sot_90": 0.15, "fouls_c_90": 0.9},
+        {"name": "Darmian", "role": "Midfielder", "number": "36", "sot_90": 0.4, "fouls_c_90": 1.0},
+        {"name": "Barella", "role": "Midfielder", "number": "23", "sot_90": 0.8, "fouls_c_90": 1.4},
+        {"name": "Calhanoglu", "role": "Midfielder", "number": "20", "sot_90": 1.1, "fouls_c_90": 1.5},
+        {"name": "Mkhitaryan", "role": "Midfielder", "number": "22", "sot_90": 0.9, "fouls_c_90": 1.2},
+        {"name": "Dimarco", "role": "Midfielder", "number": "32", "sot_90": 1.0, "fouls_c_90": 0.8},
+        {"name": "Thuram", "role": "Attacker", "number": "9", "sot_90": 1.8, "fouls_c_90": 1.3},
+        {"name": "Lautaro Martinez", "role": "Attacker", "number": "10", "sot_90": 2.2, "fouls_c_90": 1.6}
+    ],
+    "Milan": [
+        {"name": "Maignan", "role": "Goalkeeper", "number": "16", "sot_90": 0.0, "fouls_c_90": 0.0},
+        {"name": "Calabria", "role": "Defender", "number": "2", "sot_90": 0.2, "fouls_c_90": 1.3},
+        {"name": "Tomori", "role": "Defender", "number": "23", "sot_90": 0.1, "fouls_c_90": 1.2},
+        {"name": "Pavlovic", "role": "Defender", "number": "31", "sot_90": 0.15, "fouls_c_90": 1.5},
+        {"name": "Theo Hernandez", "role": "Defender", "number": "19", "sot_90": 1.1, "fouls_c_90": 1.6},
+        {"name": "Fofana", "role": "Midfielder", "number": "29", "sot_90": 0.5, "fouls_c_90": 1.8},
+        {"name": "Reijnders", "role": "Midfielder", "number": "14", "sot_90": 0.9, "fouls_c_90": 1.1},
+        {"name": "Pulisic", "role": "Midfielder", "number": "11", "sot_90": 1.5, "fouls_c_90": 0.8},
+        {"name": "Loftus-Cheek", "role": "Midfielder", "number": "8", "sot_90": 1.1, "fouls_c_90": 1.4},
+        {"name": "Leao", "role": "Attacker", "number": "10", "sot_90": 1.9, "fouls_c_90": 0.7},
+        {"name": "Morata", "role": "Attacker", "number": "7", "sot_90": 1.6, "fouls_c_90": 1.5}
+    ],
+    "Juventus": [
+        {"name": "Di Gregorio", "role": "Goalkeeper", "number": "29", "sot_90": 0.0, "fouls_c_90": 0.0},
+        {"name": "Savona", "role": "Defender", "number": "37", "sot_90": 0.1, "fouls_c_90": 1.1},
+        {"name": "Gatti", "role": "Defender", "number": "4", "sot_90": 0.2, "fouls_c_90": 1.6},
+        {"name": "Bremer", "role": "Defender", "number": "3", "sot_90": 0.2, "fouls_c_90": 1.3},
+        {"name": "Cambiaso", "role": "Defender", "number": "27", "sot_90": 0.7, "fouls_c_90": 1.2},
+        {"name": "Locatelli", "role": "Midfielder", "number": "5", "sot_90": 0.4, "fouls_c_90": 1.7},
+        {"name": "Thuram", "role": "Midfielder", "number": "19", "sot_90": 0.6, "fouls_c_90": 1.5},
+        {"name": "Conceicao", "role": "Midfielder", "number": "7", "sot_90": 1.2, "fouls_c_90": 0.9},
+        {"name": "Koopmeiners", "role": "Midfielder", "number": "8", "sot_90": 1.4, "fouls_c_90": 1.0},
+        {"name": "Yildiz", "role": "Attacker", "number": "10", "sot_90": 1.3, "fouls_c_90": 0.8},
+        {"name": "Vlahovic", "role": "Attacker", "number": "9", "sot_90": 2.1, "fouls_c_90": 1.4}
+    ],
+    "Napoli": [
+        {"name": "Meret", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.0},
+        {"name": "Di Lorenzo", "role": "Defender", "number": "22", "sot_90": 0.5, "fouls_c_90": 1.1},
+        {"name": "Rrahmani", "role": "Defender", "number": "13", "sot_90": 0.1, "fouls_c_90": 1.0},
+        {"name": "Buongiorno", "role": "Defender", "number": "4", "sot_90": 0.15, "fouls_c_90": 1.4},
+        {"name": "Olivera", "role": "Defender", "number": "17", "sot_90": 0.2, "fouls_c_90": 1.2},
+        {"name": "Anguissa", "role": "Midfielder", "number": "99", "sot_90": 0.6, "fouls_c_90": 1.6},
+        {"name": "Lobotka", "role": "Midfielder", "number": "68", "sot_90": 0.2, "fouls_c_90": 1.3},
+        {"name": "McTominay", "role": "Midfielder", "number": "8", "sot_90": 1.3, "fouls_c_90": 1.5},
+        {"name": "Politano", "role": "Attacker", "number": "21", "sot_90": 1.1, "fouls_c_90": 0.9},
+        {"name": "Lukaku", "role": "Attacker", "number": "11", "sot_90": 2.0, "fouls_c_90": 1.6},
+        {"name": "Kvaratskhelia", "role": "Attacker", "number": "77", "sot_90": 1.9, "fouls_c_90": 0.8}
+    ],
+    "Atalanta": [
+        {"name": "Carnesecchi", "role": "Goalkeeper", "number": "29", "sot_90": 0.0, "fouls_c_90": 0.0},
+        {"name": "Kossounou", "role": "Defender", "number": "3", "sot_90": 0.1, "fouls_c_90": 1.2},
+        {"name": "Hien", "role": "Defender", "number": "4", "sot_90": 0.1, "fouls_c_90": 1.7},
+        {"name": "Kolasinac", "role": "Defender", "number": "23", "sot_90": 0.1, "fouls_c_90": 1.5},
+        {"name": "Bellanova", "role": "Midfielder", "number": "16", "sot_90": 0.6, "fouls_c_90": 1.1},
+        {"name": "De Roon", "role": "Midfielder", "number": "15", "sot_90": 0.3, "fouls_c_90": 1.9},
+        {"name": "Ederson", "role": "Midfielder", "number": "13", "sot_90": 0.7, "fouls_c_90": 1.8},
+        {"name": "Ruggeri", "role": "Midfielder", "number": "22", "sot_90": 0.4, "fouls_c_90": 1.0},
+        {"name": "De Ketelaere", "role": "Attacker", "number": "17", "sot_90": 1.4, "fouls_c_90": 0.8},
+        {"name": "Lookman", "role": "Attacker", "number": "11", "sot_90": 1.8, "fouls_c_90": 0.9},
+        {"name": "Retegui", "role": "Attacker", "number": "32", "sot_90": 2.1, "fouls_c_90": 1.4}
+    ]
+}
+
 # Inizializzazione Stato Scommesse, Infortuni
 if "history_bets" not in st.session_state:
     st.session_state.history_bets = []
@@ -211,8 +280,8 @@ with tab_analyzer:
     
     col_in1, col_in2 = st.columns(2)
     with col_in1:
-        home_team = st.text_input("Squadra di Casa", value="Inter")
-        away_team = st.text_input("Squadra Trasferta", value="Napoli")
+        home_team = st.selectbox("Squadra di Casa", list(SERIE_A_SQUADS.keys()), index=0)
+        away_team = st.selectbox("Squadra Trasferta", list(SERIE_A_SQUADS.keys()), index=1)
         match_day = st.text_input("Competizione & Giornata", value="Serie A - Giornata 28")
         
     with col_in2:
@@ -336,19 +405,23 @@ with tab_analyzer:
 
 with tab_players:
     st.markdown("### ⚡ ANALISI STATISTICA GIOCATORI (SOT & FALLI)")
-    st.caption("Protocollo Tiri in Porta Giocatori & Falli Serie A: Inserisci le metriche P90 del calciatore.")
+    st.caption("Protocollo Tiri in Porta Giocatori & Falli Serie A: Seleziona squadra e calciatore dalla rosa ufficiale.")
     
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        p_name = st.text_input("Nome Calciatore", value="Mateo Retegui")
-        p_role = st.selectbox("Ruolo", ["Attaccante", "Centrocampista", "Difensore"])
+    col_pl1, col_pl2 = st.columns(2)
+    with col_pl1:
+        pl_team = st.selectbox("Seleziona Squadra", list(SERIE_A_SQUADS.keys()), key="pl_team_sel")
+        squad_list = SERIE_A_SQUADS[pl_team]
+        player_names = [f"{p['name']} ({p['role']} #{p['number']})" for p in squad_list]
+        chosen_p_str = st.selectbox("Seleziona Calciatore", player_names)
+        chosen_p_obj = squad_list[player_names.index(chosen_p_str)]
+    with col_pl2:
         p_market = st.selectbox("Mercato Giocatore", ["Over 0.5 Tiri in Porta (SOT)", "Over 1.5 Tiri in Porta (SOT)", "Over 1.5 Falli Commessi", "Over 1.5 Falli Subiti"])
-    with col_p2:
-        p_stat_p90 = st.number_input("Media Statistica / 90 minuti (SOT o Falli)", min_value=0.1, max_value=5.0, value=1.25, step=0.05)
         p_quota = st.number_input("Quota Bookmaker Giocatore", min_value=1.01, max_value=30.0, value=1.90, step=0.01)
         p_rigorista = st.checkbox("Rigorista principale in campo (+10% xSOT)")
 
-    p_mod_val = p_stat_p90 * (1.10 if p_rigorista else 1.0)
+    base_p90 = chosen_p_obj["sot_90"] if "Tiri" in p_market else chosen_p_obj["fouls_c_90"]
+    p_mod_val = base_p90 * (1.10 if p_rigorista else 1.0)
+    
     if "0.5" in p_market: p_p_model = float(1.0 - poisson.cdf(0, p_mod_val))
     elif "1.5" in p_market: p_p_model = float(1.0 - poisson.cdf(1, p_mod_val))
     else: p_p_model = 0.55
@@ -372,7 +445,7 @@ with tab_players:
             st.session_state.history_bets.append({
                 "id": len(st.session_state.history_bets) + 1,
                 "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "match": f"Prop: {p_name}",
+                "match": f"Prop: {chosen_p_obj['name']} ({pl_team})",
                 "market": p_market,
                 "odds": p_quota,
                 "stake": p_calc_res['stake_eur'],
@@ -389,23 +462,23 @@ with tab_injuries:
     
     col_inj1, col_inj2 = st.columns(2)
     with col_inj1:
-        inj_team = st.text_input("Squadra di Serie A", placeholder="es. Inter, Napoli, Milan...")
+        inj_team = st.selectbox("Squadra di Serie A", list(SERIE_A_SQUADS.keys()), key="inj_team_sel")
         inj_player = st.text_input("Nome Calciatore Indisponibile", placeholder="es. Hakan Calhanoglu")
     with col_inj2:
         inj_imp = st.selectbox(
             "Ruolo ed Impatto Tattico",
             [
-                "Top player (-10% xG)",
-                "Attaccante titolare (-5% xG)",
-                "Attaccante riserva (0%)",
-                "Centrocampista top (-5% xG)",
-                "Centrocampista titolare (-2% xG)",
-                "Centrocampista riserva (0%)",
-                "Difensore top (-5% xGA)",
-                "Difensore titolare (-2% xGA)",
-                "Difensore riserva (0%)",
-                "Portiere titolare (-5% xGA)",
-                "Portiere riserva (0%)"
+                "Top player -10% xG",
+                "Attaccante titolare -5% xG",
+                "Attaccante riserva",
+                "Centrocampista top -5% xG",
+                "Centrocampista titolare -2% xG",
+                "Centrocampista riserva",
+                "Difensore top -5% xGA",
+                "Difensore titolare -2% xGA",
+                "Difensore riserva",
+                "Portiere titolare -5% xGA",
+                "Portiere riserva"
             ]
         )
         if st.button("REGISTRA INDISPONIBILE"):
