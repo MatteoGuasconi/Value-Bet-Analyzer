@@ -186,7 +186,7 @@ SERIE_A_SQUADS = {
     ]
 }
 
-# Inizializzazione Stato Scommesse, Infortuni
+# Inizializzazione Stato
 if "history_bets" not in st.session_state:
     st.session_state.history_bets = []
 if "injuries_list" not in st.session_state:
@@ -201,7 +201,6 @@ kelly_fraction = st.sidebar.select_slider("Frazione di Kelly", options=[0.25, 0.
 min_edge_pct = st.sidebar.slider("Soglia Minima Edge (%)", min_value=1.0, max_value=5.0, value=3.0, step=0.5, help="Soglia minima da protocollo: 3.0%")
 min_edge_val = min_edge_pct / 100.0
 
-# Calcolo Bankroll Dinamico
 total_profit = sum([b.get("profit", 0.0) for b in st.session_state.history_bets if b.get("status") in ["VINTA", "PERSA"]])
 total_stake_history = sum([b.get("stake", 0.0) for b in st.session_state.history_bets if b.get("status") in ["VINTA", "PERSA"]])
 current_bankroll = initial_bankroll + total_profit
@@ -224,10 +223,8 @@ st.sidebar.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Titolo Principale
 st.title("VALUE BET ANALYZER • SERIE A")
 
-# Navigazione Tab
 tab_analyzer, tab_players, tab_injuries, tab_register, tab_kpi = st.tabs([
     "🎯 Analisi Squadre & Match",
     "⚡ Statistiche Giocatori (SOT & Falli)",
@@ -236,10 +233,14 @@ tab_analyzer, tab_players, tab_injuries, tab_register, tab_kpi = st.tabs([
     "📈 KPI & Statistiche"
 ])
 
-# MOTOR QUANTITATIVO DA PROTOCOLLO
 class QuantitativeEngine:
     @staticmethod
     def calculate_metrics(p_reale, quota_book, bankroll):
+        if p_reale <= 0.0 or quota_book <= 1.0:
+            return {
+                "p_imp": 0.0, "edge": 0.0, "ev": 0.0, "quota_equa": 99.0,
+                "kelly_half": 0.0, "stake_pct": 0.0, "stake_eur": 0.0, "verdetto": "NO BET / Dati non validi"
+            }
         p_imp = 1.0 / quota_book
         edge = (quota_book / (1.0 / p_reale)) - 1.0
         ev = (p_reale * quota_book) - 1.0
@@ -300,7 +301,6 @@ with tab_analyzer:
 
     st.markdown("---")
     
-    # Calcolo impatto infermeria sugli xG / xGA
     def get_injury_penalty(team_name):
         penalty_xg = 0.0
         for inj in st.session_state.injuries_list:
