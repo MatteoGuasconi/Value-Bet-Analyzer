@@ -117,7 +117,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# DATABASE UFFICIALE SERIE A (20 SQUADRE - SENZA EMPOLI, CON FROSINONE)
+# DATABASE UFFICIALE SERIE A (20 SQUADRE - SENZA VERONA, CON SASSUOLO)
 SERIE_A_SQUADS = {
     "Atalanta": [
         {"name": "Carnesecchi", "role": "Goalkeeper", "number": "29", "sot_90": 0.0, "fouls_c_90": 0.0},
@@ -327,6 +327,19 @@ SERIE_A_SQUADS = {
         {"name": "Dybala", "role": "Attacker", "number": "21", "sot_90": 1.8, "fouls_c_90": 0.6},
         {"name": "Dovbyk", "role": "Attacker", "number": "11", "sot_90": 2.1, "fouls_c_90": 1.5}
     ],
+    "Sassuolo": [
+        {"name": "Consigli", "role": "Goalkeeper", "number": "47", "sot_90": 0.0, "fouls_c_90": 0.0},
+        {"name": "Toljan", "role": "Defender", "number": "22", "sot_90": 0.2, "fouls_c_90": 1.1},
+        {"name": "Erlic", "role": "Defender", "number": "28", "sot_90": 0.1, "fouls_c_90": 1.4},
+        {"name": "Ferrari", "role": "Defender", "number": "13", "sot_90": 0.1, "fouls_c_90": 1.3},
+        {"name": "Doig", "role": "Defender", "number": "3", "sot_90": 0.3, "fouls_c_90": 1.2},
+        {"name": "Matheus Henrique", "role": "Midfielder", "number": "7", "sot_90": 0.5, "fouls_c_90": 1.6},
+        {"name": "Boloca", "role": "Midfielder", "number": "24", "sot_90": 0.3, "fouls_c_90": 1.8},
+        {"name": "Thorstvedt", "role": "Midfielder", "number": "42", "sot_90": 0.9, "fouls_c_90": 1.4},
+        {"name": "Berardi", "role": "Attacker", "number": "10", "sot_90": 1.8, "fouls_c_90": 0.7},
+        {"name": "Laurienté", "role": "Attacker", "number": "45", "sot_90": 1.5, "fouls_c_90": 1.0},
+        {"name": "Pinamonti", "role": "Attacker", "number": "9", "sot_90": 1.9, "fouls_c_90": 1.5}
+    ],
     "Torino": [
         {"name": "Milinkovic-Savic", "role": "Goalkeeper", "number": "32", "sot_90": 0.0, "fouls_c_90": 0.0},
         {"name": "Walukiewicz", "role": "Defender", "number": "23", "sot_90": 0.1, "fouls_c_90": 1.4},
@@ -365,19 +378,6 @@ SERIE_A_SQUADS = {
         {"name": "Oristanio", "role": "Attacker", "number": "19", "sot_90": 1.3, "fouls_c_90": 0.9},
         {"name": "Busio", "role": "Midfielder", "number": "6", "sot_90": 0.8, "fouls_c_90": 1.2},
         {"name": "Pohjanpalo", "role": "Attacker", "number": "20", "sot_90": 1.9, "fouls_c_90": 1.4}
-    ],
-    "Verona": [
-        {"name": "Montipò", "role": "Goalkeeper", "number": "1", "sot_90": 0.0, "fouls_c_90": 0.0},
-        {"name": "Daniliuc", "role": "Defender", "number": "3", "sot_90": 0.1, "fouls_c_90": 1.5},
-        {"name": "Coppola", "role": "Defender", "number": "42", "sot_90": 0.1, "fouls_c_90": 1.7},
-        {"name": "Ghilardi", "role": "Defender", "number": "W", "sot_90": 0.1, "fouls_c_90": 1.3},
-        {"name": "Tchatchoua", "role": "Midfielder", "number": "38", "sot_90": 0.4, "fouls_c_90": 1.6},
-        {"name": "Belahyane", "role": "Midfielder", "number": "6", "sot_90": 0.3, "fouls_c_90": 1.9},
-        {"name": "Duda", "role": "Midfielder", "number": "33", "sot_90": 0.4, "fouls_c_90": 2.1},
-        {"name": "Lazovic", "role": "Midfielder", "number": "8", "sot_90": 0.7, "fouls_c_90": 0.9},
-        {"name": "Suslov", "role": "Midfielder", "number": "31", "sot_90": 1.1, "fouls_c_90": 1.4},
-        {"name": "Mosquera", "role": "Attacker", "number": "71", "sot_90": 1.4, "fouls_c_90": 1.8},
-        {"name": "Tengstedt", "role": "Attacker", "number": "34", "sot_90": 1.6, "fouls_c_90": 1.2}
     ]
 }
 
