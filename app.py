@@ -117,7 +117,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# DATABASE UFFICIALE SERIE A 2026/2027 (TUTTE E 20 LE SQUADRE)
+# DATABASE UFFICIALE SERIE A (20 SQUADRE - SENZA EMPOLI, CON FROSINONE)
 SERIE_A_SQUADS = {
     "Atalanta": [
         {"name": "Carnesecchi", "role": "Goalkeeper", "number": "29", "sot_90": 0.0, "fouls_c_90": 0.0},
@@ -171,19 +171,6 @@ SERIE_A_SQUADS = {
         {"name": "Fadera", "role": "Attacker", "number": "16", "sot_90": 1.0, "fouls_c_90": 1.1},
         {"name": "Cutrone", "role": "Attacker", "number": "10", "sot_90": 1.6, "fouls_c_90": 1.4}
     ],
-    "Empoli": [
-        {"name": "Vasquez", "role": "Goalkeeper", "number": "23", "sot_90": 0.0, "fouls_c_90": 0.0},
-        {"name": "Goglichidze", "role": "Defender", "number": "2", "sot_90": 0.0, "fouls_c_90": 1.6},
-        {"name": "Ismajli", "role": "Defender", "number": "34", "sot_90": 0.1, "fouls_c_90": 1.5},
-        {"name": "Viti", "role": "Defender", "number": "21", "sot_90": 0.1, "fouls_c_90": 1.3},
-        {"name": "Gyasi", "role": "Midfielder", "number": "11", "sot_90": 0.4, "fouls_c_90": 1.7},
-        {"name": "Henderson", "role": "Midfielder", "number": "91", "sot_90": 0.5, "fouls_c_90": 1.4},
-        {"name": "Grassi", "role": "Midfielder", "number": "5", "sot_90": 0.2, "fouls_c_90": 1.9},
-        {"name": "Pezzella", "role": "Midfielder", "number": "3", "sot_90": 0.3, "fouls_c_90": 1.2},
-        {"name": "Fazzini", "role": "Midfielder", "number": "10", "sot_90": 0.9, "fouls_c_90": 1.1},
-        {"name": "Esposito", "role": "Attacker", "number": "99", "sot_90": 1.3, "fouls_c_90": 1.2},
-        {"name": "Colombo", "role": "Attacker", "number": "29", "sot_90": 1.5, "fouls_c_90": 1.4}
-    ],
     "Fiorentina": [
         {"name": "De Gea", "role": "Goalkeeper", "number": "43", "sot_90": 0.0, "fouls_c_90": 0.0},
         {"name": "Dodo", "role": "Defender", "number": "2", "sot_90": 0.3, "fouls_c_90": 1.2},
@@ -196,6 +183,19 @@ SERIE_A_SQUADS = {
         {"name": "Beltran", "role": "Attacker", "number": "9", "sot_90": 1.3, "fouls_c_90": 1.2},
         {"name": "Gudmundsson", "role": "Attacker", "number": "10", "sot_90": 1.7, "fouls_c_90": 0.9},
         {"name": "Kean", "role": "Attacker", "number": "20", "sot_90": 2.0, "fouls_c_90": 1.7}
+    ],
+    "Frosinone": [
+        {"name": "Cerofolini", "role": "Goalkeeper", "number": "31", "sot_90": 0.0, "fouls_c_90": 0.0},
+        {"name": "Oyono", "role": "Defender", "number": "19", "sot_90": 0.2, "fouls_c_90": 1.4},
+        {"name": "Biraschi", "role": "Defender", "number": "30", "sot_90": 0.1, "fouls_c_90": 1.6},
+        {"name": "Monterisi", "role": "Defender", "number": "5", "sot_90": 0.15, "fouls_c_90": 1.3},
+        {"name": "Marchizza", "role": "Defender", "number": "22", "sot_90": 0.2, "fouls_c_90": 1.2},
+        {"name": "Barrenechea", "role": "Midfielder", "number": "45", "sot_90": 0.2, "fouls_c_90": 1.8},
+        {"name": "Brescianini", "role": "Midfielder", "number": "4", "sot_90": 0.8, "fouls_c_90": 1.5},
+        {"name": "Reinier", "role": "Midfielder", "number": "12", "sot_90": 0.9, "fouls_c_90": 1.0},
+        {"name": "Soulé", "role": "Attacker", "number": "18", "sot_90": 1.6, "fouls_c_90": 0.8},
+        {"name": "Cheddira", "role": "Attacker", "number": "70", "sot_90": 1.5, "fouls_c_90": 1.7},
+        {"name": "Kaio Jorge", "role": "Attacker", "number": "9", "sot_90": 1.4, "fouls_c_90": 1.1}
     ],
     "Genoa": [
         {"name": "Gollini", "role": "Goalkeeper", "number": "95", "sot_90": 0.0, "fouls_c_90": 0.0},
