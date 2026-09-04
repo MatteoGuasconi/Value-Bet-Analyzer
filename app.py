@@ -624,9 +624,6 @@ if "injuries_list" not in st.session_state:
     st.session_state.injuries_list = []
 
 # Sidebar
-st.sidebar.markdown("### 👑 SERIE A • PROTOCOLLO v4.0")
-
-st.sidebar.markdown("---")
 initial_bankroll = st.sidebar.number_input("Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0)
 kelly_fraction = st.sidebar.select_slider("Frazione di Kelly", options=[0.25, 0.50, 1.0], value=0.50, help="Protocollo standard: Kelly/2 (0.50)")
 min_edge_pct = st.sidebar.slider("Soglia Minima Edge (%)", min_value=1.0, max_value=5.0, value=3.0, step=0.5, help="Soglia minima da protocollo: 3.0%")
