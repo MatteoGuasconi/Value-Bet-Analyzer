@@ -1,6 +1,7 @@
 import datetime
 import numpy as np
 import pandas as pd
+import plotly.express as px
 from scipy.stats import poisson
 import streamlit as st
 
@@ -117,7 +118,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# DATABASE UFFICIALE SERIE A 2026/2027 • TUTTE LE 20 SQUADRE CON ROSE INTEGRALI (TITOLARI E RISERVE)
+# DATABASE UFFICIALE E INTEGRALE SERIE A (20 SQUADRE CON TITOLARI E RISERVE DA VOI FORNITE)
 SERIE_A_SQUADS = {
     "AC Milan": [
         {"name": "Mike Maignan", "role": "Goalkeeper", "number": "16", "sot_90": 0.0, "fouls_c_90": 0.0},
@@ -622,6 +623,8 @@ if "history_bets" not in st.session_state:
     st.session_state.history_bets = []
 if "injuries_list" not in st.session_state:
     st.session_state.injuries_list = []
+if "saved_bets_pool" not in st.session_state:
+    st.session_state.saved_bets_pool = []
 
 # Sidebar
 initial_bankroll = st.sidebar.number_input("Bankroll Iniziale (€)", min_value=10.0, value=1000.0, step=50.0)
@@ -653,12 +656,13 @@ st.sidebar.markdown(f"""
 
 st.title("VALUE BET ANALYZER • SERIE A")
 
-tab_analyzer, tab_players, tab_injuries, tab_register, tab_kpi = st.tabs([
+tab_analyzer, tab_combo, tab_players, tab_injuries, tab_register, tab_kpi = st.tabs([
     "🎯 Analisi Squadre & Match",
+    "🔗 Schedine Multiple (Combo)",
     "⚡ Statistiche Giocatori (SOT & Falli)",
     "🏥 Gestione Infermeria",
     "📝 Registro Scommesse",
-    "📈 KPI & Statistiche"
+    "📈 KPI & Grafico Bankroll"
 ])
 
 class QuantitativeEngine:
@@ -811,25 +815,91 @@ with tab_analyzer:
         st.metric("Verdetto Protocollo", calc_res['verdetto'])
 
     st.markdown("---")
-    if calc_res['edge'] >= 3.0 and quota_bk >= 1.70:
-        st.success(f"✅ **BET QUALIFICATO**: Il match rispetta tutti i filtri quantitativi del protocollo v4.0.")
-        if st.button("REGISTRA SCOMMESSA NEL REGISTRO"):
-            new_bet = {
-                "id": len(st.session_state.history_bets) + 1,
-                "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "match": f"{home_team} vs {away_team}",
-                "market": exact_market_name or market_category,
-                "odds": quota_bk,
-                "stake": calc_res['stake_eur'],
-                "ev": calc_res['ev'],
-                "status": "IN CORSO",
-                "profit": 0.0
-            }
-            st.session_state.history_bets.append(new_bet)
-            st.success("Scommessa salvata con successo nel Registro!")
+    col_act1, col_act2 = st.columns(2)
+    with col_act1:
+        if calc_res['edge'] >= 3.0 and quota_bk >= 1.70:
+            st.success(f"✅ **BET QUALIFICATO**: Il match rispetta tutti i filtri quantitativi del protocollo v4.0.")
+            if st.button("REGISTRA SCOMMESSA NEL REGISTRO"):
+                new_bet = {
+                    "id": len(st.session_state.history_bets) + 1,
+                    "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "match": f"{home_team} vs {away_team}",
+                    "market": exact_market_name or market_category,
+                    "odds": quota_bk,
+                    "stake": calc_res['stake_eur'],
+                    "ev": calc_res['ev'],
+                    "status": "IN CORSO",
+                    "profit": 0.0
+                }
+                st.session_state.history_bets.append(new_bet)
+                st.success("Scommessa salvata con successo nel Registro!")
+                st.rerun()
+        else:
+            st.warning("⚠️ **NO BET**: L'opportunità non soddisfa i requisiti minimi di Edge (≥3%) o Quota (≥1.70) previsti dal protocollo.")
+            
+    with col_act2:
+        if st.button("➕ AGGIUNGI ALLA POOL PER SCHEDINA MULTIPLA (COMBO)"):
+            st.session_state.saved_bets_pool.append({
+                "label": f"{home_team} vs {away_team} - {exact_market_name or market_category}",
+                "prob": p_model,
+                "quota": quota_bk
+            })
+            st.success("Analisi aggiunta alla pool delle Multiple!")
+
+with tab_combo:
+    st.markdown("### 🔗 MODULO SCHEDINE MULTIPLE (COMBO)")
+    st.caption("Seleziona due o più eventi salvati dalla pool di analisi per calcolare probabilità congiunta, quota totale e Kelly Mezzato.")
+    
+    if st.session_state.saved_bets_pool:
+        pool_options = [f"{b['label']} (Q: {b['quota']} | P: {b['prob']*100:.1f}%)" for b in st.session_state.saved_bets_pool]
+        selected_combo = st.multiselect("Seleziona Eventi per la Multipla", pool_options)
+        
+        if selected_combo:
+            total_combo_odds = 1.0
+            total_combo_prob = 1.0
+            for item in selected_combo:
+                idx = pool_options.index(item)
+                b_obj = st.session_state.saved_bets_pool[idx]
+                total_combo_odds *= b_obj["quota"]
+                total_combo_prob *= b_obj["prob"]
+                
+            combo_res = QuantitativeEngine.calculate_metrics(total_combo_prob, total_combo_odds, current_bankroll)
+            
+            st.markdown("---")
+            st.markdown("#### 📋 RISULTATO MULTIPLA CONGIUNTA")
+            cc1, cc2, cc3 = st.columns(3)
+            with cc1:
+                st.metric("Probabilità Congiunta", f"{total_combo_prob*100:.2f}%")
+                st.metric("Quota Totale Schedina", f"{total_combo_odds:.2f}")
+            with cc2:
+                st.metric("Edge Schedina", f"{combo_res['edge']:+.2f}%")
+                st.metric("Valore Atteso (EV)", f"{combo_res['ev']:+.2f}%")
+            with cc3:
+                st.metric("Stake Consigliato (Kelly/2)", f"{combo_res['stake_pct']}%", f"{combo_res['stake_eur']:.2f} €")
+                st.metric("Verdetto Multipla", combo_res['verdetto'])
+                
+            if st.button("REGISTRA MULTIPLA NEL REGISTRO"):
+                st.session_state.history_bets.append({
+                    "id": len(st.session_state.history_bets) + 1,
+                    "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "match": "MULTIPLA (COMBO)",
+                    "market": f"Combo di {len(selected_combo)} eventi",
+                    "odds": round(total_combo_odds, 2),
+                    "stake": combo_res['stake_eur'],
+                    "ev": combo_res['ev'],
+                    "status": "IN CORSO",
+                    "profit": 0.0
+                })
+                st.success("Schedina multipla registrata con successo!")
+                st.rerun()
+        else:
+            st.info("Seleziona almeno un evento dalla lista sopra per calcolare la multipla.")
+            
+        if st.button("PULISCI POOL MULTIPLE"):
+            st.session_state.saved_bets_pool = []
             st.rerun()
     else:
-        st.warning("⚠️ **NO BET**: L'opportunità non soddisfa i requisiti minimi di Edge (≥3%) o Quota (≥1.70) previsti dal protocollo.")
+        st.info("Nessun evento salvato nella pool. Vai nella tab 'Analisi Squadre & Match' e clicca su 'Aggiungi alla pool per Schedina Multipla'.")
 
 with tab_players:
     st.markdown("### ⚡ ANALISI STATISTICA GIOCATORI (SOT & FALLI)")
@@ -959,7 +1029,7 @@ with tab_register:
         st.info("Nessuna scommessa registrata nel registro operativo.")
 
 with tab_kpi:
-    st.markdown("### 📈 ANALISI KPI & PERFORMANCE")
+    st.markdown("### 📈 ANALISI KPI & GRAFICO TEMPORALE BANKROLL")
     st.markdown(f"""
         - **Capitale Iniziale:** `{initial_bankroll:.2f} €`
         - **Capitale Attuale:** `{current_bankroll:.2f} €`
@@ -967,3 +1037,36 @@ with tab_kpi:
         - **Yield Operativo:** `{yield_val:+.2f}%`
         - **Totale Scommesse Tracciate:** `{len(st.session_state.history_bets)}`
     """)
+    
+    st.markdown("---")
+    st.markdown("#### 📉 Andamento Temporale del Bankroll")
+    
+    concluded_bets = [b for b in st.session_state.history_bets if b.get("status") in ["VINTA", "PERSA"]]
+    if concluded_bets:
+        df_chart = pd.DataFrame(concluded_bets)
+        df_chart = df_chart.sort_values(by="created_at")
+        
+        running_balance = [initial_bankroll]
+        curr_b = initial_bankroll
+        for p in df_chart["profit"]:
+            curr_b += p
+            running_balance.append(curr_b)
+            
+        chart_dates = ["Inizio"] + list(df_chart["created_at"])
+        df_plot = pd.DataFrame({"Data": chart_dates, "Bankroll": running_balance})
+        
+        fig = px.line(
+            df_plot, x="Data", y="Bankroll", markers=True,
+            title="Evoluzione Storica del Capitale",
+            labels={"Bankroll": "Capitale (€)", "Data": "Data Registrazione"}
+        )
+        fig.update_layout(
+            plot_bgcolor="#1C2541",
+            paper_bgcolor="#0B132B",
+            font_color="#FFFFFF",
+            xaxis=dict(showgrid=True, gridcolor="#2D3A5D"),
+            yaxis=dict(showgrid=True, gridcolor="#2D3A5D")
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Registra e concludi almeno una scommessa (segnandola come VINTA o PERSA) per generare il grafico temporale dell'andamento del bankroll.")
