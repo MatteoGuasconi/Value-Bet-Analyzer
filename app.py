@@ -906,7 +906,7 @@ with tab_combo:
 
 with tab_players:
     st.markdown("### ⚡ ANALISI STATISTICA GIOCATORI (SOT & FALLI & XL)")
-    st.caption("Protocollo Tiri in Porta, Falli e Mercati XL Serie A: Seleziona squadra, calciatore e soglia personalizzata.")
+    st.caption("Protocollo Tiri in Porta, Falli e Mercati XL Serie A: Seleziona squadra, calciatore e inserisci la media statistica.")
     
     col_pl1, col_pl2 = st.columns(2)
     with col_pl1:
@@ -928,24 +928,29 @@ with tab_players:
             ]
         )
         
-        # Campo di input dinamico per la soglia numerica nei mercati XL
+        # Campo per la media statistica inserita dall'utente presente in ogni mercato giocatori
+        default_val = chosen_p_obj["sot_90"] if ("Tiri" in p_market or "Marcatore" in p_market) else chosen_p_obj["fouls_c_90"]
+        user_custom_avg = st.number_input("Media statistica inserita (es. da WhoScored)", min_value=0.0, max_value=10.0, value=float(default_val), step=0.05)
+        
+        # Campo per la soglia numerica richiesto nei mercati XL con le etichette esatte richieste
         xl_threshold = 2
-        if "XL" in p_market:
-            xl_threshold = st.number_input("Soglia Numerica Richiesta (es. 2 o 3)", min_value=1, max_value=5, value=2, step=1)
+        if "Quasi Ammonito XL" in p_market:
+            xl_threshold = st.number_input("Numero di falli commessi", min_value=1, max_value=5, value=2, step=1)
+        elif "Quasi Marcatore XL" in p_market:
+            xl_threshold = st.number_input("Numero tiri in porta effettuati", min_value=1, max_value=5, value=2, step=1)
             
         p_quota = st.number_input("Quota Bookmaker Giocatore", min_value=1.01, max_value=30.0, value=1.90, step=0.01)
         p_rigorista = st.checkbox("Rigorista principale in campo (+10% xSOT)")
 
-    # Logica di calcolo probabilistico per i mercati XL con soglia dinamica
+    # Logica di calcolo probabilistico unificata con la media personalizzata
     if "Quasi Marcatore XL" in p_market:
-        base_p90 = chosen_p_obj["sot_90"] * 1.35
+        base_p90 = user_custom_avg * 1.35
         p_p_model = float(1.0 - poisson.cdf(xl_threshold - 1, base_p90))
     elif "Quasi Ammonito XL" in p_market:
-        base_p90 = chosen_p_obj["fouls_c_90"] * 1.25
+        base_p90 = user_custom_avg * 1.25
         p_p_model = float(1.0 - poisson.cdf(xl_threshold - 1, base_p90))
     else:
-        base_p90 = chosen_p_obj["sot_90"] if "Tiri" in p_market else chosen_p_obj["fouls_c_90"]
-        p_mod_val = base_p90 * (1.10 if p_rigorista else 1.0)
+        p_mod_val = user_custom_avg * (1.10 if p_rigorista else 1.0)
         if "0.5" in p_market: 
             p_p_model = float(1.0 - poisson.cdf(0, p_mod_val))
         elif "1.5" in p_market: 
