@@ -905,8 +905,8 @@ with tab_combo:
         st.info("Nessun evento salvato nella pool. Vai nella tab 'Analisi Squadre & Match' e clicca su 'Aggiungi alla pool per Schedina Multipla'.")
 
 with tab_players:
-    st.markdown("### ⚡ ANALISI STATISTICA GIOCATORI (SOT & FALLI)")
-    st.caption("Protocollo Tiri in Porta Giocatori & Falli Serie A: Seleziona squadra e calciatore dalla rosa ufficiale.")
+    st.markdown("### ⚡ ANALISI STATISTICA GIOCATORI (SOT & FALLI & XL)")
+    st.caption("Protocollo Tiri in Porta, Falli e Mercati XL Serie A: Seleziona squadra e calciatore dalla rosa ufficiale.")
     
     col_pl1, col_pl2 = st.columns(2)
     with col_pl1:
@@ -916,16 +916,38 @@ with tab_players:
         chosen_p_str = st.selectbox("Seleziona Calciatore", player_names)
         chosen_p_obj = squad_list[player_names.index(chosen_p_str)]
     with col_pl2:
-        p_market = st.selectbox("Mercato Giocatore", ["Over 0.5 Tiri in Porta (SOT)", "Over 1.5 Tiri in Porta (SOT)", "Over 1.5 Falli Commessi", "Over 1.5 Falli Subiti"])
+        p_market = st.selectbox(
+            "Mercato Giocatore",
+            [
+                "Over 0.5 Tiri in Porta (SOT)",
+                "Over 1.5 Tiri in Porta (SOT)",
+                "Over 1.5 Falli Commessi",
+                "Over 1.5 Falli Subiti",
+                "Quasi Marcatore XL (x tiri in porta o gol)",
+                "Quasi Ammonito XL (x falli commessi o ammonizione)"
+            ]
+        )
         p_quota = st.number_input("Quota Bookmaker Giocatore", min_value=1.01, max_value=30.0, value=1.90, step=0.01)
         p_rigorista = st.checkbox("Rigorista principale in campo (+10% xSOT)")
 
-    base_p90 = chosen_p_obj["sot_90"] if "Tiri" in p_market else chosen_p_obj["fouls_c_90"]
+    # Gestione calcolo in base al mercato (inclusi i mercati XL)
+    if "Quasi Marcatore XL" in p_market:
+        # Valore combinato SOT + propensione gol stimata dal P90 del giocatore
+        base_p90 = chosen_p_obj["sot_90"] * 1.35
+    elif "Quasi Ammonito XL" in p_market:
+        # Valore combinato falli commessi + boost ammonizione
+        base_p90 = chosen_p_obj["fouls_c_90"] * 1.25
+    else:
+        base_p90 = chosen_p_obj["sot_90"] if "Tiri" in p_market else chosen_p_obj["fouls_c_90"]
+
     p_mod_val = base_p90 * (1.10 if p_rigorista else 1.0)
     
-    if "0.5" in p_market: p_p_model = float(1.0 - poisson.cdf(0, p_mod_val))
-    elif "1.5" in p_market: p_p_model = float(1.0 - poisson.cdf(1, p_mod_val))
-    else: p_p_model = 0.55
+    if "0.5" in p_market or "XL" in p_market: 
+        p_p_model = float(1.0 - poisson.cdf(0, p_mod_val))
+    elif "1.5" in p_market: 
+        p_p_model = float(1.0 - poisson.cdf(1, p_mod_val))
+    else: 
+        p_p_model = 0.55
 
     p_calc_res = QuantitativeEngine.calculate_metrics(p_p_model, p_quota, current_bankroll)
 
