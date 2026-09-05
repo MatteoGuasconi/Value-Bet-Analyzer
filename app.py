@@ -118,7 +118,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# DATABASE UFFICIALE E INTEGRALE SERIE A (20 SQUADRE CON TITOLARI E RISERVE DA VOI FORNITE)
+# DATABASE UFFICIALE E INTEGRALE SERIE A (20 SQUADRE CON TITOLARI E RISERVE)
 SERIE_A_SQUADS = {
     "AC Milan": [
         {"name": "Mike Maignan", "role": "Goalkeeper", "number": "16", "sot_90": 0.0, "fouls_c_90": 0.0},
@@ -671,7 +671,7 @@ class QuantitativeEngine:
         if p_reale <= 0.0 or quota_book <= 1.0:
             return {
                 "p_imp": 0.0, "edge": 0.0, "ev": 0.0, "quota_equa": 99.0,
-                "kelly_half": 0.0, "stake_pct": 0.0, "stake_eur": 0.0, "verdetto": "NO BET / Dati non validi"
+                "kelly_half": 0.0, "stake_pct": 0.0, "stake_eur": 0.0, "verdetto": "NO BET❌"
             }
         p_imp = 1.0 / quota_book
         edge = (quota_book / (1.0 / p_reale)) - 1.0
@@ -694,7 +694,7 @@ class QuantitativeEngine:
         final_stake_pct = min(kelly_half, cap_fascia)
         stake_eur = round(bankroll * final_stake_pct, 2)
         
-        verdetto = "BET QUALIFICATO" if edge >= 0.03 and ev > 0 and quota_book >= 1.70 else "NO BET / Sotto soglia protocollo"
+        verdetto = "VALUE BET✅" if edge >= 0.03 and ev > 0 and quota_book >= 1.70 else "NO BET❌"
         
         return {
             "p_imp": round(p_imp * 100, 2),
@@ -747,8 +747,11 @@ with tab_analyzer:
     pen_home = get_injury_penalty(home_team)
     pen_away = get_injury_penalty(away_team)
     
-    if pen_home > 0 or pen_away > 0:
-        st.info(f"🏥 Impatto Infermeria rilevato dal modello -> Penalità xG applicata: {home_team} (-{pen_home*100:.0f}%), {away_team} (-{pen_away*100:.0f}%)")
+    D_PEN_HOME = pen_home
+    D_PEN_AWAY = pen_away
+    
+    if D_PEN_HOME > 0 or D_PEN_AWAY > 0:
+        st.info(f"🏥 Impatto Infermeria rilevato dal modello -> Penalità xG applicata: {home_team} (-{D_PEN_HOME*100:.0f}%), {away_team} (-{D_PEN_AWAY*100:.0f}%)")
 
     if "⚽ Gol" in market_category:
         st.markdown("#### 📊 PARAMETRI GOL & EXPECTED GOALS (xG)")
@@ -757,8 +760,8 @@ with tab_analyzer:
         with col_st2: xg_away_raw = st.number_input("xG Base Trasferta (ultime 8)", min_value=0.1, max_value=5.0, value=1.15, step=0.05)
         with col_st3: conf_level = st.selectbox("Confidenza Modello", ["ALTA", "MEDIA", "BASSA"], index=0)
         
-        xg_home = max(0.1, xg_home_raw * (1.0 - pen_home))
-        xg_away = max(0.1, xg_away_raw * (1.0 - pen_away))
+        xg_home = max(0.1, xg_home_raw * (1.0 - D_PEN_HOME))
+        xg_away = max(0.1, xg_away_raw * (1.0 - D_PEN_AWAY))
         
         lambda_tot = xg_home + xg_away
         if "Over 2.5" in exact_market_name:
@@ -774,7 +777,7 @@ with tab_analyzer:
         st.markdown("#### 🚩 PARAMETRI CALCI D'ANGOLO (Protocollo Corner)")
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1: mean_corners = st.number_input("Media Corner Combinati / Proiettati", min_value=2.0, max_value=18.0, value=9.5, step=0.5)
-        with col_c2: cross_vol = st.number_input("Volume Cross / Gara (Correzione +8% se >20)", min_value=10.0, max_value=35.0, value=19.0, step=1.0)
+        with col_c2: cross_vol = st.number_input("Volume Cross / Gara (Correzione +8% se >20)", min_value=1.0, max_value=35.0, value=19.0, step=1.0)
         with col_c3: ref_sev = st.selectbox("Direttore di Gara / Arbitro", ["Permissivo (-5%)", "Standard (0%)", "Severo (+5%)"])
         
         c_mod = mean_corners * (1.08 if cross_vol > 20 else 1.0)
@@ -817,7 +820,7 @@ with tab_analyzer:
     st.markdown("---")
     col_act1, col_act2 = st.columns(2)
     with col_act1:
-        if calc_res['edge'] >= 3.0 and quota_bk >= 1.70:
+        if calc_res['verdetto'] == "VALUE BET✅":
             st.success(f"✅ **BET QUALIFICATO**: Il match rispetta tutti i filtri quantitativi del protocollo v4.0.")
             if st.button("REGISTRA SCOMMESSA NEL REGISTRO"):
                 new_bet = {
@@ -938,7 +941,7 @@ with tab_players:
         st.metric("Stake Consigliato", f"{p_calc_res['stake_pct']}%", f"{p_calc_res['stake_eur']:.2f} €")
         st.metric("Verdetto Giocatore", p_calc_res['verdetto'])
 
-    if p_calc_res['edge'] >= 3.0 and p_quota >= 1.70:
+    if p_calc_res['verdetto'] == "VALUE BET✅":
         if st.button("REGISTRA SCOMMESSA GIOCATORE"):
             st.session_state.history_bets.append({
                 "id": len(st.session_state.history_bets) + 1,
