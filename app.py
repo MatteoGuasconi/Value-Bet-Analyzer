@@ -906,7 +906,7 @@ with tab_combo:
 
 with tab_players:
     st.markdown("### ⚡ ANALISI STATISTICA GIOCATORI (SOT & FALLI & XL)")
-    st.caption("Protocollo Tiri in Porta, Falli e Mercati XL Serie A: Seleziona squadra e calciatore dalla rosa ufficiale.")
+    st.caption("Protocollo Tiri in Porta, Falli e Mercati XL Serie A: Seleziona squadra, calciatore e soglia personalizzata.")
     
     col_pl1, col_pl2 = st.columns(2)
     with col_pl1:
@@ -927,27 +927,31 @@ with tab_players:
                 "Quasi Ammonito XL (x falli commessi o ammonizione)"
             ]
         )
+        
+        # Campo di input dinamico per la soglia numerica nei mercati XL
+        xl_threshold = 2
+        if "XL" in p_market:
+            xl_threshold = st.number_input("Soglia Numerica Richiesta (es. 2 o 3)", min_value=1, max_value=5, value=2, step=1)
+            
         p_quota = st.number_input("Quota Bookmaker Giocatore", min_value=1.01, max_value=30.0, value=1.90, step=0.01)
         p_rigorista = st.checkbox("Rigorista principale in campo (+10% xSOT)")
 
-    # Gestione calcolo in base al mercato (inclusi i mercati XL)
+    # Logica di calcolo probabilistico per i mercati XL con soglia dinamica
     if "Quasi Marcatore XL" in p_market:
-        # Valore combinato SOT + propensione gol stimata dal P90 del giocatore
         base_p90 = chosen_p_obj["sot_90"] * 1.35
+        p_p_model = float(1.0 - poisson.cdf(xl_threshold - 1, base_p90))
     elif "Quasi Ammonito XL" in p_market:
-        # Valore combinato falli commessi + boost ammonizione
         base_p90 = chosen_p_obj["fouls_c_90"] * 1.25
+        p_p_model = float(1.0 - poisson.cdf(xl_threshold - 1, base_p90))
     else:
         base_p90 = chosen_p_obj["sot_90"] if "Tiri" in p_market else chosen_p_obj["fouls_c_90"]
-
-    p_mod_val = base_p90 * (1.10 if p_rigorista else 1.0)
-    
-    if "0.5" in p_market or "XL" in p_market: 
-        p_p_model = float(1.0 - poisson.cdf(0, p_mod_val))
-    elif "1.5" in p_market: 
-        p_p_model = float(1.0 - poisson.cdf(1, p_mod_val))
-    else: 
-        p_p_model = 0.55
+        p_mod_val = base_p90 * (1.10 if p_rigorista else 1.0)
+        if "0.5" in p_market: 
+            p_p_model = float(1.0 - poisson.cdf(0, p_mod_val))
+        elif "1.5" in p_market: 
+            p_p_model = float(1.0 - poisson.cdf(1, p_mod_val))
+        else: 
+            p_p_model = 0.55
 
     p_calc_res = QuantitativeEngine.calculate_metrics(p_p_model, p_quota, current_bankroll)
 
@@ -965,11 +969,12 @@ with tab_players:
 
     if p_calc_res['verdetto'] == "VALUE BET✅":
         if st.button("REGISTRA SCOMMESSA GIOCATORE"):
+            market_label = f"{p_market} (Soglia: {xl_threshold})" if "XL" in p_market else p_market
             st.session_state.history_bets.append({
                 "id": len(st.session_state.history_bets) + 1,
                 "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "match": f"Prop: {chosen_p_obj['name']} ({pl_team})",
-                "market": p_market,
+                "market": market_label,
                 "odds": p_quota,
                 "stake": p_calc_res['stake_eur'],
                 "ev": p_calc_res['ev'],
